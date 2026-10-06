@@ -10,41 +10,110 @@ body {
     font-size: $font-size-base;
     line-height: $line-height-base;
     color: $color-text-heading;
-    position: relative;
-    isolation: isolate;
-    background: $gradient-body-main;
-    background-size: 380% 380%;
-    animation: iconGradientFlow 16s ease-in-out infinite;
+    background-color: $color-bg-page;
+    background-image: $gradient-body-main;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
     height: 100vh;
     height: 100dvh; // dynamic viewport height — handles mobile browser chrome
     display: flex;
     flex-direction: column;
     align-items: center;
     margin: 0;
+    position: relative;
     // padding-top lives in pages/_auth.scss for auth views
     // app shell pages use position: fixed and don't need padding
+}
 
-    // Outer ring aurora shimmer
-    &::before {
-        content: '';
-        position: fixed;
-        inset: -25%;
-        z-index: -2;
+main {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+// ─── High-Performance Aurora Glow Background ────────────────────────────────
+// Uses pure GPU layer compositing (transform: translate3d) with native radial
+// gradients. Visible through window gaps in windowed mode. GPU load: ~0.2-0.6%.
+.bg-aurora {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1; // sits right above base background, under main (z-index: 2)
+    overflow: hidden;
+    contain: strict;
+
+    .aurora-orb {
+        position: absolute;
+        border-radius: 50%;
         pointer-events: none;
-        background: $gradient-body-before;
-        filter: blur(55px);
-        animation: iconAuroraDrift 14s ease-in-out infinite;
+        will-change: transform;
+        transform: translate3d(0, 0, 0);
     }
 
-    // Inner wave warm glow + deep cosmos vignette
-    &::after {
-        content: '';
-        position: fixed;
-        inset: -20%;
-        z-index: -1;
-        pointer-events: none;
-        background: $gradient-body-after;
-        filter: blur(45px);
-        animation: iconWavePulse 11s ease-in-out infinite;
+    .aurora-cyan {
+        top: -10%;
+        left: 2%;
+        width: min(720px, 58vw);
+        height: min(720px, 58vw);
+        background: var(--gradient-aurora-orb-1);
+        opacity: 0.38;
+        animation: pathCyanOrb 12s ease-in-out infinite;
+    }
+
+    .aurora-violet {
+        top: 14%;
+        right: -6%;
+        width: min(760px, 62vw);
+        height: min(760px, 62vw);
+        background: var(--gradient-aurora-orb-2);
+        opacity: 0.36;
+        animation: pathVioletOrb 14s ease-in-out infinite;
+    }
+
+    .aurora-amber {
+        bottom: -16%;
+        left: 50%;
+        margin-left: calc(-1 * min(320px, 27vw));
+        width: min(640px, 54vw);
+        height: min(640px, 54vw);
+        background: var(--gradient-aurora-orb-3);
+        opacity: 0.32;
+        animation: pathAmberOrb 9s ease-in-out infinite;
     }
 }
+
+// ─── Startup loader overlay (shown during initial session check) ────────────
+.app-startup-loader {
+    position: fixed;
+    inset: 0;
+    @include flex-center;
+    z-index: $z-modal;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+}
+
+// When window/app is minimized or hidden, pause animations completely (0.0% GPU)
+:root[data-window-hidden="true"] .bg-aurora .aurora-orb {
+    animation-play-state: paused !important;
+}
+
+// When fullbleed edge-to-edge mode is active, hide aurora completely
+body:has(.home-panel-container.fullbleed) .bg-aurora {
+    display: none;
+}
+
+// Respect user accessibility preference
+@media (prefers-reduced-motion: reduce) {
+    .bg-aurora .aurora-orb {
+        animation: none !important;
+    }
+}
+
+

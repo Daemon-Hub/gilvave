@@ -34,4 +34,18 @@ impl Api {
         .await?;
         Api::response_to::<ChannelView>(res).await
     }
+
+    // ─── VOICE CALL ENDPOINTS ────────────────────────────────────────────────
+
+    // TODO [HTTP]: POST /channels/{channel_id}/voice/join
+    // Запрос токена подключения к WebRTC/SFU медиа-серверу (LiveKit room token, router RTP capabilities, ICE/STUN/TURN серверы)
+    // pub async fn join_voice_channel(channel_id: ChannelId) -> Result<VoiceJoinResponse, ErrorInfo>
+
+    // TODO [HTTP]: POST /channels/{channel_id}/voice/leave
+    // Уведомление бэкенда о завершении голосовой сессии участником и закрытии SFU-пира
+    // pub async fn leave_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo>
+
+    // TODO [HTTP]: GET /channels/{channel_id}/voice/participants
+    // Получение текущего списка активных участников в голосовой комнате (никнеймы, аватары, Mute/Deafen)
+    // pub async fn get_voice_participants(channel_id: ChannelId) -> Result<Vec<VoiceParticipantView>, ErrorInfo>
 }

@@ -116,6 +116,7 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
             ]),
         ) {
             h2 { "Создать аккаунт" }
+            p(class="auth-subtitle") { "Присоединяйтесь к общению без границ" }
             form(on:submit=on_submit) {
                 InputGroup(
                     r#type="text",

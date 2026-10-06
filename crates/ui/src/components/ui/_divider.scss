@@ -13,14 +13,14 @@
         left: 0;
         right: 0;
         height: 1px;
-        background: $color-white-alpha-06;
+        background: $color-border-subtle;
     }
 
     span {
         background: $color-bg-container;
         padding: 0 12px;
         position: relative;
-        color: $color-text-dim;
+        color: $color-text-muted;
         font-size: $font-size-xs;
     }
 }

@@ -1,6 +1,9 @@
 use sycamore::prelude::*;
 
-use crate::components::common::CreateServerContext;
+use crate::components::{
+    common::CreateServerContext,
+    ui::icons::{ArrowLeftIcon, CloseSmallIcon},
+};
 
 use super::server_card::server_card;
 
@@ -27,7 +30,7 @@ pub(super) fn JoinServerModal(
                     button(class="modal-close-icon-btn", on:click=move |_| {
                         let ctx = use_context::<CreateServerContext>();
                         ctx.is_modal_open.set(false);
-                    }, title="Закрыть") { "✕" }
+                    }, title="Закрыть") { CloseSmallIcon() }
                     div(class="join-modal-search") {
                         input(r#type="text", placeholder="Поиск серверов...")
                     }
@@ -41,7 +44,10 @@ pub(super) fn JoinServerModal(
                     }
                 }
                 div(class="join-modal-footer") {
-                    button(class="back-btn", on:click=on_back) { "← Назад" }
+                    button(class="back-btn", on:click=on_back) {
+                    ArrowLeftIcon()
+                    span { "Назад" }
+                }
                 }
             }
         }

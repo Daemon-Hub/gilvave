@@ -1,36 +1,49 @@
 @use '../common/variables' as *;
 @use '../common/mixins' as *;
 
-// Auth pages need top padding to push below Tauri titlebar
+// Auth pages need top padding to push below Tauri titlebar on desktop
 body:has(.container.active) {
     padding-top: calc(#{$header-height-app} + 40px);
-    align-items: center; // center card on desktop/tablet
+    align-items: center; // center card on desktop
 
     @include respond-to(md) {
-        padding-top: calc(#{$header-height-app} + 16px);
-    }
-
-    @include respond-to(sm) {
-        padding-top: $header-height-app;
-        align-items: stretch; // fill full width on mobile
+        padding-top: 0;
+        align-items: stretch; // fill full screen on mobile
         justify-content: flex-start;
         overflow-y: auto;
         overflow-x: hidden;
+        height: 100dvh;
+        min-height: 100dvh;
     }
 }
 
-// ─── Form panel (login / register) ───────────────────────────────────────────
+main:has(.container.active) {
+    @include respond-to(md) {
+        align-items: stretch;
+        height: 100%;
+        min-height: 100dvh;
+        flex: 1;
+    }
+}
+
 .form-panel {
-    padding: 28px 32px 24px;
+    padding: 32px 36px 28px;
     display: none;
-    animation: slideInUp 0.3s ease;
+    animation: fadeIn 0.25s ease;
 
     &.active {
         display: block;
     }
 
     @include respond-to(md) {
-        padding: 24px 24px 20px;
+        padding: 28px 24px 24px;
+        flex: 1;
+
+        form {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
     }
 
     @include respond-to(sm) {
@@ -40,13 +53,38 @@ body:has(.container.active) {
 
 .form-panel h2 {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 6px;
     color: $color-text-heading;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
+    letter-spacing: -0.02em;
 
     @include respond-to(sm) {
-        font-size: 20px;
-        margin-bottom: 20px;
+        font-size: 22px;
+        margin-bottom: 4px;
     }
 }
+
+.auth-subtitle {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+}
+
+.forgot-link {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 18px;
+    font-size: $font-size-xs;
+    color: $color-primary;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: $color-primary-light;
+        text-decoration: underline;
+    }
+}
+

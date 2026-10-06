@@ -2,7 +2,10 @@ use gilvave_core::dto::channel::{ChannelCreateInfo, ChannelType};
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::{
-    components::common::{ChannelContext, ServerContext, UiModalContext},
+    components::{
+        common::{ChannelContext, ServerContext, UiModalContext},
+        ui::icons::{CloseSmallIcon, HashIcon, Volume2Icon},
+    },
     http::api::Api,
 };
 
@@ -57,8 +60,7 @@ pub fn CreateChannelModal() -> View {
         create_memo(move || modal_context.create_channel_type.get() == ChannelType::TEXT);
     let is_voice_type =
         create_memo(move || modal_context.create_channel_type.get() == ChannelType::VOICE);
-    let prefix_char = create_memo(move || if is_text_type.get() { "#" } else { "🔊" });
-
+    
     let text_option_class = move || {
         if is_text_type.get() {
             "type-option active"
@@ -86,7 +88,7 @@ pub fn CreateChannelModal() -> View {
             ) {
                 div(class="server-modal-header") {
                     span { "Создать канал" }
-                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { "✕" }
+                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { CloseSmallIcon() }
                 }
 
                 div(class="create-channel-body") {
@@ -96,7 +98,7 @@ pub fn CreateChannelModal() -> View {
                             class=text_option_class,
                             on:click=move |_| modal_context.create_channel_type.set(ChannelType::TEXT),
                         ) {
-                            span(class="type-icon") { "#" }
+                            span(class="type-icon") { HashIcon() }
                             div(class="type-info") {
                                 span(class="type-title") { "Текстовый" }
                                 span(class="type-desc") { "Публикуйте сообщения, изображения, ссылки и мемы" }
@@ -107,7 +109,7 @@ pub fn CreateChannelModal() -> View {
                             class=voice_option_class,
                             on:click=move |_| modal_context.create_channel_type.set(ChannelType::VOICE),
                         ) {
-                            span(class="type-icon") { "🔊" }
+                            span(class="type-icon") { Volume2Icon() }
                             div(class="type-info") {
                                 span(class="type-title") { "Голосовой" }
                                 span(class="type-desc") { "Общайтесь голосом, видео и демонстрируйте экран" }
@@ -119,7 +121,11 @@ pub fn CreateChannelModal() -> View {
                         label { "НАЗВАНИЕ КАНАЛА" }
                         div(class="channel-name-input-wrapper") {
                             span(class="channel-prefix") {
-                                (prefix_char.get())
+                                (if is_text_type.get() {
+                                    view! { HashIcon() }
+                                } else {
+                                    view! { Volume2Icon() }
+                                })
                             }
                             input(
                                 r#type="text",

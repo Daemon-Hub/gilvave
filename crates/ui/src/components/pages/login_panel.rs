@@ -92,6 +92,7 @@ pub fn LoginPanel(props: LoginFormProps) -> View {
             ]),
         ) {
             h2 { "Добро пожаловать!" }
+            p(class="auth-subtitle") { "Войдите в свой аккаунт Gilvave" }
             form(on:submit=on_submit) {
                 InputGroup(
                     r#type="text",

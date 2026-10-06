@@ -2,7 +2,8 @@
 
 .form-header {
     display: flex;
-    border-bottom: 1px solid $color-white-alpha-06;
+    background: $color-black-alpha-15;
+    border-bottom: 1px solid $color-border-subtle;
 }
 
 .tab-btn {
@@ -13,26 +14,28 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, background 0.2s;
     color: $color-text-muted;
     position: relative;
 
     &.active {
-        color: $color-text-white;
+        color: $color-text-heading;
 
         &::after {
             content: '';
             position: absolute;
             bottom: -1px;
-            left: 16px;
-            right: 16px;
-            height: 2px;
-            background: $color-primary;
-            border-radius: 2px 2px 0 0;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: $gradient-home-btn;
+            border-radius: 3px 3px 0 0;
+            box-shadow: 0 0 12px $color-primary-alpha-40;
         }
     }
 
     &:hover:not(.active) {
-        color: $color-text-label;
+        color: $color-text-heading;
+        background: $color-white-alpha-04;
     }
 }

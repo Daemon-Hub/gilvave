@@ -1,6 +1,9 @@
 use sycamore::prelude::*;
 
-use crate::components::common::{ServerContext, UiModalContext, classes};
+use crate::components::{
+    common::{ServerContext, UiModalContext, classes},
+    ui::icons::{CloseSmallIcon, GlobeIcon, LockIcon},
+};
 
 #[component]
 pub fn ServerSettingsModal() -> View {
@@ -74,7 +77,7 @@ pub fn ServerSettingsModal() -> View {
             ) {
                 div(class="server-modal-header") {
                     span { "Настройки сервера" }
-                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { "✕" }
+                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { CloseSmallIcon() }
                 }
 
                 div(class="server-settings-body") {
@@ -143,14 +146,20 @@ pub fn ServerSettingsModal() -> View {
                                         ("active", { !is_public.get() }.into()).into(),
                                     ]),
                                     on:click=move |_| is_public.set(false),
-                                ) { "🔐 Приватный" }
+                                ) {
+                                    LockIcon()
+                                    span { "Приватный" }
+                                }
                                 div(
                                     class=classes(vec![
                                         "toggle-tab".into(),
                                         ("active", { is_public.get() }.into()).into(),
                                     ]),
                                     on:click=move |_| is_public.set(true),
-                                ) { "🌍 Публичный" }
+                                ) {
+                                    GlobeIcon()
+                                    span { "Публичный" }
+                                }
                                 div(
                                     class=classes(vec![
                                         "floating-bg".into(),

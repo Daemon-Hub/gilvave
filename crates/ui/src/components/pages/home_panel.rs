@@ -1,5 +1,5 @@
 use gilvave_core::dto::{
-    channel::ChannelView,
+    channel::{ChannelType, ChannelView},
     message::MessageView,
     server::{MemberView, Server, ServerSmallPart},
 };
@@ -14,13 +14,18 @@ use crate::{
         features::{
             channels::{
                 channel_panel::ChannelPanel, create_channel_modal::CreateChannelModal,
+                voice_channel_area::VoiceChannelArea,
             },
             chat::messages_area::{ExpandedMessageEditorModal, MessagesArea},
             home::{home_dashboard::HomeDashboard, home_nav_panel::HomeNavPanel},
             members::members_panel::MembersPanel,
-            profile::profile_settings_modal::{ProfileSettingsModal, ThemeCatalogModal},
-            servers::{server_settings_modal::ServerSettingsModal, server_sidebar::ServerSidebar},
+            profile::{ProfileSettingsModal, ThemeCatalogModal, ThemeJsonEditorModal},
+            servers::{
+                server_settings_modal::ServerSettingsModal, server_sidebar::ServerSidebar,
+                SidebarControls,
+            },
         },
+        ui::icons::{GearIcon, HashIcon, HomeIcon},
     },
     gateway::service::WsService,
     http::api::Api,
@@ -57,6 +62,8 @@ pub fn HomePanel() -> View {
         custom_themes: create_signal(initial_custom_themes),
         is_windowed_mode: create_signal(crate::components::common::load_windowed_mode()),
         is_theme_catalog_open: create_signal(false),
+        is_theme_json_editor_open: create_signal(false),
+        theme_json_editor_content: create_signal(String::new()),
     };
     provide_context(ui_modal_context);
 
@@ -142,9 +149,16 @@ pub fn HomePanel() -> View {
     let is_server_settings_open = ui_modal_context.is_server_settings_open;
     let is_create_channel_open = ui_modal_context.is_create_channel_open;
     let is_profile_settings_open = ui_modal_context.is_profile_settings_open;
-    let is_message_editor_open = ui_modal_context.is_message_editor_open;
     let is_theme_catalog_open = ui_modal_context.is_theme_catalog_open;
-    let is_fullbleed: MaybeDyn<bool> = (move || !ui_modal_context.is_windowed_mode.get()).into();
+    let is_theme_json_editor_open = ui_modal_context.is_theme_json_editor_open;
+    let is_message_editor_open = ui_modal_context.is_message_editor_open;
+    let is_fullbleed: MaybeDyn<bool> = (move || {
+        crate::components::common::is_mobile_device() || !ui_modal_context.is_windowed_mode.get()
+    }).into();
+
+    let active_channel_type = create_memo(move || {
+        channel_context.current.with(|c| c.as_ref().map(|ch| ch.r#type))
+    });
 
     view! {
         div(
@@ -156,30 +170,40 @@ pub fn HomePanel() -> View {
             ]),
         ) {
             div(class="discord-sidebar") {
-                div(class="home-button-wrapper") {
-                    div(class=home_pill_class)
-                    button(
-                        class=home_btn_class,
-                        on:click=handle_home_click,
-                        title="Главная (Личные сообщения и друзья)",
-                    ) {
-                        div(class="home-avatar-inner") {
-                            (if user_profile.avatar.with(|a| !a.is_empty()) {
-                                let av = user_profile.avatar.get_clone();
-                                view! { img(src=av, alt="") }
-                            } else {
-                                let initial = user_profile.username.with(|u| u.chars().next().unwrap_or('?').to_uppercase().to_string());
-                                view! { span { (initial) } }
-                            })
-                        }
-                        div(class="home-badge") {
-                            "🏠"
+                div(class="discord-sidebar-top") {
+                    div(class="home-button-wrapper") {
+                        div(class=home_pill_class)
+                        button(
+                            class=home_btn_class,
+                            on:click=handle_home_click,
+                            title="Главная (Личные сообщения и друзья)",
+                        ) {
+                            div(class="home-avatar-inner") {
+                                (if user_profile.avatar.with(|a| !a.is_empty()) {
+                                    let av = user_profile.avatar.get_clone();
+                                    view! { img(src=av, alt="") }
+                                } else {
+                                    let initial = user_profile.username.with(|u| u.chars().next().unwrap_or('?').to_uppercase().to_string());
+                                    view! { span { (initial) } }
+                                })
+                            }
+                            div(class="home-badge") {
+                                HomeIcon()
+                            }
                         }
                     }
+
+                    div(class="separator")
                 }
 
-                div(class="separator")
-                ServerSidebar()
+                div(class="discord-sidebar-servers") {
+                    ServerSidebar()
+                }
+
+                div(class="discord-sidebar-bottom") {
+                    div(class="separator")
+                    SidebarControls()
+                }
             }
 
             div(class="discord-main") {
@@ -207,18 +231,18 @@ pub fn HomePanel() -> View {
                         view! {
                             ChannelPanel()
 
-                            (if channel_context.current.with(|c| c.is_some()) {
-                                view! { MessagesArea() }
-                            } else {
-                                view! {
+                            (match active_channel_type.get() {
+                                Some(ChannelType::TEXT) => view! { MessagesArea() },
+                                Some(ChannelType::VOICE) => view! { VoiceChannelArea() },
+                                None => view! {
                                     div(class="no-channel-selected") {
                                         div(class="no-channel-content") {
-                                            span(class="no-channel-icon") { "#" }
+                                            span(class="no-channel-icon") { HashIcon() }
                                             h3 { "Выберите канал" }
                                             p { "Выберите текстовый или голосовой канал в списке слева, чтобы начать общение." }
                                         }
                                     }
-                                }
+                                },
                             })
                         }
                     } else {
@@ -254,6 +278,11 @@ pub fn HomePanel() -> View {
         })
         (if is_theme_catalog_open.get() {
             view! { ThemeCatalogModal() }
+        } else {
+            view! {}
+        })
+        (if is_theme_json_editor_open.get() {
+            view! { ThemeJsonEditorModal() }
         } else {
             view! {}
         })
@@ -318,7 +347,7 @@ fn header_server_view(server_signal: Signal<Option<Server>>, modal_context: UiMo
                     on:click=move |_| modal_context.is_server_settings_open.set(true),
                     title="Настройки сервера",
                 ) {
-                    "⚙️"
+                    GearIcon()
                 }
             }
         }
@@ -326,7 +355,7 @@ fn header_server_view(server_signal: Signal<Option<Server>>, modal_context: UiMo
         view! {
             div(class="header-server-info") {
                 div(class="header-server-icon home") {
-                    span { "🏠" }
+                    HomeIcon()
                 }
                 div(class="header-server-text") {
                     span(class="header-server-name") { "Личные сообщения" }

@@ -4,6 +4,7 @@ use crate::{
     components::{
         common::{CreateServerContext, HomeTab, ModalView, UiModalContext, UserProfileContext},
         features::{chat::messages_area::ChatInputArea, servers::open_join_modal},
+        ui::icons::{ArrowLeftIcon, ArrowRightIcon, ChatBubbleIcon, GearIcon, GlobeIcon, PlusIcon},
     },
     utils::to_local_datetime,
 };
@@ -78,7 +79,8 @@ fn dashboard_main_view(
         div(class="home-dashboard") {
             div(class="home-dashboard-mobile-header") {
                 button(class="dashboard-back-btn", on:click=go_back_to_chats) {
-                    "← К списку чатов"
+                    ArrowLeftIcon()
+                    span { "К списку чатов" }
                 }
             }
 
@@ -102,39 +104,39 @@ fn dashboard_main_view(
 
             div(class="quick-actions-grid") {
                 div(class="quick-card join", on:click=open_join) {
-                    div(class="quick-card-icon") { "🌐" }
+                    div(class="quick-card-icon") { GlobeIcon() }
                     div(class="quick-card-text") {
                         span(class="quick-card-title") { "Каталог серверов" }
                         span(class="quick-card-desc") { "Найдите интересные публичные сообщества" }
                     }
-                    span(class="quick-card-arrow") { "→" }
+                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
 
                 div(class="quick-card create", on:click=open_create) {
-                    div(class="quick-card-icon") { "➕" }
+                    div(class="quick-card-icon") { PlusIcon() }
                     div(class="quick-card-text") {
                         span(class="quick-card-title") { "Создать сервер" }
                         span(class="quick-card-desc") { "Создайте место для друзей или команды" }
                     }
-                    span(class="quick-card-arrow") { "→" }
+                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
 
                 div(class="quick-card settings", on:click=open_settings) {
-                    div(class="quick-card-icon") { "⚙️" }
+                    div(class="quick-card-icon") { GearIcon() }
                     div(class="quick-card-text") {
                         span(class="quick-card-title") { "Настройки профиля" }
                         span(class="quick-card-desc") { "Смените аватарку, никнейм и пароль" }
                     }
-                    span(class="quick-card-arrow") { "→" }
+                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
 
                 div(class="quick-card dms", on:click=go_back_to_chats) {
-                    div(class="quick-card-icon") { "💬" }
+                    div(class="quick-card-icon") { ChatBubbleIcon() }
                     div(class="quick-card-text") {
                         span(class="quick-card-title") { "Личные чаты" }
                         span(class="quick-card-desc") { "Общайтесь один на один в безопасности" }
                     }
-                    span(class="quick-card-arrow") { "→" }
+                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
             }
 
@@ -153,7 +155,8 @@ fn dashboard_main_view(
                         span(class="friend-status") { "В сети • Кодит на Rust 🦀" }
                     }
                     button(class="friend-action-btn", on:click=select_dm_smirnov) {
-                        "Написать 💬"
+                        span { "Написать" }
+                        ChatBubbleIcon()
                     }
                 }
 
@@ -167,7 +170,8 @@ fn dashboard_main_view(
                         span(class="friend-status") { "В сети • Разрабатывает UI" }
                     }
                     button(class="friend-action-btn", on:click=select_dm_vasilieva) {
-                        "Написать 💬"
+                        span { "Написать" }
+                        ChatBubbleIcon()
                     }
                 }
             }
@@ -244,7 +248,10 @@ fn dm_chat_view(dm_name: String, modal_context: UiModalContext, dm_input: Signal
                 button(
                     class="mobile-back-btn",
                     on:click=move |_| modal_context.selected_dm_name.set(None),
-                ) { "← Назад" }
+                ) {
+                    ArrowLeftIcon()
+                    span { "Назад" }
+                }
                 (header_avatar)
                 div(class="dm-header-meta") {
                     (header_name)

@@ -35,13 +35,15 @@
         border-radius: $radius-lg;
     }
 
-    // Mobile (< 768px): small gap from edges
+    // Mobile (< 768px): always fills entire screen with zero gaps or visible bg
     @include respond-to(md) {
-        top: 0;
-        left: 6px;
-        right: 6px;
-        bottom: 8px;
-        border-radius: 0 0 $radius-lg $radius-lg;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
 
         &.active {
             flex-direction: row; // servers on left, channel content on right
@@ -83,26 +85,147 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px 0;
-    gap: 12px;
+    padding: 14px 0 12px;
+    gap: 6px;
     flex-shrink: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    @include scrollbar(4px, $color-white-alpha-10);
+    height: 100%;
+    overflow: hidden;
+
+    .discord-sidebar-top {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        flex-shrink: 0;
+        gap: 6px;
+    }
+
+    .discord-sidebar-servers {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 4px 0;
+        @include scrollbar(3px, $color-white-alpha-10);
+    }
+
+    .discord-sidebar-bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        flex-shrink: 0;
+        margin-top: auto;
+        gap: 8px;
+        padding-top: 4px;
+    }
 
     .separator {
         width: 32px;
         height: 2px;
         background: $gradient-server-separator;
-        margin: 4px 0;
+        margin: 2px 0;
         flex-shrink: 0;
+    }
+
+    // ── Sidebar user controls (Mic, Deafen, Settings) ──
+    .sidebar-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+
+        .sidebar-ctrl-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid transparent;
+            color: $color-text-channel;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+            svg {
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                display: block;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-white;
+                border-color: $color-border;
+                transform: scale(1.06);
+                box-shadow: 0 4px 14px $color-black-alpha-35;
+            }
+
+            &:active {
+                transform: scale(0.96);
+            }
+
+            // Top: Microphone & Middle: Headphones (compact 38px squircle)
+            &.mic,
+            &.deafen {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+
+                svg {
+                    width: 18px;
+                    height: 18px;
+                }
+            }
+
+            &.mic.muted,
+            &.deafen.deafened {
+                background: $color-danger-alpha-15;
+                color: $color-danger;
+                border-color: $color-danger-alpha-40;
+
+                &:hover {
+                    background: $color-danger-alpha-40;
+                    color: $color-danger-light;
+                    border-color: $color-danger;
+                }
+            }
+
+            // Bottom: Gear / Settings (noticeably larger 46px squircle matching server icon)
+            &.settings {
+                width: 46px;
+                height: 46px;
+                border-radius: $radius-lg;
+
+                svg {
+                    width: 22px;
+                    height: 22px;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                &:hover {
+                    color: $color-primary-light;
+                    border-color: $color-primary-alpha-40;
+
+                    svg {
+                        transform: rotate(45deg);
+                    }
+                }
+            }
+        }
     }
 
     // Mobile: compact vertical sidebar on the left
     @include respond-to(md) {
         width: 60px;
-        padding: 12px 0;
-        gap: 8px;
+        padding: 10px 0 8px;
+        gap: 4px;
 
         .server-icon {
             width: 42px;
@@ -112,7 +235,36 @@
         .separator {
             width: 24px;
             height: 2px;
-            margin: 2px 0;
+            margin: 1px 0;
+        }
+
+        .sidebar-controls {
+            gap: 6px;
+
+            .sidebar-ctrl-btn {
+                &.mic,
+                &.deafen {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 8px;
+
+                    svg {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+
+                &.settings {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 10px;
+
+                    svg {
+                        width: 20px;
+                        height: 20px;
+                    }
+                }
+            }
         }
     }
 }
@@ -208,8 +360,15 @@
         &.home {
             background: $color-bg-input-panel;
 
-            span {
-                font-size: 16px;
+            svg {
+                width: 18px;
+                height: 18px;
+                color: $color-icon-cyan;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                display: block;
+                margin: auto;
             }
         }
     }
@@ -238,7 +397,6 @@
         background: transparent;
         border: none;
         color: $color-text-muted;
-        font-size: 16px;
         width: 28px;
         height: 28px;
         border-radius: $radius-sm;
@@ -248,6 +406,16 @@
         cursor: pointer;
         margin-left: 8px;
         transition: background 0.15s, color 0.15s, transform 0.1s;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
 
         &:hover {
             background: $color-bg-panel-hover;
@@ -455,7 +623,8 @@
             }
         }
 
-        .messages-area {
+        .messages-area,
+        .voice-channel-area {
             position: fixed;
             top: 0;
             left: 0;

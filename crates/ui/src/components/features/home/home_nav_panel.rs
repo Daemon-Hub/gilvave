@@ -2,7 +2,7 @@ use sycamore::prelude::*;
 
 use crate::components::{
     common::{HomeTab, UiModalContext},
-    features::channels::user_status_bar::UserStatusBar,
+    ui::icons::{ChatBubbleIcon, HomeIcon, PlusIcon, UsersIcon, ZapIcon},
 };
 
 #[derive(Clone, PartialEq)]
@@ -105,7 +105,8 @@ pub fn HomeNavPanel() -> View {
                         },
                         on:click=move |_| modal_context.home_tab.set(HomeTab::Chats),
                     ) {
-                        "💬 Чаты"
+                        ChatBubbleIcon()
+                        span { "Чаты" }
                     }
                     button(
                         class=if modal_context.home_tab.get() == HomeTab::Dashboard {
@@ -115,7 +116,8 @@ pub fn HomeNavPanel() -> View {
                         },
                         on:click=move |_| modal_context.home_tab.set(HomeTab::Dashboard),
                     ) {
-                        "🏠 Главная"
+                        HomeIcon()
+                        span { "Главная" }
                     }
                 }
 
@@ -128,12 +130,12 @@ pub fn HomeNavPanel() -> View {
                         },
                         on:click=on_friends_click,
                     ) {
-                        span(class="nav-icon") { "👥" }
+                        span(class="nav-icon") { UsersIcon() }
                         span(class="nav-title") { "Друзья" }
                     }
 
                     div(class="home-nav-item") {
-                        span(class="nav-icon") { "⚡" }
+                        span(class="nav-icon") { ZapIcon() }
                         span(class="nav-title") { "Входящие" }
                     }
                 }
@@ -146,7 +148,7 @@ pub fn HomeNavPanel() -> View {
                         on:click=move |_| {
                             modal_context.selected_dm_name.set(Some("Новое сообщение".to_string()));
                         },
-                    ) { "+" }
+                    ) { PlusIcon() }
                 }
 
                 Indexed(
@@ -222,8 +224,6 @@ pub fn HomeNavPanel() -> View {
                     },
                 )
             }
-
-            UserStatusBar()
         }
     }
 }

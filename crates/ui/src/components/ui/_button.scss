@@ -4,25 +4,26 @@
 // ─── Primary submit button ────────────────────────────────────────────────────
 .submit-btn {
     width: 100%;
-    padding: $padding-btn;
-    background: $color-primary;
-    color: $color-text-white;
+    padding: 13px 20px;
+    background: $gradient-send-btn;
+    color: $color-text-on-accent;
     border: none;
-    border-radius: $radius-btn;
+    border-radius: $radius-md;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: $shadow-send-btn;
+    transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.2s ease;
     @include focus-visible-ring($color-primary);
 
     @include respond-to(sm) {
-        padding: 16px;
+        padding: 15px 18px;
         font-size: $font-size-base;
     }
 
     &:hover {
-        background: $color-primary-hover;
-        box-shadow: $shadow-submit-hover;
+        filter: brightness(1.12);
+        box-shadow: $shadow-send-btn-hover;
     }
 
     &:active {
@@ -52,8 +53,8 @@
 
     &:hover {
         background: $color-white-alpha-06;
-        border-color: $color-white-alpha-15;
-        color: $color-text-white;
+        border-color: $color-primary-alpha-40;
+        color: $color-primary;
     }
 
     &:active {
@@ -70,7 +71,7 @@
 .btn-danger {
     padding: $padding-btn;
     background: $color-danger;
-    color: $color-text-white;
+    color: $color-text-on-accent;
     border: none;
     border-radius: $radius-btn;
     font-size: $font-size-sm;
@@ -96,23 +97,24 @@
 // ─── Social (OAuth) button ────────────────────────────────────────────────────
 .social-btn {
     flex: 1;
-    padding: 10px 12px;
-    border: 1px solid $color-white-alpha-08;
+    padding: 11px 14px;
+    border: 1px solid $color-border;
     border-radius: $radius-md;
-    background: $color-black-alpha-20;
+    background: $color-bg-input;
     cursor: pointer;
     font-size: $font-size-xs;
     font-weight: $font-weight-medium;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.1s;
     @include flex-center;
     gap: 8px;
     color: $color-text-label;
     @include focus-visible-ring;
 
     &:hover {
-        background: $color-white-alpha-06;
-        border-color: $color-white-alpha-15;
-        color: $color-text-white;
+        background: $color-bg-input-focus;
+        border-color: $color-primary;
+        color: $color-primary;
+        transform: translateY(-1px);
     }
 
     &:active {
@@ -165,7 +167,7 @@
     width: 100%;
     padding: 10px;
     background: $color-primary;
-    color: $color-text-white;
+    color: $color-text-on-accent;
     border: none;
     border-radius: $radius-btn;
     font-size: $font-size-xs;

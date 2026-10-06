@@ -175,52 +175,56 @@
     to   { opacity: 1; }
 }
 
-// ── Icon-themed Iridescent Background ──
-@keyframes iconGradientFlow {
+
+// ── Aurora Cyan Orb (Left curving arc) ──
+@keyframes pathCyanOrb {
     0% {
-        background-position: 0% 50%;
+        transform: translate3d(100px, -60px, 0) scale(1);
     }
     25% {
-        background-position: 50% 100%;
+        transform: translate3d(-30px, 80px, 0) scale(1.10);
     }
     50% {
-        background-position: 100% 50%;
+        transform: translate3d(-160px, 260px, 0) scale(0.94);
     }
     75% {
-        background-position: 50% 0%;
+        transform: translate3d(-50px, 110px, 0) scale(1.06);
     }
     100% {
-        background-position: 0% 50%;
+        transform: translate3d(100px, -60px, 0) scale(1);
     }
 }
 
-@keyframes iconAuroraDrift {
+// ── Aurora Amber Orb (Center-bottom vertical float) ──
+@keyframes pathAmberOrb {
     0% {
-        transform: translate3d(-4%, -3%, 0) scale(1) rotate(0deg);
-    }
-    33% {
-        transform: translate3d(4%, 5%, 0) scale(1.08) rotate(8deg);
-    }
-    66% {
-        transform: translate3d(-3%, 4%, 0) scale(0.95) rotate(-6deg);
-    }
-    100% {
-        transform: translate3d(-4%, -3%, 0) scale(1) rotate(0deg);
-    }
-}
-
-@keyframes iconWavePulse {
-    0% {
-        transform: translate3d(3%, -4%, 0) scale(1.05) rotate(0deg);
-        opacity: 0.75;
+        transform: translate3d(0, 80px, 0) scale(0.95);
     }
     50% {
-        transform: translate3d(-5%, 5%, 0) scale(0.94) rotate(-10deg);
-        opacity: 0.95;
+        transform: translate3d(0, -200px, 0) scale(1.18);
     }
     100% {
-        transform: translate3d(3%, -4%, 0) scale(1.05) rotate(0deg);
-        opacity: 0.75;
+        transform: translate3d(0, 80px, 0) scale(0.95);
     }
 }
+
+// ── Aurora Violet Orb (Right curving arc) ──
+@keyframes pathVioletOrb {
+    0% {
+        transform: translate3d(80px, -140px, 0) scale(1);
+    }
+    25% {
+        transform: translate3d(0px, 30px, 0) scale(1.10);
+    }
+    50% {
+        transform: translate3d(-200px, 200px, 0) scale(0.95);
+    }
+    75% {
+        transform: translate3d(-80px, 50px, 0) scale(1.05);
+    }
+    100% {
+        transform: translate3d(80px, -140px, 0) scale(1);
+    }
+}
+
 

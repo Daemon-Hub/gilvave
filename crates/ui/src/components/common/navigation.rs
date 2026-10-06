@@ -3,6 +3,7 @@ use sycamore::prelude::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, EnumIter, Display, EnumString)]
 pub enum ActiveScreen {
+    Loading,
     Login,
     Register,
     Home,
@@ -18,6 +19,10 @@ impl ScreenWrapper {
 
     pub fn set(&self, value: ActiveScreen) {
         self.0.set(value);
+    }
+
+    pub fn is_loading(&self) -> bool {
+        self.get() == ActiveScreen::Loading
     }
 
     pub fn is_login(&self) -> bool {

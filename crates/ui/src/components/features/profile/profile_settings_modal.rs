@@ -1,6 +1,11 @@
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use wasm_bindgen::JsCast;
+use crate::components::ui::icons::{
+    ArrowLeftIcon, CatalogIcon, CheckIcon, CloseSmallIcon, CodeIcon,
+    DownloadIcon, EditIcon, FileTextIcon, LockIcon, LogOutIcon, PaletteIcon, TrashIcon,
+    UploadIcon, UserIcon,
+};
 use crate::components::common::{
     ActiveScreen, AppTheme, CustomTheme, ScreenWrapper, UiModalContext, UserProfileContext,
     classes, download_json_file,
@@ -31,8 +36,6 @@ pub fn ProfileSettingsModal() -> View {
     let confirm_password = create_signal(String::new());
     let password_msg = create_signal(String::new());
 
-    let is_json_editor_open = create_signal(false);
-    let json_editor_input = create_signal(CustomTheme::template_json());
     let theme_status_msg = create_signal(String::new());
     let theme_status_is_error = create_signal(false);
 
@@ -93,7 +96,7 @@ pub fn ProfileSettingsModal() -> View {
             ) {
                 div(class="profile-modal-top-bar") {
                     span(class="profile-modal-title") { "Настройки профиля" }
-                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { "✕" }
+                    button(class="modal-close-icon-btn", on:click=close, title="Закрыть") { CloseSmallIcon() }
                 }
                 div(class="profile-modal-layout") {
                     div(class="profile-sidebar-tabs") {
@@ -105,7 +108,8 @@ pub fn ProfileSettingsModal() -> View {
                             ]),
                             on:click=move |_| active_tab.set(SettingsTab::Profile),
                         ) {
-                            span { "👤 Профиль" }
+                            UserIcon()
+                            span { "Профиль" }
                         }
                         div(
                             class=classes(vec![
@@ -114,7 +118,8 @@ pub fn ProfileSettingsModal() -> View {
                             ]),
                             on:click=move |_| active_tab.set(SettingsTab::Appearance),
                         ) {
-                            span { "🎨 Внешний вид" }
+                            PaletteIcon()
+                            span { "Внешний вид" }
                         }
                         div(
                             class=classes(vec![
@@ -123,13 +128,15 @@ pub fn ProfileSettingsModal() -> View {
                             ]),
                             on:click=move |_| active_tab.set(SettingsTab::Security),
                         ) {
-                            span { "🔒 Безопасность" }
+                            LockIcon()
+                            span { "Безопасность" }
                         }
 
                         div(class="profile-tab-divider")
 
                         div(class="profile-tab-item logout", on:click=handle_logout) {
-                            span { "🚪 Выйти из аккаунта" }
+                            LogOutIcon()
+                            span { "Выйти из аккаунта" }
                         }
                     }
 
@@ -230,7 +237,6 @@ pub fn ProfileSettingsModal() -> View {
                                             theme_status_msg.set(format!(
                                                 "✓ Тема «{new_name}» успешно установлена и активирована!"
                                             ));
-                                            is_json_editor_open.set(false);
                                         }
                                     }
                                     Err(err_msg) => {
@@ -272,11 +278,6 @@ pub fn ProfileSettingsModal() -> View {
                                 }
                             };
 
-                            let on_apply_json_editor = move |_| {
-                                let raw = json_editor_input.get_clone();
-                                install_custom_theme_from_json(raw);
-                            };
-
                             let on_download_template = move |_| {
                                 let tpl = CustomTheme::template_json();
                                 download_json_file("my-theme.gilvave-theme.json", &tpl);
@@ -311,6 +312,12 @@ pub fn ProfileSettingsModal() -> View {
                                                 ) {
                                                     "Gilvave Standard (Classic Dark)"
                                                 }
+                                                option(
+                                                    value="light",
+                                                    selected=move || current_theme.get_clone() == AppTheme::Light,
+                                                ) {
+                                                    "Gilvave Light (Clean Modern Light)"
+                                                }
                                                 (move || {
                                                     let list = custom_themes_sig.get_clone();
                                                     let active = current_theme.get_clone();
@@ -343,23 +350,33 @@ pub fn ProfileSettingsModal() -> View {
                                         div(
                                             class="vscode-toggle-row",
                                             on:click=move |_| {
-                                                is_windowed_sig.set(!is_windowed_sig.get());
+                                                if !crate::components::common::is_mobile_device() {
+                                                    is_windowed_sig.set(!is_windowed_sig.get());
+                                                }
                                             },
                                         ) {
                                             div(
-                                                class=move || if is_windowed_sig.get() {
-                                                    "vscode-switch active"
-                                                } else {
-                                                    "vscode-switch"
+                                                class=move || {
+                                                    if crate::components::common::is_mobile_device() {
+                                                        "vscode-switch disabled"
+                                                    } else if is_windowed_sig.get() {
+                                                        "vscode-switch active"
+                                                    } else {
+                                                        "vscode-switch"
+                                                    }
                                                 },
                                             ) {
                                                 div(class="vscode-switch-thumb")
                                             }
                                             span(class="vscode-switch-label") {
-                                                (move || if is_windowed_sig.get() {
-                                                    "Оконный режим включён (с отступами и фоном по краям)"
-                                                } else {
-                                                    "Оконный режим отключён (панель заполняет всё пространство без зазоров)"
+                                                (move || {
+                                                    if crate::components::common::is_mobile_device() {
+                                                        "Оконный режим автоматически отключён на мобильных устройствах"
+                                                    } else if is_windowed_sig.get() {
+                                                        "Оконный режим включён (с отступами и фоном по краям)"
+                                                    } else {
+                                                        "Оконный режим отключён (панель заполняет всё пространство без зазоров)"
+                                                    }
                                                 })
                                             }
                                         }
@@ -373,13 +390,15 @@ pub fn ProfileSettingsModal() -> View {
                                                 modal_context.is_theme_catalog_open.set(true);
                                             },
                                         ) {
-                                            "🛍️ Каталог тем"
+                                            CatalogIcon()
+                                            span { "Каталог тем" }
                                         }
                                         label(
                                             r#for="custom-theme-file-input",
                                             class="toolbar-btn",
                                         ) {
-                                            "📥 Загрузить тему (.json)"
+                                            DownloadIcon()
+                                            span { "Загрузить тему (.json)" }
                                         }
                                         input(
                                             id="custom-theme-file-input",
@@ -391,22 +410,19 @@ pub fn ProfileSettingsModal() -> View {
                                         button(
                                             class="toolbar-btn",
                                             on:click=move |_| {
-                                                let next = !is_json_editor_open.get();
-                                                is_json_editor_open.set(next);
-                                                theme_status_msg.set(String::new());
+                                                modal_context.theme_json_editor_content.set(CustomTheme::template_json());
+                                                modal_context.is_theme_json_editor_open.set(true);
                                             },
                                         ) {
-                                            (move || if is_json_editor_open.get() {
-                                                "✕ Скрыть JSON-редактор"
-                                            } else {
-                                                "📋 Вставить / Создать JSON тему"
-                                            })
+                                            CodeIcon()
+                                            span { "Открыть JSON-редактор" }
                                         }
                                         button(
                                             class="toolbar-btn",
                                             on:click=on_download_template,
                                         ) {
-                                            "📄 Скачать шаблон (.json)"
+                                            FileTextIcon()
+                                            span { "Скачать шаблон (.json)" }
                                         }
                                     }
 
@@ -425,37 +441,6 @@ pub fn ProfileSettingsModal() -> View {
                                                 div(class=cls) { (msg) }
                                             }
                                         }
-                                    })
-
-                                    // Collapsible JSON Theme Editor
-                                    (move || if is_json_editor_open.get() {
-                                        view! {
-                                            div(class="json-theme-editor-panel") {
-                                                div(class="json-editor-header") {
-                                                    span { "JSON-редактор темы (VS Code формат)" }
-                                                    small { "Поддерживаются поля palette и прямые CSS-переменные (--color-*, --gradient-*)" }
-                                                }
-                                                textarea(
-                                                    class="json-theme-textarea",
-                                                    rows="12",
-                                                    bind:value=json_editor_input,
-                                                )
-                                                div(class="json-editor-actions") {
-                                                    button(
-                                                        class="back-btn",
-                                                        on:click=move |_| {
-                                                            json_editor_input.set(CustomTheme::template_json());
-                                                        },
-                                                    ) { "Сбросить к шаблону" }
-                                                    button(
-                                                        class="submit-btn create-submit",
-                                                        on:click=on_apply_json_editor,
-                                                    ) { "Установить и применить тему" }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        view! {}
                                     })
 
                                     div(class="theme-cards-grid") {
@@ -498,7 +483,7 @@ pub fn ProfileSettingsModal() -> View {
                                                     span(class="theme-card-name") { "Advanced" }
                                                     span(class="theme-card-badge advanced-badge") { "Cosmic Icon" }
                                                     (move || if current_theme.get_clone() == AppTheme::Advanced {
-                                                        view! { span(class="theme-active-check") { "✓ Активна" } }
+                                                        view! { span(class="theme-active-check") { CheckIcon() span { "Активна" } } }
                                                     } else {
                                                         view! {}
                                                     })
@@ -557,7 +542,7 @@ pub fn ProfileSettingsModal() -> View {
                                                     span(class="theme-card-name") { "Standard" }
                                                     span(class="theme-card-badge standard-badge") { "Classic Dark" }
                                                     (move || if current_theme.get_clone() == AppTheme::Standard {
-                                                        view! { span(class="theme-active-check") { "✓ Активна" } }
+                                                        view! { span(class="theme-active-check") { CheckIcon() span { "Активна" } } }
                                                     } else {
                                                         view! {}
                                                     })
@@ -573,6 +558,65 @@ pub fn ProfileSettingsModal() -> View {
                                                     span(class="swatch std-5")
                                                     span(class="swatch std-6")
                                                     span(class="swatch std-7")
+                                                }
+                                            }
+                                        }
+
+                                        // Light Theme Card
+                                        div(
+                                            class=move || {
+                                                if current_theme.get_clone() == AppTheme::Light {
+                                                    "theme-preview-card light active"
+                                                } else {
+                                                    "theme-preview-card light"
+                                                }
+                                            },
+                                            on:click=move |_| current_theme.set(AppTheme::Light),
+                                        ) {
+                                            div(class="theme-mockup light-mockup") {
+                                                div(class="mockup-sidebar") {
+                                                    div(class="mockup-dot home")
+                                                    div(class="mockup-dot")
+                                                    div(class="mockup-dot plus")
+                                                }
+                                                div(class="mockup-channels") {
+                                                    div(class="mockup-line active")
+                                                    div(class="mockup-line")
+                                                    div(class="mockup-line")
+                                                }
+                                                div(class="mockup-chat") {
+                                                    div(class="mockup-msg") {
+                                                        div(class="mockup-avatar")
+                                                        div(class="mockup-bubble")
+                                                    }
+                                                    div(class="mockup-divider")
+                                                    div(class="mockup-input-row") {
+                                                        div(class="mockup-input")
+                                                        div(class="mockup-send")
+                                                    }
+                                                }
+                                            }
+                                            div(class="theme-card-info") {
+                                                div(class="theme-card-title-row") {
+                                                    span(class="theme-card-name") { "Light" }
+                                                    span(class="theme-card-badge light-badge") { "Clean Light" }
+                                                    (move || if current_theme.get_clone() == AppTheme::Light {
+                                                        view! { span(class="theme-active-check") { CheckIcon() span { "Активна" } } }
+                                                    } else {
+                                                        view! {}
+                                                    })
+                                                }
+                                                p(class="theme-card-desc") {
+                                                    "Светлая, чистая и современная тема с мягким контрастом, сине-фиолетовыми акцентами и отличной читаемостью."
+                                                }
+                                                div(class="theme-swatches") {
+                                                    span(class="swatch light-1")
+                                                    span(class="swatch light-2")
+                                                    span(class="swatch light-3")
+                                                    span(class="swatch light-4")
+                                                    span(class="swatch light-5")
+                                                    span(class="swatch light-6")
+                                                    span(class="swatch light-7")
                                                 }
                                             }
                                         }
@@ -649,7 +693,7 @@ pub fn ProfileSettingsModal() -> View {
                                                                         if current_theme.get_clone()
                                                                             == AppTheme::Custom(theme_id_check.clone())
                                                                         {
-                                                                            view! { span(class="theme-active-check") { "✓ Активна" } }
+                                                                            view! { span(class="theme-active-check") { CheckIcon() span { "Активна" } } }
                                                                         } else {
                                                                             view! {}
                                                                         }
@@ -672,11 +716,14 @@ pub fn ProfileSettingsModal() -> View {
                                                                     button(
                                                                         class="theme-card-btn",
                                                                         on:click=move |_| {
-                                                                            json_editor_input.set(theme_for_edit.to_pretty_json());
-                                                                            is_json_editor_open.set(true);
+                                                                            modal_context.theme_json_editor_content.set(theme_for_edit.to_pretty_json());
+                                                                            modal_context.is_theme_json_editor_open.set(true);
                                                                             theme_status_msg.set(String::new());
                                                                         },
-                                                                    ) { "✏️ JSON" }
+                                                                    ) {
+                                                                        EditIcon()
+                                                                        span { "JSON" }
+                                                                    }
                                                                     button(
                                                                         class="theme-card-btn",
                                                                         on:click=move |_| {
@@ -687,7 +734,10 @@ pub fn ProfileSettingsModal() -> View {
                                                                             let content = theme_for_export.to_pretty_json();
                                                                             download_json_file(&filename, &content);
                                                                         },
-                                                                    ) { "📤 Экспорт" }
+                                                                    ) {
+                                                                        UploadIcon()
+                                                                        span { "Экспорт" }
+                                                                    }
                                                                     button(
                                                                         class="theme-card-btn delete",
                                                                         title="Удалить тему",
@@ -706,7 +756,7 @@ pub fn ProfileSettingsModal() -> View {
                                                                                 "Тема «{theme_name_delete}» удалена."
                                                                             ));
                                                                         },
-                                                                    ) { "🗑️" }
+                                                                    ) { TrashIcon() }
                                                                 }
                                                             }
                                                         }
@@ -757,7 +807,10 @@ pub fn ProfileSettingsModal() -> View {
                                     div(class="danger-zone") {
                                         h4 { "СЕССИЯ" }
                                         p { "Выход из текущей учётной записи на этом устройстве." }
-                                        button(class="danger-btn logout-btn", on:click=handle_logout) { "🚪 Выйти из аккаунта" }
+                                        button(class="danger-btn logout-btn", on:click=handle_logout) {
+                                            LogOutIcon()
+                                            span { "Выйти из аккаунта" }
+                                        }
                                     }
                                 }
                             }
@@ -817,12 +870,13 @@ pub fn ThemeCatalogModal() -> View {
                 on:click=move |e: web_sys::MouseEvent| e.stop_propagation(),
             ) {
                 div(class="server-modal-header") {
-                    span { "🛍️ Каталог тем" }
+                    span { CatalogIcon()
+                                            span { "Каталог тем" } }
                     button(
                         class="modal-close-icon-btn",
                         on:click=close_catalog,
                         title="Закрыть",
-                    ) { "✕" }
+                    ) { CloseSmallIcon() }
                     div(class="join-modal-search theme-catalog-search") {
                         span(class="theme-catalog-search-icon") {
                             svg(viewBox="0 0 24 24") {
@@ -939,9 +993,9 @@ pub fn ThemeCatalogModal() -> View {
                                                                 .iter()
                                                                 .any(|t| t.id == tid_check);
                                                             if installed {
-                                                                "✓ Установлена (Применить)"
+                                                                view! { CheckIcon() span { "Установлена (Применить)" } }
                                                             } else {
-                                                                "⬇ Установить тему"
+                                                                view! { DownloadIcon() span { "Установить тему" } }
                                                             }
                                                         })
                                                     }
@@ -955,7 +1009,10 @@ pub fn ThemeCatalogModal() -> View {
                                                             let content = theme_for_download.to_pretty_json();
                                                             download_json_file(&filename, &content);
                                                         },
-                                                    ) { "📥 Скачать .json" }
+                                                    ) {
+                                                                                        DownloadIcon()
+                                                                                        span { "Скачать .json" }
+                                                                                    }
                                                 }
                                             }
                                         }
@@ -973,7 +1030,10 @@ pub fn ThemeCatalogModal() -> View {
                 }
 
                 div(class="join-modal-footer") {
-                    button(class="back-btn", on:click=close_catalog) { "← Назад" }
+                    button(class="back-btn", on:click=close_catalog) {
+                        ArrowLeftIcon()
+                        span { "Назад" }
+                    }
                 }
             }
         }

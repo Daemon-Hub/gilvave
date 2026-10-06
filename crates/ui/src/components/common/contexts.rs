@@ -74,5 +74,7 @@ pub struct UiModalContext {
     pub custom_themes: Signal<Vec<CustomTheme>>,
     pub is_windowed_mode: Signal<bool>,
     pub is_theme_catalog_open: Signal<bool>,
+    pub is_theme_json_editor_open: Signal<bool>,
+    pub theme_json_editor_content: Signal<String>,
 }
 

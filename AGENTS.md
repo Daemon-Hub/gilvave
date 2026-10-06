@@ -90,14 +90,16 @@ crates/ui/src/
       login_panel.rs        — Login form with validation & token persistence
       register_panel.rs     — Registration form with client-side field validation
     features/               — Feature domains
-      servers/              — Server sidebar, server actions, create/join/settings modals
-      channels/             — Channel list (text/voice), user status bar, create channel modal
+      servers/              — Server sidebar, server actions, create/join/settings modals,
+                              sidebar user controls (mic, headphones, settings squircle)
+      channels/             — Channel list (text/voice), collapsible accordion groups,
+                              VoiceChannelArea (pre-connect stage, radar pulse, room dock), create channel modal
       chat/                 — MessagesArea, ChatInputArea (emoji modal, attachment menu, expand button),
                               ExpandedMessageEditorModal, MessageItem (grouping, read-more/collapse)
       members/              — Server member list (online/offline groups, roles, avatars)
       home/                 — Home dashboard (greeting hero, quick actions, DM chat with ChatInputArea, friends online)
       profile/              — User profile settings modal (preview, bio, credentials, security,
-                              appearance/themes tab, ThemeCatalogModal)
+                              appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal)
       auth/                 — Social buttons, auth form cards
     ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons)
 ```
@@ -131,6 +133,7 @@ crates/ui/src/
 - **Built-in & Custom Themes**:
   - **`AppTheme::Advanced`** (default): Rich dark palette inspired by the Gilvave app icon (deep midnight blues, electric cyan `#22d3ee`, warm amber/gold `#f59e0b`, indigo-violet gradients, and subtle glow shadows).
   - **`AppTheme::Standard`**: Classic calm dark palette (`#18191c` / `#2f3136` / `#36393f`, soft lavender `#a78bfa` accents).
+  - **`AppTheme::Light`**: Clean modern light palette (`#f0f4f9` / `#ffffff` / `#ebf3fc`, crisp blue `#0284c7` accents, dark high-contrast typography `#0f172a`).
   - **`AppTheme::Custom(String)`**: User-created or community-installed JSON themes (`CustomTheme`). Supports a 19-field `palette` (which automatically derives 120+ CSS variables) plus fine-grained `variables` overrides with strict CSS injection validation (`is_allowed_css_var` & `is_safe_css_value`). See [`CUSTOM_THEMES_GUIDE.md`](CUSTOM_THEMES_GUIDE.md) for the full specification.
   - **`ThemeCatalogModal`**: Standalone modal in `profile_settings_modal.rs` with search and a `// TODO:` hook for fetching community themes from the backend server.
 - **Windowed vs Fullbleed Mode**:
@@ -139,6 +142,21 @@ crates/ui/src/
 - **Typography**: Clean sans-serif (`gg sans`, `Noto Sans`, `Helvetica Neue`, sans-serif).
 - **Glassmorphism & Overlays**: Backdrop filter `blur(12px)` on modals and sticky headers.
 - **Scrollbars**: Thin, custom-styled scrollbars with rounded thumbs, hidden until hovered.
+
+### Channels & Voice System (`channel_panel.rs`, `voice_channel_area.rs`, `_voice-channel.scss`)
+- **Collapsible Category Accordions**: Text and Voice channel groups feature collapsible headers with smooth CSS Grid `1fr` $\leftrightarrow$ `0fr` animations and rotating `ChevronDownIcon` toggles.
+- **Interactive Voice Channels**: Clicking a voice channel switches the main view to `VoiceChannelArea`:
+  - **Pre-connect Stage**: Displays animated radar pulse rings (`voicePulseOrb`), channel name, server info, audio specs badges (48kHz, Opus, E2EE), and a prominent connect button.
+  - **Connected Room View**: Stage with participant cards, voice activity detection rings (`speakingRingPulse`), mute/deafen status badges, and a floating dock controls bar (Mic, Deafen, Disconnect).
+  - **Protocol Placeholders**: Annotated with explicit TODO comments indicating communication protocols (`HTTP` for initial participant fetch/join/leave, `WS` for participant joins/leaves and speaking events, `WebRTC` for media streams and SDP negotiation).
+
+### Sidebar User Controls (`sidebar_controls.rs`, `_home-panel.scss`)
+- Mounted at the bottom of `.discord-sidebar` (`.discord-sidebar-bottom`): Mic (top), Headphones (middle), Settings Gear (bottom).
+- **Squircle Geometry & Idle Transparency**:
+  - Idle state is completely transparent without visible container backgrounds or borders.
+  - Hover highlights the button with `$color-bg-panel-hover`, border, and shadow.
+  - Rounded corners match server icon curvature (`$radius-lg` / 12px on 46px settings gear, 10px on 38px mic/headphones).
+  - Active mute/deafen states display soft red danger accents (`$color-danger-alpha-15`).
 
 ### Chat & Message System Nuances
 - **Message Grouping (Chaining)**:
@@ -181,8 +199,10 @@ crates/ui/src/
   - Mobile layout transforms the multi-column desktop layout into a single-panel flow.
   - Server sidebar remains accessible on the left.
   - Channels / Home nav panel occupies full remaining width when no channel or DM is active.
-  - When a channel is clicked, `ChannelContext.current` is set, sliding the chat area into view.
-  - A back button (`.chat-back-btn`) in `chat-header` allows clearing `ChannelContext.current` to return to the channel navigation list.
+  - When a channel is clicked, `ChannelContext.current` is set, sliding the active text or voice view into view:
+    - `.messages-area` and `.voice-channel-area` cover the screen fixed at `z-index: 100`.
+    - Both headers provide a back button (`.chat-back-btn`) to return to channel navigation by clearing `ChannelContext.current`.
+  - **Fullbleed Auth Views**: On mobile (`<= 768px`), login and register containers (`.container.active`) expand to `100%` width and `100dvh` height with `border-radius: 0`, eliminating outer gaps and smoothly adapting to the virtual keyboard.
   - Modals (Profile Settings, Server Settings, Create Channel, Join Server) adapt on mobile:
     - Sidebar tabs convert to a horizontal scrollable tab strip (`.profile-sidebar-tabs`).
     - Full-screen height with scrollable content bodies and full-width stacked action buttons.

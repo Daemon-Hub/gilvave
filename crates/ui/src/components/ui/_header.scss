@@ -98,7 +98,7 @@
 
     &:hover {
         background: $color-white-alpha-08;
-        color: $color-text-white;
+        color: $color-text-heading;
     }
 
     &:active {
@@ -107,12 +107,12 @@
 
     &.close:hover {
         background: $color-danger;
-        color: $color-text-white;
+        color: $color-text-on-accent;
     }
 
     &.close:active {
         background: $color-danger-hover;
-        color: $color-text-white;
+        color: $color-text-on-accent;
     }
 }
 

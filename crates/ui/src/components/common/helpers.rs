@@ -60,3 +60,28 @@ pub fn classes(rules: Vec<ClassRule>) -> impl Fn() -> String {
             .join(" ")
     }
 }
+
+/// Проверяет, запущено ли приложение на мобильном устройстве (по ширине экрана, media query или user-agent).
+pub fn is_mobile_device() -> bool {
+    let Some(window) = web_sys::window() else {
+        return false;
+    };
+    if let Ok(width_val) = window.inner_width() {
+        if let Some(w) = width_val.as_f64() {
+            if w <= 768.0 {
+                return true;
+            }
+        }
+    }
+    if let Ok(ua) = window.navigator().user_agent() {
+        let ua_lower = ua.to_lowercase();
+        if ua_lower.contains("mobile")
+            || ua_lower.contains("android")
+            || ua_lower.contains("iphone")
+            || ua_lower.contains("ipad")
+        {
+            return true;
+        }
+    }
+    false
+}

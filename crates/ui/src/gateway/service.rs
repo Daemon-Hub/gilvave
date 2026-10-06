@@ -58,6 +58,24 @@ impl WsService {
         }
     }
 
+    // ─── VOICE CALL SIGNALING (WS) ───────────────────────────────────────────
+
+    // TODO [WS]: Отправка ServerSend::JoinVoiceChannel { channel_id }
+    // Оповещает шлюз о присоединении пользователя к голосовому каналу
+    // pub async fn join_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo>
+
+    // TODO [WS]: Отправка ServerSend::LeftVoiceChannel { channel_id }
+    // Оповещает шлюз об отключении пользователя от голосового канала
+    // pub async fn left_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo>
+
+    // TODO [WS]: Отправка ServerSend::VoiceStateUpdate { channel_id, is_muted, is_deafened }
+    // Синхронизация статуса микрофона / звука со всеми клиентами комнаты в реальном времени
+    // pub async fn update_voice_state(channel_id: ChannelId, is_muted: bool, is_deafened: bool) -> Result<(), ErrorInfo>
+
+    // TODO [WS]: Отправка ServerSend::VoiceSignal { channel_id, data }
+    // Обмен сигнальными сообщениями WebRTC (SDP Offer, SDP Answer, ICE Candidates) через WebSocket
+    // pub async fn send_voice_signal(channel_id: ChannelId, data: String) -> Result<(), ErrorInfo>
+
     pub async fn message_create(
         channel_id: ChannelId,
         content: String,

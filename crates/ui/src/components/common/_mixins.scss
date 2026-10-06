@@ -138,22 +138,23 @@
 // ─── Базовые стили поля ввода ─────────────────────────────────────────────────
 @mixin input-base {
     width: 100%;
-    background: $color-black-alpha-20;
-    border: 1px solid $color-white-alpha-08;
+    background: $color-bg-input;
+    border: 1px solid $color-border;
     border-radius: $radius-md;
     color: $color-text-heading;
     font-size: $font-size-sm;
     font-family: inherit;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 
     &:focus {
         border-color: $color-primary;
         box-shadow: $shadow-input-focus;
+        background: $color-bg-input-focus;
     }
 
     &::placeholder {
-        color: $color-white-alpha-20;
+        color: $color-text-muted;
     }
 }
 

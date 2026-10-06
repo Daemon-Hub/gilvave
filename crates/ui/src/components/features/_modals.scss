@@ -18,7 +18,6 @@
     background: $color-white-alpha-08;
     border: none;
     color: $color-text-muted;
-    font-size: 15px;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -26,6 +25,14 @@
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
     flex-shrink: 0;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+    }
 
     &:hover {
         background: $color-white-alpha-18;
@@ -77,9 +84,21 @@
             }
 
             .type-icon {
-                font-size: 20px;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 color: $color-primary;
-                font-weight: $font-weight-bold;
+                flex-shrink: 0;
+
+                svg {
+                    width: 20px;
+                    height: 20px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-width: 2.2;
+                }
             }
 
             .type-info {
@@ -110,10 +129,19 @@
         .channel-prefix {
             position: absolute;
             left: 12px;
-            font-size: 16px;
-            font-weight: $font-weight-bold;
             color: $color-text-muted;
             pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+            }
         }
 
         input {
@@ -182,7 +210,7 @@
             span {
                 font-size: 24px;
                 font-weight: $font-weight-bold;
-                color: $color-text-white;
+                color: $color-text-on-accent;
             }
         }
     }
@@ -324,16 +352,28 @@
             color: $color-text-channel;
             font-size: $font-size-sm;
             font-weight: $font-weight-medium;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             transition: background 0.15s, color 0.15s;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                flex-shrink: 0;
+            }
 
             &:hover {
                 background: $color-bg-panel-hover;
-                color: $color-text-white;
+                color: $color-text-heading;
             }
 
             &.active {
                 background: $color-bg-panel-active;
-                color: $color-text-white;
+                color: $color-text-heading;
             }
 
             &.logout {
@@ -523,7 +563,7 @@
                         justify-content: center;
                         font-size: 24px;
                         font-weight: $font-weight-bold;
-                        color: $color-text-white;
+                        color: $color-text-on-accent;
                     }
 
                     .status-dot {
@@ -610,6 +650,20 @@
                 font-size: $font-size-xs;
                 color: $color-text-muted;
                 margin-bottom: 12px;
+            }
+
+            .logout-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-width: 2.2;
+                }
             }
         }
 
@@ -749,10 +803,19 @@
                     cursor: pointer;
                     transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 
+                    svg {
+                        width: 14px;
+                        height: 14px;
+                        stroke: currentColor;
+                        fill: none;
+                        stroke-width: 2.2;
+                        flex-shrink: 0;
+                    }
+
                     &:hover {
                         background: $color-bg-input-focus;
                         border-color: $color-primary;
-                        color: $color-text-white;
+                        color: $color-primary;
                     }
 
                     &:active {
@@ -762,11 +825,12 @@
                     &.primary {
                         background: $color-primary-alpha-20;
                         border-color: $color-primary-alpha-45;
-                        color: $color-text-white;
+                        color: $color-primary;
 
                         &:hover {
                             background: $color-primary;
                             border-color: $color-primary;
+                            color: $color-text-on-accent;
                         }
                     }
                 }
@@ -1020,6 +1084,32 @@
             }
         }
 
+        &.light-mockup {
+            background: $raw-light-bg-page;
+
+            .mockup-sidebar {
+                background: $raw-light-bg-panel-darkest;
+                .mockup-dot { background: $mockup-light-dot; }
+                .mockup-dot.home { background: $mockup-light-dot; box-shadow: $mockup-light-dot-home-shadow; }
+                .mockup-dot.plus { background: $raw-light-bg-panel; border: 1px dashed $raw-light-primary; }
+            }
+
+            .mockup-channels {
+                background: $raw-light-bg-panel-dark;
+                .mockup-line { background: rgba(0, 0, 0, 0.12); }
+                .mockup-line.active { background: $raw-light-bg-panel-active; border-left: 2px solid $raw-light-primary; }
+            }
+
+            .mockup-chat {
+                background: $raw-light-bg-panel;
+                .mockup-avatar { background: $mockup-light-dot; }
+                .mockup-bubble { background: $raw-light-bg-input; border: 1px solid rgba(0, 0, 0, 0.08); }
+                .mockup-divider { background: rgba(0, 0, 0, 0.08); }
+                .mockup-input { background: $raw-light-bg-input; border: 1px solid rgba(0, 0, 0, 0.1); }
+                .mockup-send { background: $mockup-light-dot; }
+            }
+        }
+
         &.custom-mockup {
             background: $preview-bg-sidebar;
 
@@ -1087,6 +1177,12 @@
                 border: 1px solid $mockup-std-badge-border;
             }
 
+            &.light-badge {
+                background: $mockup-light-badge-bg;
+                color: $raw-light-primary;
+                border: 1px solid $mockup-light-badge-border;
+            }
+
             &.custom-badge {
                 background: $preview-badge-bg;
                 color: $preview-primary;
@@ -1100,6 +1196,17 @@
             font-size: 11.5px;
             font-weight: $font-weight-bold;
             color: $color-status-online;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.5;
+            }
         }
 
         .theme-card-desc {
@@ -1138,6 +1245,14 @@
                 &.std-6 { background: $raw-std-primary-end; }
                 &.std-7 { background: $raw-std-status-online; }
 
+                &.light-1 { background: $raw-light-bg-panel-darkest; }
+                &.light-2 { background: $raw-light-bg-panel-dark; }
+                &.light-3 { background: $raw-light-bg-panel; }
+                &.light-4 { background: $raw-light-bg-panel-active; }
+                &.light-5 { background: $raw-light-primary; }
+                &.light-6 { background: $raw-light-primary-end; }
+                &.light-7 { background: $raw-light-status-online; }
+
                 &.custom-1 { background: $preview-bg-sidebar; }
                 &.custom-2 { background: $preview-bg-channels; }
                 &.custom-3 { background: $preview-bg-chat; }
@@ -1166,22 +1281,36 @@
                 border: 1px solid $color-white-alpha-10;
                 color: $color-text-heading;
                 cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
                 transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 
+                svg {
+                    width: 13px;
+                    height: 13px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-width: 2.2;
+                    flex-shrink: 0;
+                }
+
                 &:hover {
-                    background: $color-white-alpha-12;
+                    background: $color-bg-panel-hover;
                     border-color: $color-primary-alpha-45;
-                    color: $color-text-white;
+                    color: $color-primary;
                 }
 
                 &.install {
                     background: $color-primary-alpha-20;
                     border-color: $color-primary-alpha-45;
-                    color: $color-text-white;
+                    color: $color-primary;
 
                     &:hover {
                         background: $color-primary;
                         border-color: $color-primary;
+                        color: $color-text-on-accent;
                     }
                 }
 
@@ -1193,7 +1322,7 @@
 
                     &:hover {
                         background: $color-danger;
-                        color: $color-text-white;
+                        color: $color-text-on-accent;
                     }
                 }
             }
@@ -1207,8 +1336,8 @@
 }
 
 .server-modal.join-modal.theme-catalog-modal {
-    width: 780px;
-    max-width: min(780px, 95vw);
+    width: 1060px;
+    max-width: min(1060px, 96vw);
     max-height: 86vh;
 
     .theme-catalog-search {
@@ -1245,6 +1374,492 @@
 
     .theme-catalog-body {
         padding: 4px 2px;
+
+        .theme-cards-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+
+            @media (max-width: 960px) {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            @media (max-width: 640px) {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}
+
+// ─── Theme JSON Editor Modal (Separate Window) ──────────────────────────────
+.theme-json-editor-overlay {
+    z-index: calc(#{$z-modal} + 15);
+}
+
+.server-modal.theme-json-editor-modal {
+    width: 760px;
+    max-width: min(760px, 95vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+
+    .server-modal-header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+        padding-bottom: 12px;
+
+        span:first-child {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: $font-size-base;
+            font-weight: $font-weight-bold;
+            color: $color-text-white;
+
+            svg {
+                width: 18px;
+                height: 18px;
+                color: $color-icon-cyan;
+                stroke: currentColor;
+            }
+        }
+
+        .theme-json-editor-subtitle {
+            font-size: $font-size-xs;
+            color: $color-text-muted;
+            line-height: 1.45;
+            margin: 0;
+            padding-right: 32px;
+        }
+    }
+
+    &.with-guide {
+        width: 1240px;
+        max-width: min(1240px, 96vw);
+        height: 88vh;
+        max-height: 88vh;
+
+        .theme-json-editor-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .theme-editor-code-col {
+            overflow: hidden;
+
+            .json-theme-textarea {
+                flex: 1;
+                min-height: 360px;
+                max-height: none;
+                resize: none;
+            }
+        }
+    }
+
+    .theme-json-editor-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 4px 0 12px 0;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        @include scrollbar;
+    }
+
+    .theme-editor-code-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+        flex: 1;
+        height: 100%;
+    }
+
+    .theme-editor-guide-col {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        background: $color-bg-input-panel;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        overflow: hidden;
+
+        .theme-editor-guide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: $color-bg-panel-dark;
+            border-bottom: 1px solid $color-border-subtle;
+
+            .theme-editor-guide-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: $font-size-xs;
+                font-weight: $font-weight-bold;
+                color: $color-text-white;
+
+                svg {
+                    width: 15px;
+                    height: 15px;
+                    color: $color-icon-cyan;
+                    stroke: currentColor;
+                }
+            }
+
+            .guide-close-btn {
+                background: transparent;
+                border: none;
+                color: $color-text-dim;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: $radius-xs;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.15s, background 0.15s;
+
+                &:hover {
+                    color: $color-text-heading;
+                    background: $color-white-alpha-08;
+                }
+
+                svg {
+                    width: 14px;
+                    height: 14px;
+                    stroke: currentColor;
+                }
+            }
+        }
+
+        .theme-editor-guide-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 16px 18px;
+            @include scrollbar(6px, $color-white-alpha-18);
+        }
+    }
+
+    .theme-json-editor-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .hidden-file-input {
+            display: none !important;
+        }
+
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: $color-bg-input-panel;
+            border: 1px solid $color-border-subtle;
+            border-radius: $radius-sm;
+            padding: 6px 12px;
+            color: $color-text-chat;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            svg {
+                width: 14px;
+                height: 14px;
+                stroke: currentColor;
+                flex-shrink: 0;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                border-color: $color-border;
+                color: $color-text-white;
+            }
+
+            &.active {
+                background: $color-primary-alpha-24;
+                border-color: $color-primary;
+                color: $color-text-white;
+            }
+        }
+    }
+
+    .json-theme-textarea {
+        width: 100%;
+        min-height: 320px;
+        max-height: 480px;
+        font-family: 'Consolas', 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 12.5px;
+        line-height: 1.5;
+        background: $color-bg-input;
+        color: $color-text-chat;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        padding: 12px 14px;
+        resize: vertical;
+        outline: none;
+        box-sizing: border-box;
+        @include scrollbar(6px, $color-white-alpha-18);
+
+        &:focus {
+            border-color: $color-primary;
+            box-shadow: $shadow-input-focus;
+        }
+    }
+
+    .theme-json-editor-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 12px;
+        border-top: 1px solid $color-border-subtle;
+        margin-top: 4px;
+
+        .theme-json-editor-hint {
+            font-size: 11px;
+            color: $color-text-dim;
+            user-select: none;
+        }
+
+        .theme-json-editor-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .submit-btn svg {
+                width: 15px;
+                height: 15px;
+                margin-right: 4px;
+                stroke: currentColor;
+            }
+        }
+    }
+
+    @include respond-to(md) {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+
+        &.with-guide {
+            .theme-json-editor-body {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .theme-editor-guide-col {
+                min-height: 320px;
+                height: auto;
+            }
+        }
+
+        .json-theme-textarea {
+            min-height: 240px;
+        }
+
+        .theme-json-editor-footer {
+            flex-direction: column;
+            align-items: stretch;
+
+            .theme-json-editor-actions {
+                flex-direction: column;
+            }
+        }
+    }
+}
+
+// ─── Markdown Rendered Content ──────────────────────────────────────────────
+.markdown-rendered-view {
+    color: $color-text-chat;
+    font-size: $font-size-sm;
+    line-height: 1.6;
+
+    h1, h2, h3, h4, h5, h6 {
+        color: $color-text-white;
+        font-weight: $font-weight-bold;
+        margin-top: 1.25em;
+        margin-bottom: 0.5em;
+        line-height: 1.3;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    h1 {
+        font-size: 1.35rem;
+        border-bottom: 1px solid $color-border-subtle;
+        padding-bottom: 6px;
+    }
+
+    h2 {
+        font-size: 1.15rem;
+        border-bottom: 1px solid $color-border-subtle;
+        padding-bottom: 4px;
+        color: $color-icon-cyan;
+    }
+
+    h3 {
+        font-size: 1rem;
+        color: $color-primary-light;
+    }
+
+    h4 {
+        font-size: 0.9rem;
+    }
+
+    p {
+        margin: 0 0 0.85em 0;
+    }
+
+    strong {
+        color: $color-text-white;
+        font-weight: $font-weight-bold;
+    }
+
+    em {
+        font-style: italic;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid $color-border-subtle;
+        margin: 1.2em 0;
+    }
+
+    ul, ol {
+        margin: 0 0 0.85em 0;
+        padding-left: 20px;
+
+        li {
+            margin-bottom: 4px;
+        }
+    }
+
+    blockquote {
+        margin: 0 0 0.85em 0;
+        padding: 6px 12px;
+        border-left: 3px solid $color-primary;
+        background: $color-primary-alpha-14;
+        border-radius: 0 $radius-xs $radius-xs 0;
+        color: $color-text-muted;
+    }
+
+    code {
+        font-family: 'Consolas', 'JetBrains Mono', monospace;
+        font-size: 0.88em;
+        background: $color-bg-input;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-xs;
+        padding: 2px 5px;
+        color: $color-icon-cyan;
+    }
+
+    pre {
+        background: $color-bg-input;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        padding: 10px 12px;
+        overflow-x: auto;
+        margin: 0 0 0.85em 0;
+        @include scrollbar(5px, $color-white-alpha-18);
+
+        code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            font-size: 12px;
+            color: $color-text-chat;
+            display: block;
+        }
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 1em 0;
+        font-size: $font-size-xs;
+
+        th, td {
+            border: 1px solid $color-border;
+            padding: 7px 10px;
+            text-align: left;
+        }
+
+        th {
+            background: $color-bg-panel;
+            color: $color-text-white;
+            font-weight: $font-weight-bold;
+        }
+
+        tr:nth-child(even) td {
+            background: $color-white-alpha-03;
+        }
+    }
+
+    a {
+        color: $color-icon-cyan;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: $color-primary-light;
+        }
+    }
+
+    details {
+        margin: 1em 0;
+        background: $color-bg-input;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        overflow: hidden;
+
+        summary {
+            padding: 10px 14px;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-white;
+            background: $color-bg-panel-dark;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease;
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-icon-cyan;
+            }
+
+            &:focus {
+                outline: none;
+            }
+        }
+
+        &[open] {
+            summary {
+                border-bottom: 1px solid $color-border-subtle;
+            }
+        }
+
+        .details-body, p {
+            padding: 12px 14px;
+            margin: 0;
+        }
+
+        table {
+            border: none;
+            margin: 0;
+            width: 100%;
+        }
     }
 }
 
@@ -1265,5 +1880,33 @@
         background: $color-danger;
         color: $color-text-white;
         transform: scale(1.02);
+    }
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: $radius-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s, background 0.15s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+    }
+
+    &:hover {
+        color: $color-primary;
+        background: $color-white-alpha-06;
     }
 }

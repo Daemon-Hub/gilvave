@@ -3,31 +3,27 @@
 
 // Auth flow container (login / register card)
 .container {
-    @include glass(20px, $color-bg-glass);
-    border-radius: $radius-xl;
-    box-shadow: $shadow-panel;
-    width: 350px;
-    margin-top: 12vh;
+    @include glass(24px, $color-bg-container);
+    border-radius: 20px;
+    box-shadow: $shadow-container, 0 16px 48px rgba(0, 0, 0, 0.55);
+    width: min(430px, 92vw);
+    margin-top: 8vh;
     overflow: hidden;
-    border: 1px solid $color-white-alpha-06;
+    border: 1px solid $color-border-container;
     display: none;
 
     &.active {
         display: block;
+        animation: scaleIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @include respond-to(md) {
-        width: 90%;
-        max-width: 400px;
-        margin-top: 4vh;
-    }
-
-    @include respond-to(sm) {
         width: 100%;
         max-width: 100%;
         margin-top: 0;
         border-radius: 0;
-        min-height: calc(100dvh - #{$header-height-app});
+        min-height: 100dvh;
+        height: 100%;
         box-shadow: none;
         border: none;
         display: none; // still controlled by .active
@@ -35,6 +31,9 @@
         &.active {
             display: flex;
             flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
     }
 }

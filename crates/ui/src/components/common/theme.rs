@@ -9,6 +9,9 @@ const STYLE_TAG_ACTIVE_CUSTOM: &str = "gilvave-custom-theme";
 const STYLE_TAG_CUSTOM_PREVIEWS: &str = "gilvave-custom-theme-previews";
 
 pub fn load_windowed_mode() -> bool {
+    if super::helpers::is_mobile_device() {
+        return false;
+    }
     web_sys::window()
         .and_then(|w| w.local_storage().ok().flatten())
         .and_then(|s| s.get_item(STORAGE_KEY_WINDOWED_MODE).ok().flatten())
@@ -32,6 +35,7 @@ pub enum AppTheme {
     Standard,
     #[default]
     Advanced,
+    Light,
     Custom(String),
 }
 
@@ -40,6 +44,7 @@ impl AppTheme {
         match self {
             Self::Standard => "standard",
             Self::Advanced => "advanced",
+            Self::Light => "light",
             Self::Custom(id) => id.as_str(),
         }
     }
@@ -47,6 +52,7 @@ impl AppTheme {
     pub fn from_id(value: &str) -> Self {
         match value.trim() {
             "standard" => Self::Standard,
+            "light" => Self::Light,
             "advanced" | "" => Self::Advanced,
             other => Self::Custom(other.to_string()),
         }
@@ -81,10 +87,18 @@ impl AppTheme {
                 }
                 set_style_tag(&doc, STYLE_TAG_ACTIVE_CUSTOM, "");
             }
+            Self::Light => {
+                if let Some(root) = doc.document_element() {
+                    let _ = root.set_attribute("data-theme", "light");
+                }
+                set_style_tag(&doc, STYLE_TAG_ACTIVE_CUSTOM, "");
+            }
             Self::Custom(id) => {
                 if let Some(theme) = custom_themes.iter().find(|t| &t.id == id) {
                     let base_attr = if theme.base.eq_ignore_ascii_case("advanced") {
                         "advanced"
+                    } else if theme.base.eq_ignore_ascii_case("light") {
+                        "light"
                     } else {
                         "standard"
                     };
@@ -193,7 +207,7 @@ impl CustomTheme {
         if theme.id.is_empty() {
             theme.id = sanitize_id(&theme.name);
         }
-        if theme.id.is_empty() || theme.id == "standard" || theme.id == "advanced" {
+        if theme.id.is_empty() || theme.id == "standard" || theme.id == "advanced" || theme.id == "light" {
             #[cfg(target_arch = "wasm32")]
             {
                 theme.id = format!("custom-{}", js_sys::Date::now() as u64);
@@ -209,7 +223,10 @@ impl CustomTheme {
         if theme.version.trim().is_empty() {
             theme.version = default_version();
         }
-        if !theme.base.eq_ignore_ascii_case("advanced") && !theme.base.eq_ignore_ascii_case("standard") {
+        if !theme.base.eq_ignore_ascii_case("advanced")
+            && !theme.base.eq_ignore_ascii_case("standard")
+            && !theme.base.eq_ignore_ascii_case("light")
+        {
             theme.base = "standard".to_string();
         }
 
@@ -458,6 +475,37 @@ impl CustomTheme {
                     online: Some("#31748f".to_string()),
                     idle: Some("#f6c177".to_string()),
                     danger: Some("#eb6f92".to_string()),
+                },
+                variables: BTreeMap::new(),
+            },
+            Self {
+                id: "catppuccin-latte".to_string(),
+                name: "Catppuccin Latte".to_string(),
+                author: "catppuccin".to_string(),
+                version: "1.0.0".to_string(),
+                description: "Нежная, тёплая и контрастная светлая палитра Catppuccin в молочно-кофейных тонах."
+                    .to_string(),
+                base: "light".to_string(),
+                palette: ThemePalette {
+                    bg_page: Some("#dce0e8".to_string()),
+                    bg_sidebar: Some("#e6e9ef".to_string()),
+                    bg_channels: Some("#eff1f5".to_string()),
+                    bg_chat: Some("#ffffff".to_string()),
+                    bg_input: Some("#e6e9ef".to_string()),
+                    bg_modal: Some("#ffffff".to_string()),
+                    bg_message: Some("rgba(230, 233, 239, 0.6)".to_string()),
+                    border: Some("#ccd0da".to_string()),
+                    primary: Some("#8839ef".to_string()),
+                    primary_end: Some("#ea76cb".to_string()),
+                    accent: Some("#1e66f5".to_string()),
+                    accent_warm: Some("#fe640b".to_string()),
+                    text_heading: Some("#4c4f69".to_string()),
+                    text_chat: Some("#5c5f77".to_string()),
+                    text_muted: Some("#8c8fa1".to_string()),
+                    text_author: Some("#1e66f5".to_string()),
+                    online: Some("#40a02b".to_string()),
+                    idle: Some("#df8e1d".to_string()),
+                    danger: Some("#d20f39".to_string()),
                 },
                 variables: BTreeMap::new(),
             },
@@ -714,6 +762,21 @@ impl CustomTheme {
                 format!("0 6px 20px {}", with_alpha(pe, 0.15)),
             );
             vars.insert("--color-quick-dms-text".into(), pe.clone());
+            vars.insert("--gradient-voice-btn".into(), grad.clone());
+            vars.insert(
+                "--shadow-voice-btn".into(),
+                format!("0 4px 16px {}", with_alpha(p_start, 0.25)),
+            );
+            vars.insert(
+                "--shadow-voice-btn-hover".into(),
+                format!("0 6px 20px {}", with_alpha(pe, 0.35)),
+            );
+            vars.insert("--gradient-voice-radar".into(), grad.clone());
+            vars.insert(
+                "--shadow-voice-radar".into(),
+                format!("0 4px 16px {}", with_alpha(p_start, 0.25)),
+            );
+            vars.insert("--color-voice-ring".into(), with_alpha(p_start, 0.25));
         }
 
         if let Some(ref acc) = accent {
@@ -849,6 +912,25 @@ impl CustomTheme {
             vars.insert("--color-hero-banner-border".into(), with_alpha(acc, 0.3));
         }
 
+        if let Some(ref pr) = primary {
+            let acc = accent.as_ref().unwrap_or(pr);
+            let pr_end = primary_end.as_ref().unwrap_or(pr);
+            let warm = accent_warm.as_ref().unwrap_or(acc);
+            vars.insert(
+                "--gradient-aurora-orb-1".into(),
+                format!("radial-gradient(circle, {acc} 0%, {pr} 40%, transparent 70%)"),
+            );
+            vars.insert(
+                "--gradient-aurora-orb-2".into(),
+                format!("radial-gradient(circle, {pr} 0%, {pr_end} 45%, transparent 70%)"),
+            );
+            vars.insert(
+                "--gradient-aurora-orb-3".into(),
+                format!("radial-gradient(circle, {warm} 0%, transparent 65%)"),
+            );
+        }
+
+
         if let Some(ref c) = text_heading {
             vars.insert("--color-text-heading".into(), c.clone());
             vars.insert("--color-text-white".into(), c.clone());
@@ -928,6 +1010,11 @@ impl CustomTheme {
             if is_allowed_css_var(key) && is_safe_css_value(val) {
                 vars.insert(key.to_string(), val.to_string());
             }
+        }
+
+        if !vars.is_empty() {
+            vars.entry("--color-text-on-accent".into())
+                .or_insert_with(|| "#ffffff".into());
         }
 
         vars

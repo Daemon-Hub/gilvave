@@ -1,0 +1,512 @@
+@use '../common/variables' as *;
+@use '../common/mixins' as *;
+
+// ── Keyframe Animations for Voice Channel ──────────────────────────────────────
+@keyframes voicePulseOrb {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.35);
+        opacity: 0.15;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+@keyframes speakingRingPulse {
+    0% {
+        box-shadow: 0 0 0 0 $color-status-online;
+    }
+    70% {
+        box-shadow: 0 0 0 8px transparent;
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+// ── Voice Channel Main Container ──────────────────────────────────────────────
+.voice-channel-area {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    background: $color-bg-panel;
+    overflow: hidden;
+    position: relative;
+}
+
+// ── Voice Header ──────────────────────────────────────────────────────────────
+.voice-header {
+    height: 52px;
+    min-height: 52px;
+    background: $color-bg-panel;
+    border-bottom: 1px solid $color-border-panel;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 2;
+
+    .chat-back-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: $color-text-channel;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: $radius-sm;
+        transition: background 0.15s, color 0.15s;
+
+        svg {
+            stroke: currentColor;
+            fill: none;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-primary;
+        }
+
+        @include respond-to(md) {
+            display: inline-flex;
+        }
+    }
+
+    .voice-header-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .voice-header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: $font-weight-bold;
+        font-size: $font-size-sm;
+        color: $color-text-white;
+
+        .voice-channel-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-primary-light;
+
+            svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        .voice-channel-name {
+            @include truncate;
+        }
+    }
+
+    .voice-header-badge {
+        font-size: $font-size-xxs;
+        font-weight: $font-weight-semibold;
+        padding: 3px 10px;
+        border-radius: $radius-full;
+        background: $color-white-alpha-08;
+        color: $color-text-muted;
+        border: 1px solid $color-border-subtle;
+        user-select: none;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+        &.connected {
+            background: $color-primary-alpha-20;
+            color: $color-primary-light;
+            border-color: $color-primary-alpha-40;
+        }
+    }
+
+    .voice-header-server-info {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        font-weight: $font-weight-medium;
+        user-select: none;
+
+        @include respond-to(sm) {
+            display: none;
+        }
+    }
+}
+
+// ── Voice Body ────────────────────────────────────────────────────────────────
+.voice-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    position: relative;
+    overflow-y: auto;
+
+    @include respond-to(sm) {
+        padding: 20px 14px;
+    }
+}
+
+// ── Pre-connect Welcome Screen ─────────────────────────────────────────────────
+.voice-welcome-card {
+    max-width: 500px;
+    width: 100%;
+    background: $color-bg-panel-dark;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-xl;
+    padding: 44px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 12px 40px $color-black-alpha-35;
+
+    @include respond-to(sm) {
+        padding: 24px 16px;
+        border-radius: $radius-lg;
+    }
+
+    .voice-radar-pulse {
+        position: relative;
+        width: 104px;
+        height: 104px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+
+        .radar-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid $color-voice-ring;
+            animation: voicePulseOrb 3s infinite ease-out;
+
+            &.ring-2 {
+                animation-delay: 1.5s;
+            }
+        }
+
+        .radar-center {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: $gradient-voice-radar;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-on-accent;
+            box-shadow: $shadow-voice-radar;
+            z-index: 1;
+
+            svg {
+                width: 32px;
+                height: 32px;
+            }
+        }
+    }
+
+    .voice-welcome-title {
+        font-size: 24px;
+        font-weight: $font-weight-bold;
+        color: $color-text-white;
+        margin-bottom: 12px;
+        line-height: 1.3;
+
+        @include respond-to(sm) {
+            font-size: 20px;
+        }
+    }
+
+    .voice-welcome-desc {
+        font-size: $font-size-sm;
+        color: $color-text-muted;
+        line-height: 1.6;
+        max-width: 400px;
+        margin-bottom: 24px;
+    }
+
+    .voice-specs-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: $font-size-xs;
+            color: $color-text-channel;
+            background: $color-white-alpha-06;
+            padding: 7px 14px;
+            border-radius: $radius-full;
+            border: 1px solid $color-border-subtle;
+
+            .spec-icon {
+                display: flex;
+                color: $color-primary;
+
+                svg {
+                    width: 14px;
+                    height: 14px;
+                }
+            }
+        }
+    }
+
+    .voice-connect-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 30px;
+        background: $gradient-voice-btn;
+        color: $color-text-on-accent;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-bold;
+        border: none;
+        border-radius: $radius-full;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        box-shadow: $shadow-voice-btn;
+
+        @include respond-to(sm) {
+            width: 100%;
+            padding: 13px 20px;
+        }
+
+        svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        &:hover {
+            transform: translateY(-2px) scale(1.02);
+            filter: brightness(1.08);
+            box-shadow: $shadow-voice-btn-hover;
+        }
+
+        &:active {
+            transform: translateY(0) scale(0.98);
+        }
+    }
+}
+
+// ── Connected Room Screen ─────────────────────────────────────────────────────
+.voice-connected-room {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: space-between;
+
+    .voice-participants-stage {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 0;
+    }
+
+    .voice-participant-card {
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border-bubble;
+        border-radius: $radius-xl;
+        padding: 32px 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-width: 250px;
+        box-shadow: 0 10px 32px $color-black-alpha-35;
+
+        @include respond-to(sm) {
+            padding: 24px 28px;
+            min-width: 200px;
+        }
+
+        .participant-avatar-wrapper {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .speaking-pulse-ring {
+                position: absolute;
+                inset: -6px;
+                border-radius: 50%;
+                border: 3px solid $color-status-online;
+                animation: speakingRingPulse 1.8s infinite ease-in-out;
+
+                &.muted {
+                    border-color: transparent;
+                    animation: none;
+                }
+            }
+
+            .participant-avatar-img {
+                width: 96px;
+                height: 96px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid $color-bg-panel-dark;
+                position: relative;
+                z-index: 1;
+            }
+
+            .participant-avatar-placeholder {
+                width: 96px;
+                height: 96px;
+                border-radius: 50%;
+                background: $gradient-voice-radar;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: $color-text-on-accent;
+                font-size: 36px;
+                font-weight: $font-weight-bold;
+                border: 3px solid $color-bg-panel-dark;
+                position: relative;
+                z-index: 1;
+            }
+        }
+
+        .participant-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+
+            .participant-username {
+                font-size: $font-size-base;
+                font-weight: $font-weight-bold;
+                color: $color-text-white;
+            }
+
+            .participant-status-badges {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+
+                .status-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    font-size: $font-size-xs;
+                    font-weight: $font-weight-semibold;
+                    padding: 4px 10px;
+                    border-radius: $radius-full;
+
+                    svg {
+                        width: 14px;
+                        height: 14px;
+                    }
+
+                    &.active {
+                        background: $color-primary-alpha-15;
+                        color: $color-status-online;
+                        border: 1px solid $color-primary-alpha-30;
+                    }
+
+                    &.muted,
+                    &.deafened {
+                        background: $color-danger-alpha-15;
+                        color: $color-danger;
+                        border: 1px solid $color-danger-alpha-40;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Floating Dock Controls ────────────────────────────────────────────────
+    .voice-dock-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: $color-bg-panel-darkest;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-full;
+        box-shadow: 0 8px 30px $color-black-alpha-35;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+
+        @include respond-to(sm) {
+            gap: 8px;
+            padding: 10px 14px;
+        }
+
+        .voice-control-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: $radius-full;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            border: 1px solid $color-border-subtle;
+            background: $color-bg-panel-dark;
+            color: $color-text-white;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-primary-light;
+                border-color: $color-primary-alpha-30;
+            }
+
+            &.off {
+                background: $color-danger-alpha-15;
+                color: $color-danger;
+                border-color: $color-danger-alpha-40;
+
+                &:hover {
+                    background: $color-danger-alpha-18;
+                }
+            }
+
+            &.disconnect-btn {
+                background: $color-danger;
+                color: $color-text-on-accent;
+                border-color: transparent;
+
+                &:hover {
+                    background: $color-danger-hover;
+                    transform: scale(1.03);
+                }
+            }
+        }
+    }
+}

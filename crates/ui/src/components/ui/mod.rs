@@ -6,3 +6,4 @@ pub mod social_button;
 pub mod spinner;
 pub mod submit_button;
 pub mod tab_button;
+pub mod markdown;

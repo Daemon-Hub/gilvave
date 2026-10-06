@@ -6,11 +6,6 @@
 .discord-sidebar {
     width: $sidebar-width-server;
     background: $color-bg-panel-darkest;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 0;
-    gap: 12px;
 }
 
 // ─── Special Home / Profile Button ───────────────────────────────────────────
@@ -197,11 +192,11 @@ $pill-triangle-polygon: polygon(
         span {
             font-size: 20px;
             font-weight: $font-weight-bold;
-            color: $color-text-white;
+            color: $color-text-on-accent;
         }
     }
 
-    .home-badge {
+        .home-badge {
         position: absolute;
         bottom: -4px;
         right: -4px;
@@ -213,11 +208,20 @@ $pill-triangle-polygon: polygon(
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
-        line-height: 1;
         z-index: 2;
         box-shadow: $shadow-home-badge;
         transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+
+        svg {
+            width: 12px;
+            height: 12px;
+            color: $color-icon-cyan;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
     }
 }
 
@@ -253,10 +257,18 @@ $pill-triangle-polygon: polygon(
         border-radius: $radius-lg;
         border: 1px dashed $color-server-new-border;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
-        span {
+        .server-icon-plus-svg {
+            width: 22px;
+            height: 22px;
             color: $color-server-new-text;
-            transition: color 0.2s ease, transform 0.2s ease;
+            display: block;
+            margin: auto;
+            transform-origin: 50% 50%;
+            transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         &:hover {
@@ -265,9 +277,9 @@ $pill-triangle-polygon: polygon(
             border-color: $color-server-new-hover-border;
             box-shadow: $shadow-server-new-hover;
 
-            span {
+            .server-icon-plus-svg {
                 color: $color-server-new-hover-text;
-                transform: scale(1.12);
+                transform: scale(1.15);
             }
         }
     }
@@ -277,7 +289,7 @@ $pill-triangle-polygon: polygon(
         font-weight: $font-weight-semibold;
         line-height: 1;
         user-select: none;
-        color: $color-text-white;
+        color: $color-text-on-accent;
     }
 
     img {
@@ -382,6 +394,18 @@ $pill-triangle-polygon: polygon(
         font-size: $font-size-xl;
         font-weight: $font-weight-semibold;
         color: $color-text-heading;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
     }
 
     .modal-close-icon-btn {
@@ -549,7 +573,18 @@ $pill-triangle-polygon: polygon(
     .checkbox-hint {
         font-size: $font-size-xxs;
         color: $color-text-muted;
-        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
     }
 }
 
@@ -572,7 +607,10 @@ $pill-triangle-polygon: polygon(
 .toggle-tab {
     flex: 1;
     padding: 14px 18px;
-    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     font-weight: $font-weight-bold;
     font-size: 15px;
     border-radius: 40px;
@@ -587,8 +625,16 @@ $pill-triangle-polygon: polygon(
     white-space: nowrap;
     @include focus-visible-ring;
 
+    svg {
+        width: 17px;
+        height: 17px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+    }
+
     &.active {
-        color: $color-text-white;
+        color: $color-text-on-accent;
     }
 }
 
@@ -635,7 +681,7 @@ $pill-triangle-polygon: polygon(
         width: 100%;
         padding: 14px;
         background: $color-primary;
-        color: $color-text-white;
+        color: $color-text-on-accent;
         border: none;
         border-radius: $radius-btn;
         font-size: 15px;
@@ -806,7 +852,7 @@ $pill-triangle-polygon: polygon(
     span {
         font-size: 15px;
         font-weight: $font-weight-semibold;
-        color: $color-text-white;
+        color: $color-text-on-accent;
         line-height: 1;
         user-select: none;
     }
@@ -828,7 +874,7 @@ $pill-triangle-polygon: polygon(
 .card-server-name-sm {
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
-    color: $color-text-white;
+    color: $color-text-on-accent;
     @include truncate;
     text-shadow: 0 1px 4px $color-black-alpha-60;
 }
@@ -871,7 +917,7 @@ $pill-triangle-polygon: polygon(
     span {
         font-size: 28px;
         font-weight: $font-weight-semibold;
-        color: $color-text-white;
+        color: $color-text-on-accent;
         line-height: 1;
         user-select: none;
     }
@@ -924,7 +970,7 @@ $pill-triangle-polygon: polygon(
     width: 100%;
     padding: 10px 16px;
     background: $color-primary;
-    color: $color-text-white;
+    color: $color-text-on-accent;
     border: none;
     border-radius: $radius-btn;
     font-size: $font-size-xs;

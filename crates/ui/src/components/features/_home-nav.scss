@@ -28,18 +28,31 @@
         color: $color-text-channel;
         font-size: $font-size-xs;
         font-weight: $font-weight-semibold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         cursor: pointer;
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
+        svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            flex-shrink: 0;
+        }
+
         &:hover {
             background: $color-bg-panel-hover;
-            color: $color-text-white;
+            color: $color-text-heading;
         }
 
         &.active {
             background: linear-gradient(135deg, $color-primary-alpha-30, $color-primary-end-alpha-30);
             border-color: $color-primary-alpha-50;
-            color: $color-text-white;
+            color: $color-text-heading;
             font-weight: $font-weight-bold;
         }
     }
@@ -64,8 +77,20 @@
     user-select: none;
 
     .nav-icon {
-        font-size: 18px;
-        line-height: 1;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
     }
 
     .nav-title {
@@ -227,6 +252,14 @@
         align-items: center;
         gap: 6px;
         padding: 8px 14px;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
         border-radius: $radius-sm;
         background: $color-white-alpha-06;
         border: 1px solid $color-white-alpha-10;
@@ -311,6 +344,13 @@
         animation: floatDecor 3s ease-in-out infinite alternate;
         flex-shrink: 0;
         margin-left: 16px;
+        pointer-events: none;
+        user-select: none;
+
+        object {
+            display: block;
+            pointer-events: none;
+        }
 
         @include respond-to(md) {
             display: none !important;
@@ -322,6 +362,7 @@
     from { transform: translateY(0px) rotate(0deg); }
     to { transform: translateY(-8px) rotate(8deg); }
 }
+
 
 .dashboard-section-title {
     font-size: $font-size-xs;
@@ -368,9 +409,24 @@
     }
 
     .quick-card-icon {
-        font-size: 28px;
-        line-height: 1;
+        width: 36px;
+        height: 36px;
+        border-radius: $radius-md;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
+        background: $color-white-alpha-06;
+
+        svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
     }
 
     .quick-card-text {
@@ -395,9 +451,19 @@
     }
 
     .quick-card-arrow {
-        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: $color-text-muted;
         transition: transform 0.2s ease, color 0.2s ease;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
     }
 
     &:hover {
@@ -417,6 +483,11 @@
     }
 
     // Distinct icon palette accents per quick card
+    &.join .quick-card-icon { color: $color-icon-cyan; }
+    &.create .quick-card-icon { color: $color-icon-amber; }
+    &.settings .quick-card-icon { color: $color-primary-light; }
+    &.dms .quick-card-icon { color: $color-icon-violet; }
+
     &.join:hover {
         border-color: $color-quick-join-border;
         box-shadow: $shadow-quick-join;
@@ -542,7 +613,18 @@
         font-size: $font-size-xs;
         font-weight: $font-weight-semibold;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         transition: background 0.15s, color 0.15s, transform 0.1s;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
 
         &:hover {
             background: $color-primary;
@@ -570,6 +652,38 @@
     gap: 12px;
     flex-shrink: 0;
 
+    .mobile-back-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: $color-text-channel;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: $radius-sm;
+        transition: background 0.15s, color 0.15s;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-primary;
+        }
+
+        @include respond-to(md) {
+            display: inline-flex;
+        }
+    }
+
     .dm-header-avatar {
         width: 32px;
         height: 32px;
@@ -578,7 +692,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: $color-text-white;
+        color: $color-text-on-accent;
         font-weight: $font-weight-bold;
         font-size: 14px;
         position: relative;
@@ -631,7 +745,7 @@
         justify-content: center;
         font-size: 28px;
         font-weight: $font-weight-bold;
-        color: $color-text-white;
+        color: $color-text-on-accent;
         margin-bottom: 8px;
     }
 

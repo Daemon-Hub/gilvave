@@ -31,3 +31,4 @@ time.workspace = true
 web-sys.workspace = true
 
 gilvave-core = { path = "../core" }
+pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }

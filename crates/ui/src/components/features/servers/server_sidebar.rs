@@ -6,7 +6,7 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::components::{
     common::{CreateServerContext, ModalView, ServerContext},
-    ui::icons::ServerIcon,
+    ui::icons::{GlobeIcon, LockIcon, ServerIcon},
 };
 use crate::{components::common::classes, http::api::Api};
 
@@ -300,14 +300,20 @@ pub fn ServerSidebar() -> View {
                                                 ("active", { !context.is_public.get() }.into()).into(),
                                             ]),
                                             on:click=move |_| context.is_public.set(false),
-                                        ) { "🔐 Приватный" }
+                                        ) {
+                                            LockIcon()
+                                            span { "Приватный" }
+                                        }
                                         div(
                                             class=classes(vec![
                                                 "toggle-tab".into(),
                                                 ("active", { context.is_public.get() }.into()).into(),
                                             ]),
                                             on:click=move |_| context.is_public.set(true),
-                                        ) { "🌍 Публичный" }
+                                        ) {
+                                            GlobeIcon()
+                                            span { "Публичный" }
+                                        }
                                         div(
                                             class=classes(vec![
                                                 "floating-bg".into(),
@@ -318,9 +324,15 @@ pub fn ServerSidebar() -> View {
                                 }
                                 span(class="checkbox-hint") {
                                     (if context.is_public.get() {
-                                        "🌍 Публичные серверы видны всем пользователям"
+                                        view! {
+                                            GlobeIcon()
+                                            span { "Публичные серверы видны всем пользователям" }
+                                        }
                                     } else {
-                                        "🔐 Только приглашённые пользователи"
+                                        view! {
+                                            LockIcon()
+                                            span { "Только приглашённые пользователи" }
+                                        }
                                     })
                                 }
                             }

@@ -36,8 +36,8 @@ $std-primary: #a78bfa;
 $std-primary-hover: #8b5cf6;
 $std-primary-light: #c4b5fd;
 $std-primary-lighter: #ddd6fe;
-$std-primary-end: #ec4899;
-$std-primary-end-light: #f472b6;
+$std-primary-end: #7c3aed;
+$std-primary-end-light: #9061f9;
 $std-primary-dark: #7c3aed;
 $std-primary-blue: #2563eb;
 
@@ -140,6 +140,7 @@ $std-status-offline: #747f8d;
     --color-text-dim: #{$std-text-dim};
     --color-text-social: #{$std-text-social};
     --color-text-white: #{$std-text-white};
+    --color-text-on-accent: #ffffff;
     --color-text-tab: #{$std-text-label};
     --color-text-channel: #{$std-text-channel};
     --color-text-member: #{$std-text-member};
@@ -220,9 +221,9 @@ $std-status-offline: #747f8d;
     --gradient-message-avatar: linear-gradient(135deg, #{$std-primary}, #{$std-primary-end});
     --gradient-read-more: #{rgba($std-primary, 0.14)};
     --gradient-read-more-hover: #{rgba($std-primary, 0.25)};
-    --gradient-send-btn: linear-gradient(135deg, #{$std-primary}, #{$std-primary-end});
-    --shadow-send-btn: 0 2px 8px #{rgba($std-primary, 0.35)};
-    --shadow-send-btn-hover: 0 4px 14px #{rgba($std-primary, 0.5)};
+    --gradient-send-btn: #{$std-primary};
+    --shadow-send-btn: none;
+    --shadow-send-btn-hover: none;
     --gradient-editor-badge: #{rgba($std-primary, 0.16)};
     --gradient-unread-badge: #{$std-danger};
     --shadow-unread-badge: none;
@@ -236,6 +237,16 @@ $std-status-offline: #747f8d;
     --gradient-body-main: linear-gradient(135deg, #{$std-bg-page}, #{$std-bg-page-mid}, #{$std-bg-page-end});
     --gradient-body-before: none;
     --gradient-body-after: none;
+    --gradient-aurora-orb-1: radial-gradient(circle, #{rgba($std-primary, 0.35)} 0%, #{rgba($std-primary-blue, 0.18)} 40%, transparent 70%);
+    --gradient-aurora-orb-2: radial-gradient(circle, #{rgba($std-primary-end, 0.28)} 0%, #{rgba($std-primary-dark, 0.15)} 45%, transparent 70%);
+    --gradient-aurora-orb-3: radial-gradient(circle, #{rgba($std-primary-light, 0.22)} 0%, transparent 65%);
+
+    --gradient-voice-btn: linear-gradient(135deg, #{$std-primary}, #{$std-primary-dark});
+    --shadow-voice-btn: 0 4px 16px #{rgba($std-primary, 0.25)};
+    --shadow-voice-btn-hover: 0 6px 20px #{rgba($std-primary, 0.35)};
+    --gradient-voice-radar: linear-gradient(135deg, #{$std-primary}, #{$std-primary-dark});
+    --shadow-voice-radar: 0 4px 16px #{rgba($std-primary, 0.25)};
+    --color-voice-ring: #{rgba($std-primary, 0.25)};
 
     --color-quick-join-border: #{rgba($std-primary, 0.4)};
     --shadow-quick-join: 0 6px 20px rgba(0, 0, 0, 0.3);
@@ -257,3 +268,284 @@ $std-status-offline: #747f8d;
     --shadow-input-focus: 0 0 0 3px #{rgba($std-primary, 0.2)};
     --shadow-submit-hover: 0 5px 20px #{rgba($std-primary, 0.4)};
 }
+
+// ─── Light Theme (Refined Azure Blue Light Palette) ───────────────────────────
+$light-bg-page: #d4e5f9;
+$light-bg-page-mid: #e1effd;
+$light-bg-page-end: #c7def8;
+
+$light-bg-container: #ffffff;
+$light-bg-container-dark: #ebf3fc;
+$light-bg-input: #e9f2fc;
+$light-bg-input-focus: #ffffff;
+$light-bg-social: #ebf3fc;
+$light-bg-message: rgba(223, 237, 253, 0.75);
+
+$light-bg-panel: #f7faff;
+$light-bg-panel-dark: #edf4fc;
+$light-bg-panel-footer: #d5e4f8;
+$light-bg-panel-darkest: #d6e6f9;
+$light-bg-panel-darkest-hover: #c4dcf7;
+$light-bg-panel-hover: #dbeafc;
+$light-bg-panel-active: #cfe2fa;
+$light-bg-input-panel: #e6f0fa;
+$light-bg-input-panel-focus: #ffffff;
+
+$light-border: #c3d9f5;
+$light-border-header: #cde0f7;
+$light-border-subtle: rgba(37, 99, 235, 0.12);
+$light-border-panel: rgba(37, 99, 235, 0.16);
+
+$light-primary: #1d4ed8;
+$light-primary-hover: #1e40af;
+$light-primary-light: #2563eb;
+$light-primary-lighter: #3b82f6;
+$light-primary-end: #3b82f6;
+$light-primary-end-light: #60a5fa;
+$light-primary-dark: #1e3a8a;
+$light-primary-blue: #0284c7;
+
+$light-text-heading: #0a192f;
+$light-text-label: #475569;
+$light-text-muted: #64748b;
+$light-text-dim: #94a3b8;
+$light-text-social: #1e293b;
+$light-text-white: #0a192f;
+$light-text-channel: #334155;
+$light-text-member: #1e293b;
+$light-text-chat: #1e293b;
+
+$light-error: #ef4444;
+$light-success: #10b981;
+$light-danger: #ef4444;
+$light-danger-hover: #dc2626;
+$light-danger-light: #f87171;
+
+$light-status-online: #10b981;
+$light-status-idle: #f59e0b;
+$light-status-dnd: #ef4444;
+$light-status-offline: #94a3b8;
+
+:root[data-theme='light'] {
+    --color-bg-page: #{$light-bg-page};
+    --color-bg-page-mid: #{$light-bg-page-mid};
+    --color-bg-page-end: #{$light-bg-page-end};
+    --color-bg-page-overlay: #{rgba($light-bg-page, 0.7)};
+
+    --color-icon-cyan: #0284c7;
+    --color-icon-cyan-bright: #0ea5e9;
+    --color-icon-blue: #{$light-primary};
+    --color-icon-slate-arc: #93c5fd;
+    --color-icon-violet: #6366f1;
+    --color-icon-magenta: #a855f7;
+    --color-icon-coral: #{$light-danger};
+    --color-icon-orange: #ea580c;
+    --color-icon-amber: #d97706;
+    --color-icon-spark: #b45309;
+
+    --color-bg-container: #{$light-bg-container};
+    --color-bg-container-dark: #{$light-bg-container-dark};
+    --color-bg-glass: rgba(255, 255, 255, 0.94);
+    --color-bg-input: #{$light-bg-input};
+    --color-bg-input-focus: #{$light-bg-input-focus};
+    --color-bg-social: #{$light-bg-social};
+    --color-bg-message: #{$light-bg-message};
+
+    --color-bg-panel: #{$light-bg-panel};
+    --color-bg-panel-dark: #{$light-bg-panel-dark};
+    --color-bg-panel-footer: #{$light-bg-panel-footer};
+    --color-bg-panel-darkest: #{$light-bg-panel-darkest};
+    --color-bg-panel-darkest-hover: #{$light-bg-panel-darkest-hover};
+    --color-bg-panel-hover: #{$light-bg-panel-hover};
+    --color-bg-panel-active: #{$light-bg-panel-active};
+    --color-bg-input-panel: #{$light-bg-input-panel};
+    --color-bg-input-panel-focus: #{$light-bg-input-panel-focus};
+
+    --color-border: #{$light-border};
+    --color-border-header: #{$light-border-header};
+    --color-border-subtle: #{$light-border-subtle};
+    --color-border-panel: #{$light-border-panel};
+    --color-border-container: rgba(37, 99, 235, 0.12);
+    --color-border-bubble: rgba(37, 99, 235, 0.12);
+    --color-border-bubble-hover: #{rgba($light-primary, 0.35)};
+    --color-border-input-panel: #{$light-border};
+    --color-border-input-focus: #{$light-primary-light};
+    --color-border-slate-arc: rgba(37, 99, 235, 0.15);
+
+    --color-primary: #{$light-primary};
+    --color-primary-hover: #{$light-primary-hover};
+    --color-primary-light: #{$light-primary-light};
+    --color-primary-lighter: #{$light-primary-lighter};
+    --color-primary-end: #{$light-primary-end};
+    --color-primary-end-light: #{$light-primary-end-light};
+    --color-primary-dark: #{$light-primary-dark};
+    --color-primary-blue: #{$light-primary-blue};
+
+    --color-primary-alpha-14: #{rgba($light-primary, 0.14)};
+    --color-primary-alpha-15: #{rgba($light-primary, 0.15)};
+    --color-primary-alpha-16: #{rgba($light-primary, 0.16)};
+    --color-primary-alpha-20: #{rgba($light-primary, 0.20)};
+    --color-primary-alpha-24: #{rgba($light-primary, 0.24)};
+    --color-primary-alpha-25: #{rgba($light-primary, 0.25)};
+    --color-primary-alpha-28: #{rgba($light-primary, 0.28)};
+    --color-primary-alpha-30: #{rgba($light-primary, 0.30)};
+    --color-primary-alpha-32: #{rgba($light-primary, 0.32)};
+    --color-primary-alpha-38: #{rgba($light-primary, 0.38)};
+    --color-primary-alpha-40: #{rgba($light-primary, 0.40)};
+    --color-primary-alpha-45: #{rgba($light-primary, 0.45)};
+    --color-primary-alpha-50: #{rgba($light-primary, 0.50)};
+    --color-primary-end-alpha-15: #{rgba($light-primary-end, 0.15)};
+    --color-primary-end-alpha-25: #{rgba($light-primary-end, 0.25)};
+    --color-primary-end-alpha-30: #{rgba($light-primary-end, 0.30)};
+
+    --color-text-heading: #{$light-text-heading};
+    --color-text-label: #{$light-text-label};
+    --color-text-muted: #{$light-text-muted};
+    --color-text-dim: #{$light-text-dim};
+    --color-text-social: #{$light-text-social};
+    --color-text-white: #{$light-text-white};
+    --color-text-on-accent: #ffffff;
+    --color-text-tab: #{$light-text-label};
+    --color-text-channel: #{$light-text-channel};
+    --color-text-member: #{$light-text-member};
+    --color-text-chat: #{$light-text-chat};
+    --color-text-author: #{$light-primary};
+    --color-text-author-hover: #{$light-primary-light};
+    --color-text-date-badge: #{$light-text-label};
+
+    // Soft dark/blue tints for white-alpha variables in light theme
+    --color-white-alpha-03: rgba(15, 30, 60, 0.03);
+    --color-white-alpha-04: rgba(15, 30, 60, 0.04);
+    --color-white-alpha-06: rgba(15, 30, 60, 0.06);
+    --color-white-alpha-08: rgba(15, 30, 60, 0.08);
+    --color-white-alpha-10: rgba(15, 30, 60, 0.10);
+    --color-white-alpha-12: rgba(15, 30, 60, 0.12);
+    --color-white-alpha-14: rgba(15, 30, 60, 0.14);
+    --color-white-alpha-15: rgba(15, 30, 60, 0.15);
+    --color-white-alpha-16: rgba(15, 30, 60, 0.16);
+    --color-white-alpha-18: rgba(15, 30, 60, 0.18);
+    --color-white-alpha-20: rgba(15, 30, 60, 0.20);
+    --color-white-alpha-22: rgba(15, 30, 60, 0.22);
+    --color-white-alpha-35: rgba(15, 30, 60, 0.35);
+    --color-white-alpha-60: rgba(15, 30, 60, 0.60);
+
+    --color-error: #{$light-error};
+    --color-error-alpha-15: #{rgba($light-error, 0.15)};
+    --color-success: #{$light-success};
+    --color-success-alpha-20: #{rgba($light-success, 0.2)};
+    --color-danger: #{$light-danger};
+    --color-danger-hover: #{$light-danger-hover};
+    --color-danger-light: #{$light-danger-light};
+    --color-danger-alpha-08: #{rgba($light-danger, 0.08)};
+    --color-danger-alpha-15: #{rgba($light-danger, 0.15)};
+    --color-danger-alpha-18: #{rgba($light-danger, 0.18)};
+    --color-danger-alpha-40: #{rgba($light-danger, 0.40)};
+    --color-danger-alpha-75: #{rgba($light-danger, 0.75)};
+    --color-bg-danger-float: rgba(254, 242, 242, 0.98);
+
+    --color-status-online: #{$light-status-online};
+    --color-status-idle: #{$light-status-idle};
+    --color-status-dnd: #{$light-status-dnd};
+    --color-status-offline: #{$light-status-offline};
+
+    --color-server-new-bg: #{$light-bg-input};
+    --color-server-new-border: #{$light-border};
+    --color-server-new-text: #{$light-primary};
+    --color-server-new-hover-bg: #{rgba($light-success, 0.15)};
+    --color-server-new-hover-border: #{$light-success};
+    --color-server-new-hover-text: #{$light-success};
+    --shadow-server-new-hover: 0 0 0 3px #{$light-success}, 0 0 12px #{rgba($light-success, 0.25)};
+
+    --color-channel-add-hover-text: #{$light-primary};
+    --color-channel-add-hover-bg: rgba(37, 99, 235, 0.10);
+    --color-channel-hash: #{$light-text-muted};
+    --color-channel-hash-hover: #{$light-text-heading};
+    --color-channel-hash-active: #{$light-primary};
+    --shadow-channel-active: inset 3px 0 0 #{$light-primary};
+    --shadow-channel-hash-glow: 0 0 8px #{rgba($light-primary, 0.25)};
+
+    --color-char-counter-bg: rgba(255, 255, 255, 0.96);
+    --color-char-counter-border: #{rgba($light-primary, 0.35)};
+    --color-char-counter-text: #{$light-text-heading};
+    --shadow-char-counter: 0 6px 18px rgba(0, 0, 0, 0.12);
+
+    --color-read-more-border: #{rgba($light-primary, 0.3)};
+    --color-read-more-text: #{$light-primary};
+    --color-read-more-hover-border: #{$light-primary};
+    --color-read-more-hover-text: #{$light-primary-hover};
+
+    --color-editor-badge-border: #{rgba($light-primary, 0.25)};
+    --color-editor-badge-text: #{$light-primary};
+    --color-editor-counter-bg: rgba(15, 30, 60, 0.05);
+    --color-editor-counter-text: #{$light-text-muted};
+
+    --gradient-pill-hover: #{$light-primary-light};
+    --gradient-pill-active: #{$light-primary};
+    --filter-pill-active: none;
+    --gradient-home-btn: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --gradient-home-btn-ring: linear-gradient(135deg, #{rgba($light-primary, 0.7)}, #{rgba($light-primary-end, 0.7)});
+    --shadow-home-btn-hover: 0 0 0 3px #{rgba($light-primary, 0.35)}, 0 4px 14px #{rgba($light-primary, 0.25)};
+    --shadow-home-btn-active: 0 0 0 3px #{$light-primary}, 0 4px 16px #{rgba($light-primary, 0.3)};
+    --color-home-badge-border: #{$light-primary};
+    --color-home-badge-border-hover: #{$light-primary};
+    --shadow-home-badge: 0 2px 6px rgba(0, 0, 0, 0.15);
+    --shadow-home-badge-hover: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px #{rgba($light-primary, 0.35)};
+
+    --gradient-server-icon: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --shadow-server-icon-hover: 0 0 0 3px #{$light-primary}, 0 4px 12px #{rgba($light-primary, 0.25)};
+    --shadow-server-icon-active: 0 0 0 3px #{$light-primary};
+    --gradient-server-separator: #{$light-border};
+    --gradient-channel-active: #{$light-bg-panel-active};
+    --gradient-footer-top-line: 1px solid #{$light-border};
+    --gradient-date-divider: #{$light-border};
+    --gradient-message-avatar: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --gradient-read-more: #{rgba($light-primary, 0.08)};
+    --gradient-read-more-hover: #{rgba($light-primary, 0.16)};
+    --gradient-send-btn: linear-gradient(135deg, #{$light-primary-light}, #{$light-primary-lighter});
+    --shadow-send-btn: 0 3px 12px #{rgba($light-primary, 0.35)};
+    --shadow-send-btn-hover: 0 4px 16px #{rgba($light-primary, 0.5)};
+    --gradient-editor-badge: #{rgba($light-primary, 0.1)};
+    --gradient-unread-badge: #{$light-danger};
+    --shadow-unread-badge: 0 2px 6px #{rgba($light-danger, 0.4)};
+    --gradient-group-icon: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --gradient-hero-banner: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(56, 189, 248, 0.08));
+    --color-hero-banner-border: rgba(37, 99, 235, 0.25);
+    --shadow-hero-banner: 0 8px 24px rgba(37, 99, 235, 0.08);
+    --filter-hero-decor: none;
+    --gradient-banner-default: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --gradient-server-banner: linear-gradient(135deg, #{$light-bg-panel-dark}, #{$light-bg-panel-active});
+    --gradient-body-main: linear-gradient(135deg, #{$light-bg-page}, #{$light-bg-page-mid}, #{$light-bg-page-end});
+    --gradient-body-before: none;
+    --gradient-body-after: none;
+    --gradient-aurora-orb-1: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(37, 99, 235, 0.3) 40%, transparent 70%);
+    --gradient-aurora-orb-2: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, rgba(99, 102, 241, 0.25) 45%, transparent 70%);
+    --gradient-aurora-orb-3: radial-gradient(circle, rgba(96, 165, 250, 0.4) 0%, transparent 65%);
+
+    --gradient-voice-btn: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --shadow-voice-btn: 0 4px 16px #{rgba($light-primary, 0.25)};
+    --shadow-voice-btn-hover: 0 6px 20px #{rgba($light-primary, 0.35)};
+    --gradient-voice-radar: linear-gradient(135deg, #{$light-primary}, #{$light-primary-end});
+    --shadow-voice-radar: 0 4px 16px #{rgba($light-primary, 0.25)};
+    --color-voice-ring: #{rgba($light-primary, 0.25)};
+
+    --color-quick-join-border: #{rgba($light-primary, 0.3)};
+    --shadow-quick-join: 0 4px 14px rgba(37, 99, 235, 0.08);
+    --color-quick-join-text: #{$light-primary};
+
+    --color-quick-create-border: #{rgba($light-primary, 0.3)};
+    --shadow-quick-create: 0 4px 14px rgba(37, 99, 235, 0.08);
+    --color-quick-create-text: #{$light-primary};
+
+    --color-quick-settings-border: #{rgba($light-primary, 0.3)};
+    --shadow-quick-settings: 0 4px 14px rgba(37, 99, 235, 0.08);
+    --color-quick-settings-text: #{$light-primary};
+
+    --color-quick-dms-border: #{rgba($light-primary, 0.3)};
+    --shadow-quick-dms: 0 4px 14px rgba(37, 99, 235, 0.08);
+    --color-quick-dms-text: #{$light-primary};
+
+    --shadow-container: 0 16px 48px rgba(15, 30, 60, 0.12);
+    --shadow-input-focus: 0 0 0 3px #{rgba($light-primary, 0.25)};
+    --shadow-submit-hover: 0 4px 16px #{rgba($light-primary, 0.35)};
+}
+

@@ -18,18 +18,61 @@
 
 // ─── Channel list ─────────────────────────────────────────────────────────────
 .channel-list {
-    padding: 8px 0;
-    flex: 1;
+    padding: 6px 0;
+    flex-shrink: 0;
 }
 
 // ─── Category header ──────────────────────────────────────────────────────────
 .channel-header {
     @include flex-between;
-    padding: 14px 16px 6px;
+    padding: 12px 14px 6px 12px;
     @include panel-section-header;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
     letter-spacing: 0.04em;
+    transition: color 0.15s ease;
+
+    .channel-header-title {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+
+        span {
+            transition: color 0.15s ease;
+        }
+    }
+
+    .channel-header-chevron {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-text-muted;
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+        flex-shrink: 0;
+
+        svg {
+            width: 12px;
+            height: 12px;
+            stroke-width: 2.4;
+            display: block;
+        }
+    }
+
+    &:hover {
+        color: $color-text-white;
+
+        .channel-header-title span,
+        .channel-header-chevron {
+            color: $color-text-white;
+        }
+    }
+
+    &.collapsed {
+        .channel-header-chevron {
+            transform: rotate(-90deg);
+        }
+    }
 
     .channel-add-btn {
         background: transparent;
@@ -47,6 +90,16 @@
         border-radius: $radius-sm;
         transition: color 0.15s, background 0.15s, transform 0.1s;
 
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
+
         &:hover {
             color: $color-channel-add-hover-text;
             background: $color-channel-add-hover-bg;
@@ -55,11 +108,31 @@
     }
 }
 
+// ─── Collapsible Category Group (Accordion Animation) ────────────────────────
+.channel-group-container {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.24s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    opacity: 1;
+
+    .channel-group-inner {
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    &.collapsed {
+        grid-template-rows: 0fr;
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
 // ─── Channel item ─────────────────────────────────────────────────────────────
 .channel-item {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
+    gap: 8px;
+    padding: 8px 14px;
     margin: 2px 8px;
     border-radius: $radius-sm;
     color: $color-text-channel;
@@ -69,22 +142,32 @@
     transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     min-width: 0;
     user-select: none;
-    @include truncate;
 
-    &::before {
-        content: '#';
-        margin-right: 8px;
+    .channel-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         color: $color-text-muted;
-        font-weight: $font-weight-bold;
-        font-size: $font-size-base;
-        transition: color 0.15s ease, text-shadow 0.15s ease;
+        flex-shrink: 0;
+        transition: color 0.15s ease, filter 0.15s ease;
+
+        svg {
+            width: 17px;
+            height: 17px;
+        }
+    }
+
+    .channel-name-text {
+        @include truncate;
+        flex: 1;
+        min-width: 0;
     }
 
     &:hover {
         background: $color-bg-panel-hover;
         color: $color-text-heading;
 
-        &::before {
+        .channel-icon {
             color: $color-channel-hash-hover;
         }
     }
@@ -94,148 +177,23 @@
         box-shadow: $shadow-channel-active;
         color: $color-text-white;
 
-        &::before {
+        .channel-icon {
             color: $color-channel-hash-active;
-            text-shadow: $shadow-channel-hash-glow;
-        }
-    }
-}
-
-// ─── Panel footer (user controls) ────────────────────────────────────────────
-.channel-panel-footer {
-    position: relative;
-    height: 54px;
-    background: $color-bg-panel-footer;
-    @include flex-between;
-    padding: 0 10px;
-    flex-shrink: 0;
-    border-top: 1px solid $color-border-slate-arc;
-
-    &::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: $gradient-footer-top-line;
-        pointer-events: none;
-    }
-
-    .footer-user {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        min-width: 0;
-        cursor: pointer;
-        border-radius: $radius-sm;
-        padding: 4px;
-        transition: background 0.15s;
-
-        &:hover {
-            background: $color-bg-panel-hover;
+            filter: drop-shadow(0 0 4px $color-primary-alpha-50);
         }
     }
 
-    .footer-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        position: relative;
-        flex-shrink: 0;
-
-        img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            display: block;
+    &.voice {
+        .channel-icon {
+            color: $color-primary-light;
         }
 
-        &.placeholder {
-            background: linear-gradient(135deg, $color-primary, $color-primary-end);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-
-            span {
-                font-size: $font-size-sm;
-                font-weight: $font-weight-bold;
-                color: $color-text-white;
-            }
-        }
-
-        .status-dot {
-            position: absolute;
-            bottom: -1px;
-            right: -1px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            border: 2px solid $color-bg-panel-footer;
-
-            &.online { background: $color-status-online; }
-            &.idle { background: $color-status-idle; }
-            &.dnd { background: $color-status-dnd; }
-            &.offline { background: $color-status-offline; }
-        }
-    }
-
-    .footer-user-info {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .footer-username {
-        font-size: $font-size-xs;
-        font-weight: $font-weight-semibold;
-        color: $color-text-heading;
-        @include truncate;
-    }
-
-    .footer-discriminator {
-        font-size: $font-size-xxs;
-        color: $color-text-muted;
-        @include truncate;
-    }
-
-    .footer-controls {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        flex-shrink: 0;
-    }
-
-    .footer-btn {
-        background: transparent;
-        border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: $radius-sm;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 15px;
-        color: $color-text-channel;
-        transition: background 0.15s, color 0.15s, transform 0.1s;
-
-        &:hover {
-            background: $color-bg-panel-hover;
+        &.active .channel-icon {
             color: $color-text-white;
-            transform: scale(1.08);
-        }
-
-        &.muted, &.deafened {
-            background: $color-danger-alpha-15;
-            color: $color-danger;
         }
     }
 }
+
 
 // ─── No channel selected placeholder ──────────────────────────────────────────
 .no-channel-selected {
@@ -260,9 +218,21 @@
     }
 
     .no-channel-icon {
-        font-size: 48px;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: $color-primary;
         opacity: 0.7;
+
+        svg {
+            width: 48px;
+            height: 48px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
     }
 
     h3 {
