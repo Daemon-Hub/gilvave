@@ -79,6 +79,7 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    overflow-anchor: auto;
     padding: 12px 16px;
     @include scrollbar(8px, $color-bg-panel-darkest);
     min-height: 0;
@@ -122,6 +123,8 @@
 
 // ─── Отдельное сообщение в стиле мессенджера ──────────────────────────────────
 .message {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 54px;
     display: flex;
     align-items: flex-start;
     flex-shrink: 0;

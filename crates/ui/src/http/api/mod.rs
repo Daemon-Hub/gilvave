@@ -1,7 +1,5 @@
-use futures_util::AsyncReadExt;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::JsCast;
-use wasm_streams::ReadableStream;
 
 use gilvave_core::{
     dto::{
@@ -95,23 +93,26 @@ impl Api {
     }
 
     pub async fn response_to_bytes(response: web_sys::Response) -> Result<Vec<u8>, ErrorInfo> {
-        if let Some(raw_stream) = response.body() {
-            let stream = ReadableStream::from_raw(raw_stream);
-            let mut async_reader = stream.into_async_read();
-            let mut bytes = Vec::new();
-            async_reader
-                .read_to_end(&mut bytes)
-                .await
-                .map_err(|e| ErrorInfo(1, format!("Stream read error: {e}")))?;
-            Ok(bytes)
-        } else {
-            Ok(Vec::new())
-        }
+        let promise = response
+            .array_buffer()
+            .map_err(|e| ErrorInfo(1, format!("Response.array_buffer error: {e:?}")))?;
+        let js_value = wasm_bindgen_futures::JsFuture::from(promise)
+            .await
+            .map_err(|e| ErrorInfo(1, format!("Response.array_buffer promise error: {e:?}")))?;
+        let uint8_array = js_sys::Uint8Array::new(&js_value);
+        Ok(uint8_array.to_vec())
     }
 
     pub async fn response_to_text(response: web_sys::Response) -> Result<String, ErrorInfo> {
-        let bytes = Self::response_to_bytes(response).await?;
-        String::from_utf8(bytes).map_err(|e| ErrorInfo(1, format!("UTF-8 decode error: {e}")))
+        let promise = response
+            .text()
+            .map_err(|e| ErrorInfo(1, format!("Response.text error: {e:?}")))?;
+        let js_value = wasm_bindgen_futures::JsFuture::from(promise)
+            .await
+            .map_err(|e| ErrorInfo(1, format!("Response.text promise error: {e:?}")))?;
+        js_value
+            .as_string()
+            .ok_or_else(|| ErrorInfo(1, "Response text is not a valid string".to_string()))
     }
 
     pub async fn response_to<T: DeserializeOwned>(

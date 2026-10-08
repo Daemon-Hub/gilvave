@@ -46,11 +46,6 @@ pub(super) fn select_server(server_id: ServerId) {
             context.current.set(Some(server));
         }
     });
-    spawn_local_scoped(async move {
-        if let Ok(members) = Api::get_members(server_id).await {
-            context.members.set(members);
-        }
-    });
 }
 
 pub(super) fn create_server(

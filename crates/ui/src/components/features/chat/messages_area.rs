@@ -1,7 +1,7 @@
 use futures_util::StreamExt;
 use gilvave_core::dto::message::MessageView;
 use sycamore::{futures::spawn_local_scoped, prelude::*, web::queue_microtask};
-use tauri_sys::event::listen;
+use crate::gateway::handler::{subscribe_gateway_events, GatewayEvent};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
@@ -712,87 +712,75 @@ pub fn MessagesArea() -> View {
     });
 
     spawn_local_scoped(async move {
-        web_sys::console::log_1(&"[MESSAGES_AREA] listening for message_new...".into());
-        let mut events = match listen::<MessageView>("message_new").await {
-            Ok(s) => {
-                web_sys::console::log_1(&"[MESSAGES_AREA] successfully obtained message_new stream".into());
-                s
-            }
-            Err(e) => {
-                web_sys::console::error_1(&format!("[MESSAGES_AREA] failed to listen message_new: {e:?}").into());
-                return;
-            }
-        };
+        web_sys::console::log_1(&"[MESSAGES_AREA] subscribing to gateway events...".into());
+        let mut events = subscribe_gateway_events();
         while let Some(event) = events.next().await {
-            web_sys::console::log_1(&format!("[MESSAGES_AREA] received message_new event: {:?}", event.payload).into());
-            let Some(node) = container.try_get() else {
-                continue;
-            };
-            let el = node.unchecked_into::<HtmlElement>();
-            let old_scroll_top = el.scroll_top();
-            let old_scroll_height = el.scroll_height();
-            let old_client_height = el.client_height();
+            match event {
+                GatewayEvent::MessageNew(msg) => {
+                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received MessageNew: {:?}", msg).into());
+                    let Some(node) = container.try_get() else {
+                        continue;
+                    };
+                    let el = node.unchecked_into::<HtmlElement>();
+                    let old_scroll_top = el.scroll_top();
+                    let old_scroll_height = el.scroll_height();
+                    let old_client_height = el.client_height();
 
-            const SCROLL_THRESHOLD: i32 = 1;
-            let is_bottom =
-                (old_scroll_height - old_client_height - old_scroll_top).abs() <= SCROLL_THRESHOLD;
+                    const SCROLL_THRESHOLD: i32 = 1;
+                    let is_bottom = (old_scroll_height - old_client_height - old_scroll_top).abs()
+                        <= SCROLL_THRESHOLD;
 
-            channel_context
-                .messages
-                .update(|list| list.push(event.payload));
+                    const MAX_LOADED_MESSAGES: usize = 300;
+                    channel_context.messages.update(|list| {
+                        list.push(msg);
+                        if list.len() > MAX_LOADED_MESSAGES {
+                            list.remove(0);
+                        }
+                    });
 
-            queue_microtask(move || {
-                if is_bottom {
-                    let delta = el.scroll_height() - old_scroll_height;
-                    el.set_scroll_top(old_scroll_top + delta);
+                    queue_microtask(move || {
+                        if is_bottom {
+                            let delta = el.scroll_height() - old_scroll_height;
+                            el.set_scroll_top(old_scroll_top + delta);
+                        }
+                    });
                 }
-            });
-        }
-    });
-    spawn_local_scoped(async move {
-        web_sys::console::log_1(&"[MESSAGES_AREA] listening for channel_history_before...".into());
-        let mut events = match listen::<Vec<MessageView>>("channel_history_before").await {
-            Ok(s) => {
-                web_sys::console::log_1(&"[MESSAGES_AREA] successfully obtained channel_history_before stream".into());
-                s
-            }
-            Err(e) => {
-                web_sys::console::error_1(&format!("[MESSAGES_AREA] failed to listen channel_history_before: {e:?}").into());
-                return;
-            }
-        };
-        while let Some(event) = events.next().await {
-            web_sys::console::log_1(&format!("[MESSAGES_AREA] received channel_history_before with {} items", event.payload.len()).into());
-            let Some(node) = container.try_get() else {
-                continue;
-            };
-            let el = node.unchecked_into::<HtmlElement>();
-            let old_scroll_top = el.scroll_top();
-            let old_scroll_height = el.scroll_height();
+                GatewayEvent::ChannelHistoryBefore(messages) => {
+                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received ChannelHistoryBefore with {} items", messages.len()).into());
+                    let Some(node) = container.try_get() else {
+                        continue;
+                    };
+                    let el = node.unchecked_into::<HtmlElement>();
+                    let old_scroll_top = el.scroll_top();
+                    let old_scroll_height = el.scroll_height();
 
-            channel_context.messages.update(|list| {
-                for msg in event.payload.into_iter() {
-                    list.insert(0, msg);
+                    const MAX_LOADED_MESSAGES: usize = 300;
+                    channel_context.messages.update(|list| {
+                        for msg in messages.into_iter() {
+                            list.insert(0, msg);
+                        }
+                        if list.len() > MAX_LOADED_MESSAGES {
+                            list.truncate(MAX_LOADED_MESSAGES);
+                        }
+                    });
+
+                    queue_microtask(move || {
+                        let delta = el.scroll_height() - old_scroll_height;
+                        el.set_scroll_top(old_scroll_top + delta);
+                    });
                 }
-            });
-
-            // Ждём, пока Sycamore реально вольёт узлы в DOM.
-            // queue_microtask достаточно, т.к. эффекты Sycamore выполняются
-            // в микротасках. Для надёжности можно использовать RAF.
-            queue_microtask(move || {
-                let delta = el.scroll_height() - old_scroll_height;
-                el.set_scroll_top(old_scroll_top + delta);
-            });
-        }
-    });
-    spawn_local_scoped(async move {
-        let mut events = listen::<Vec<MessageView>>("channel_history_after")
-            .await
-            .unwrap();
-        while let Some(mut event) = events.next().await {
-            channel_context
-                .messages
-                .update(|list| list.append(event.payload.as_mut()));
+                GatewayEvent::ChannelHistoryAfter(mut messages) => {
+                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received ChannelHistoryAfter with {} items", messages.len()).into());
+                    const MAX_LOADED_MESSAGES: usize = 300;
+                    channel_context.messages.update(|list| {
+                        list.append(&mut messages);
+                        if list.len() > MAX_LOADED_MESSAGES {
+                            let excess = list.len() - MAX_LOADED_MESSAGES;
+                            list.drain(0..excess);
+                        }
+                    });
+                }
+            }
         }
     });
 
@@ -811,6 +799,15 @@ pub fn MessagesArea() -> View {
                             .iter()
                             .map(|m| m.created_at.to_offset(local_offset))
                             .collect();
+
+                        let mut avatar_by_username = std::collections::HashMap::with_capacity(members.len());
+                        let mut avatar_by_id = std::collections::HashMap::with_capacity(members.len());
+                        for mem in members.iter() {
+                            if !mem.avatar.is_empty() {
+                                avatar_by_username.insert(mem.username.as_str(), mem.avatar.as_str());
+                                avatar_by_id.insert(mem.user_id, mem.avatar.as_str());
+                            }
+                        }
 
                         msgs.iter()
                             .enumerate()
@@ -856,22 +853,16 @@ pub fn MessagesArea() -> View {
                                     && m.author_name == *my_username
                                 {
                                     my_avatar.clone()
+                                } else if let Some(author_id) = m.author_id
+                                    && let Some(&av) = avatar_by_id.get(&author_id)
+                                {
+                                    av.to_string()
+                                } else if let Some(&av) = avatar_by_username.get(m.author_name.as_str()) {
+                                    av.to_string()
+                                } else if m.author_name == *my_username {
+                                    my_avatar.clone()
                                 } else {
-                                    members
-                                        .iter()
-                                        .find(|mem| {
-                                            mem.username == m.author_name
-                                                || (m.author_id.is_some()
-                                                    && Some(mem.user_id) == m.author_id)
-                                        })
-                                        .map(|mem| mem.avatar.clone())
-                                        .unwrap_or_else(|| {
-                                            if m.author_name == *my_username {
-                                                my_avatar.clone()
-                                            } else {
-                                                String::new()
-                                            }
-                                        })
+                                    String::new()
                                 };
 
                                 EnrichedMessage {

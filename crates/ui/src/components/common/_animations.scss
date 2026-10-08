@@ -179,51 +179,51 @@
 // ── Aurora Cyan Orb (Left curving arc) ──
 @keyframes pathCyanOrb {
     0% {
-        transform: translate3d(100px, -60px, 0) scale(1);
+        transform: translate3d(100px, -60px, 0) scale(2.15);
     }
     25% {
-        transform: translate3d(-30px, 80px, 0) scale(1.10);
+        transform: translate3d(-30px, 80px, 0) scale(2.36);
     }
     50% {
-        transform: translate3d(-160px, 260px, 0) scale(0.94);
+        transform: translate3d(-160px, 260px, 0) scale(2.02);
     }
     75% {
-        transform: translate3d(-50px, 110px, 0) scale(1.06);
+        transform: translate3d(-50px, 110px, 0) scale(2.28);
     }
     100% {
-        transform: translate3d(100px, -60px, 0) scale(1);
+        transform: translate3d(100px, -60px, 0) scale(2.15);
     }
 }
 
 // ── Aurora Amber Orb (Center-bottom vertical float) ──
 @keyframes pathAmberOrb {
     0% {
-        transform: translate3d(0, 80px, 0) scale(0.95);
+        transform: translate3d(0, 80px, 0) scale(2.04);
     }
     50% {
-        transform: translate3d(0, -200px, 0) scale(1.18);
+        transform: translate3d(0, -92vh, 0) scale(2.54);
     }
     100% {
-        transform: translate3d(0, 80px, 0) scale(0.95);
+        transform: translate3d(0, 80px, 0) scale(2.04);
     }
 }
 
 // ── Aurora Violet Orb (Right curving arc) ──
 @keyframes pathVioletOrb {
     0% {
-        transform: translate3d(80px, -140px, 0) scale(1);
+        transform: translate3d(80px, -140px, 0) scale(2.15);
     }
     25% {
-        transform: translate3d(0px, 30px, 0) scale(1.10);
+        transform: translate3d(0px, 30px, 0) scale(2.36);
     }
     50% {
-        transform: translate3d(-200px, 200px, 0) scale(0.95);
+        transform: translate3d(-200px, 200px, 0) scale(2.04);
     }
     75% {
-        transform: translate3d(-80px, 50px, 0) scale(1.05);
+        transform: translate3d(-80px, 50px, 0) scale(2.26);
     }
     100% {
-        transform: translate3d(80px, -140px, 0) scale(1);
+        transform: translate3d(80px, -140px, 0) scale(2.15);
     }
 }
 

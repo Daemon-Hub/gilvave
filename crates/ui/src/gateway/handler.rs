@@ -1,4 +1,30 @@
-use gilvave_core::dto::ws::ServerRecieve;
+use std::sync::{Arc, LazyLock, Mutex};
+use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
+use gilvave_core::dto::{message::MessageView, ws::ServerRecieve};
+
+#[derive(Clone, Debug)]
+pub enum GatewayEvent {
+    MessageNew(MessageView),
+    ChannelHistoryBefore(Vec<MessageView>),
+    ChannelHistoryAfter(Vec<MessageView>),
+}
+
+static SUBSCRIBERS: LazyLock<Arc<Mutex<Vec<UnboundedSender<GatewayEvent>>>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(Vec::new())));
+
+pub fn subscribe_gateway_events() -> UnboundedReceiver<GatewayEvent> {
+    let (tx, rx) = unbounded();
+    if let Ok(mut subs) = SUBSCRIBERS.lock() {
+        subs.push(tx);
+    }
+    rx
+}
+
+pub fn dispatch_gateway_event(event: GatewayEvent) {
+    if let Ok(mut subs) = SUBSCRIBERS.lock() {
+        subs.retain(|tx| tx.unbounded_send(event.clone()).is_ok());
+    }
+}
 
 pub async fn handle(text: String) {
     match serde_json::from_str::<ServerRecieve>(&text) {
@@ -17,23 +43,15 @@ pub async fn handle(text: String) {
             }
             ServerRecieve::MessageNew(message_view) => {
                 web_sys::console::log_1(&format!("[WS] MessageNew received: {:?}", message_view).into());
-                if let Err(e) = tauri_sys::event::emit("message_new", &message_view).await {
-                    web_sys::console::error_1(&format!("[WS] emit message_new error: {e:?}").into());
-                } else {
-                    web_sys::console::log_1(&"[WS] emit message_new success".into());
-                }
+                dispatch_gateway_event(GatewayEvent::MessageNew(message_view));
             }
             ServerRecieve::ChannelHistoryBefore(messages) => {
                 web_sys::console::log_1(&format!("[WS] ChannelHistoryBefore received {} messages", messages.len()).into());
-                if let Err(e) = tauri_sys::event::emit("channel_history_before", &messages).await {
-                    web_sys::console::error_1(&format!("[WS] emit channel_history_before error: {e:?}").into());
-                }
+                dispatch_gateway_event(GatewayEvent::ChannelHistoryBefore(messages));
             }
             ServerRecieve::ChannelHistoryAfter(messages) => {
                 web_sys::console::log_1(&format!("[WS] ChannelHistoryAfter received {} messages", messages.len()).into());
-                if let Err(e) = tauri_sys::event::emit("channel_history_after", &messages).await {
-                    web_sys::console::error_1(&format!("[WS] emit channel_history_after error: {e:?}").into());
-                }
+                dispatch_gateway_event(GatewayEvent::ChannelHistoryAfter(messages));
             }
         },
         Err(e) => {
