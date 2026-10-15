@@ -99,7 +99,8 @@ crates/ui/src/
       members/              — Server member list (online/offline groups, roles, avatars)
       home/                 — Home dashboard (greeting hero, quick actions, DM chat with ChatInputArea, friends online)
       profile/              — User profile settings modal (preview, bio, credentials, security,
-                              appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal)
+                              appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal,
+                              active sessions management tab SessionsTab)
       auth/                 — Social buttons, auth form cards
     ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons)
 ```

@@ -4,7 +4,10 @@ use gilvave_core::{
         command::{CommandArgs, CommandResponse, CommandResult},
         message::MessageView,
         server::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
-        user::{AuthTokensResponse, LoginRequest, RegisterRequest, UpdateTokensRequest, UserView},
+        user::{
+            AuthTokensResponse, LoginRequest, RegisterRequest, SessionView, UpdateTokensRequest,
+            UserView,
+        },
     },
     error::{ErrorInfo, ErrorMessage},
     ids::{ChannelId, MessageId, ServerId, UserId},
@@ -431,4 +434,42 @@ fn test_command_result_states() {
 
     let err = CommandResult::Error(ErrorInfo(401, "unauthorized".to_string()));
     assert!(!err.is_ok());
+}
+
+#[test]
+fn test_session_view_serialization() {
+    let now = OffsetDateTime::now_utc();
+    let session = SessionView {
+        id: "sess_123".to_string(),
+        device_info: DeviceInfo {
+            platform: Some("Windows".to_string()),
+            os_version: Some("11".to_string()),
+            client: "desktop".to_string(),
+            client_version: "0.1.0".to_string(),
+            device_name: Some("DESKTOP-ABC".to_string()),
+            browser: None,
+            browser_version: None,
+        },
+        ip_address: Some("192.168.1.10".to_string()),
+        location: Some("Moscow, Russia".to_string()),
+        last_used_at: now,
+        created_at: now,
+        is_current: true,
+    };
+
+    let json = serde_json::to_string(&session).unwrap();
+    assert!(json.contains("last_used_at"));
+    let parsed: SessionView = serde_json::from_str(&json).unwrap();
+    assert_eq!(parsed.id, "sess_123");
+    assert_eq!(parsed.device_info.client, "desktop");
+    assert_eq!(
+        parsed.device_info.device_name.as_deref(),
+        Some("DESKTOP-ABC")
+    );
+    assert_eq!(parsed.display_name(), "DESKTOP-ABC (Windows)");
+    assert_eq!(parsed.client_kind(), "desktop");
+    assert!(parsed.is_current);
+
+    let legacy_parsed: SessionView = serde_json::from_str(&json).unwrap();
+    assert_eq!(legacy_parsed.id, "sess_123");
 }

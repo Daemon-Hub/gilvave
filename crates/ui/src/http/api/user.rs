@@ -1,7 +1,10 @@
 use gilvave_core::{
     dto::{
         command::{CommandArgs, CommandResponse, CommandResult},
-        user::{AuthTokensResponse, LoginRequest, RegisterRequest, UpdateTokensRequest, UserView},
+        user::{
+            AuthTokensResponse, LoginRequest, RegisterRequest, SessionView, UpdateTokensRequest,
+            UserView,
+        },
     },
     error::ErrorInfo,
     settings::BASE_HTTP_URL,
@@ -13,7 +16,7 @@ impl Api {
     pub async fn register(register_request: RegisterRequest) -> Result<(), ErrorInfo> {
         let res = Api::request_raw(
             "POST",
-            &format!("{BASE_HTTP_URL}/users/register"),
+            &format!("{BASE_HTTP_URL}/users/auth/register"),
             &register_request,
             None,
         )
@@ -24,7 +27,7 @@ impl Api {
     pub async fn login(request: LoginRequest) -> Result<(), ErrorInfo> {
         let res = Api::request_raw(
             "POST",
-            &format!("{BASE_HTTP_URL}/users/login"),
+            &format!("{BASE_HTTP_URL}/users/auth/login"),
             &request,
             None,
         )
@@ -64,7 +67,7 @@ impl Api {
         let json = UpdateTokensRequest { refresh_token };
         let res = Api::request_raw(
             "POST",
-            &format!("{BASE_HTTP_URL}/users/refresh"),
+            &format!("{BASE_HTTP_URL}/users/sessions/refresh"),
             &json,
             None,
         )
@@ -100,11 +103,50 @@ impl Api {
         let token = Self::fetch_access_token().await;
         let res = Api::request_raw(
             "GET",
-            &format!("{BASE_HTTP_URL}/users/me"),
+            &format!("{BASE_HTTP_URL}/users/profile/me"),
             (),
             Some(&token),
         )
         .await?;
         Api::response_to::<UserView>(res).await
+    }
+
+    // TODO [HTTP]: GET /users/sessions — получить список всех активных сессий пользователя
+    pub async fn get_sessions() -> Result<Vec<SessionView>, ErrorInfo> {
+        let token = Self::fetch_access_token().await;
+        let res = Api::request_raw(
+            "GET",
+            &format!("{BASE_HTTP_URL}/users/sessions"),
+            (),
+            Some(&token),
+        )
+        .await?;
+        Api::response_to::<Vec<SessionView>>(res).await
+    }
+
+    // TODO [HTTP]: DELETE /users/sessions/{session_id} — принудительно завершить сессию на конкретном устройстве
+    pub async fn terminate_session(session_id: &str) -> Result<(), ErrorInfo> {
+        let token = Self::fetch_access_token().await;
+        let res = Api::request_raw(
+            "DELETE",
+            &format!("{BASE_HTTP_URL}/users/sessions/{session_id}"),
+            (),
+            Some(&token),
+        )
+        .await?;
+        Api::response_to_empty(res).await
+    }
+
+    // TODO [HTTP]: DELETE /users/sessions/other — завершить все сессии кроме текущей
+    pub async fn terminate_all_other_sessions() -> Result<(), ErrorInfo> {
+        let token = Self::fetch_access_token().await;
+        let res = Api::request_raw(
+            "DELETE",
+            &format!("{BASE_HTTP_URL}/users/sessions/other"),
+            (),
+            Some(&token),
+        )
+        .await?;
+        Api::response_to_empty(res).await
     }
 }

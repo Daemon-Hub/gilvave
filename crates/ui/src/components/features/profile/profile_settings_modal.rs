@@ -1,9 +1,10 @@
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use wasm_bindgen::JsCast;
+use crate::components::features::profile::sessions_tab::SessionsTab;
 use crate::components::ui::icons::{
     ArrowLeftIcon, CatalogIcon, CheckIcon, CloseSmallIcon, CodeIcon,
-    DownloadIcon, EditIcon, FileTextIcon, LockIcon, LogOutIcon, PaletteIcon, TrashIcon,
+    DownloadIcon, EditIcon, FileTextIcon, LockIcon, LogOutIcon, MonitorIcon, PaletteIcon, TrashIcon,
     UploadIcon, UserIcon,
 };
 use crate::components::common::{
@@ -16,6 +17,7 @@ enum SettingsTab {
     Profile,
     Appearance,
     Security,
+    Sessions,
 }
 
 #[component]
@@ -130,6 +132,16 @@ pub fn ProfileSettingsModal() -> View {
                         ) {
                             LockIcon()
                             span { "Безопасность" }
+                        }
+                        div(
+                            class=classes(vec![
+                                "profile-tab-item".into(),
+                                ("active", { active_tab.get() == SettingsTab::Sessions }.into()).into(),
+                            ]),
+                            on:click=move |_| active_tab.set(SettingsTab::Sessions),
+                        ) {
+                            MonitorIcon()
+                            span { "Сессии" }
                         }
 
                         div(class="profile-tab-divider")
@@ -768,7 +780,7 @@ pub fn ProfileSettingsModal() -> View {
                                     }
                                 }
                             }
-                        } else {
+                        } else if active_tab.get() == SettingsTab::Security {
                             view! {
                                 div(class="tab-pane") {
                                     h3(class="tab-title") { "Безопасность и вход" }
@@ -807,12 +819,25 @@ pub fn ProfileSettingsModal() -> View {
                                     div(class="danger-zone") {
                                         h4 { "СЕССИЯ" }
                                         p { "Выход из текущей учётной записи на этом устройстве." }
-                                        button(class="danger-btn logout-btn", on:click=handle_logout) {
-                                            LogOutIcon()
-                                            span { "Выйти из аккаунта" }
+                                        div(class="danger-zone-actions") {
+                                            button(class="danger-btn logout-btn", on:click=handle_logout) {
+                                                LogOutIcon()
+                                                span { "Выйти из аккаунта" }
+                                            }
+                                            button(
+                                                class="secondary-btn sessions-shortcut-btn",
+                                                on:click=move |_| active_tab.set(SettingsTab::Sessions),
+                                            ) {
+                                                MonitorIcon()
+                                                span { "Управление сессиями →" }
+                                            }
                                         }
                                     }
                                 }
+                            }
+                        } else {
+                            view! {
+                                SessionsTab()
                             }
                         })
                     }
