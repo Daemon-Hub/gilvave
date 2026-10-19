@@ -5,7 +5,7 @@ use gilvave_core::{
         command::{CommandArgs, CommandResponse, CommandResult},
         ws::ServerSend,
     },
-    error::ErrorInfo,
+    error::{ErrorCode, ErrorInfo},
     ids::ChannelId,
     settings::BASE_WS_URL,
 };
@@ -36,13 +36,13 @@ impl WsService {
                     }
                     Err(e) => {
                         web_sys::console::error_1(&format!("[WS SERVICE] unbounded_send JoinChannel ERR: {e}").into());
-                        Err(ErrorInfo(1, e.to_string()))
+                        Err(ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string()))
                     }
                 }
             }
             None => {
                 web_sys::console::error_1(&"[WS SERVICE] join_channel: SENDER is None!".into());
-                Err(ErrorInfo(1, "WebSocket sender not initialized".to_string()))
+                Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string()))
             }
         }
     }
@@ -53,8 +53,8 @@ impl WsService {
         match sender_ptr.as_ref() {
             Some(sender) => sender
                 .unbounded_send(ServerSend::LeftChannel { channel_id })
-                .map_err(|e| ErrorInfo(1, e.to_string())),
-            None => Err(ErrorInfo(1, "WebSocket sender not initialized".to_string())),
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
         }
     }
 
@@ -94,13 +94,13 @@ impl WsService {
                     }
                     Err(e) => {
                         web_sys::console::error_1(&format!("[WS SERVICE] unbounded_send MessageCreate ERR: {e}").into());
-                        Err(ErrorInfo(1, e.to_string()))
+                        Err(ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string()))
                     }
                 }
             }
             None => {
                 web_sys::console::error_1(&"[WS SERVICE] message_create: SENDER is None!".into());
-                Err(ErrorInfo(1, "WebSocket sender not initialized".to_string()))
+                Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string()))
             }
         }
     }
@@ -117,8 +117,8 @@ impl WsService {
                     channel_id,
                     timestamp,
                 })
-                .map_err(|e| ErrorInfo(1, e.to_string())),
-            None => Err(ErrorInfo(1, "WebSocket sender not initialized".to_string())),
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
         }
     }
 
@@ -134,8 +134,8 @@ impl WsService {
                     channel_id,
                     timestamp,
                 })
-                .map_err(|e| ErrorInfo(1, e.to_string())),
-            None => Err(ErrorInfo(1, "WebSocket sender not initialized".to_string())),
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
         }
     }
 

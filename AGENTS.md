@@ -259,6 +259,10 @@ crates/ui/src/
    - In `sycamore-reactive 0.9`, `signal.with(|v| ...)` holds an immutable `Ref` borrow on the global `Root::nodes` (`RefCell<SlotMap<NodeId, ReactiveNode>>`) for the entire duration of the closure.
    - **NEVER** construct `view! { ... }` (especially with `on:click` or dynamic attributes, which call `on_cleanup` / `create_effect` and mutably borrow `Root::nodes`), create signals/effects/memos, or call `.set()` / `.update()` *inside* a `.with(...)` closure. Doing so immediately panics with `RefCell already borrowed` at `dom_node.rs:180:9` (`on_cleanup`), and because WASM aborts without running `Drop` on `Ref`, `Root::nodes` remains permanently borrowed, causing all subsequent signal `.set()` calls to fail with `cannot update signal while reading: BorrowMutError`.
    - Always extract only the needed data inside `.with(...)`, let the closure return so the `Ref` guard is dropped, and then construct `view! { ... }` or call `.set()`.
+13. **Flexible `DeviceInfo` Deserialization (`os_version` / `browser_version`)**:
+   - Backend JSON payloads and OS collectors may emit version fields as integers (e.g. `11`) or strings (`"11.0"`).
+   - `DeviceInfo.os_version` and `browser_version` use `deserialize_optional_string_or_number` to accept either format without failing DTO decoding.
+   - `Api::get_sessions()` receives `Vec<(SessionView, bool)>` where the boolean indicates `is_current`, mapping smoothly onto `SessionView` in `sessions_tab.rs`.
 
 ---
 

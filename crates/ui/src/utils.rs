@@ -34,7 +34,7 @@ async fn handle_command_web(args: Value) -> CommandResult {
     };
     use gilvave_core::{
         dto::command::{CommandArgs, CommandResponse},
-        error::ErrorInfo,
+        error::{ErrorCode, ErrorInfo},
         settings::collect_device_info,
     };
 
@@ -42,8 +42,8 @@ async fn handle_command_web(args: Value) -> CommandResult {
         Some(cmd_val) => match serde_json::from_value(cmd_val.clone()) {
             Ok(c) => c,
             Err(e) => {
-                return CommandResult::Error(ErrorInfo(
-                    1,
+                return CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::CommandDeserializationFailed,
                     format!("Failed to deserialize command: {e}"),
                 ));
             }
@@ -51,8 +51,8 @@ async fn handle_command_web(args: Value) -> CommandResult {
         None => match serde_json::from_value(args) {
             Ok(c) => c,
             Err(e) => {
-                return CommandResult::Error(ErrorInfo(
-                    1,
+                return CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::CommandDeserializationFailed,
                     format!("Failed to deserialize command: {e}"),
                 ));
             }

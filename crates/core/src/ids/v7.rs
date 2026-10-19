@@ -58,3 +58,4 @@ macro_rules! id_type {
 id_type!(UserId);
 id_type!(MessageId);
 id_type!(RefreshTokenId);
+id_type!(SessionId);

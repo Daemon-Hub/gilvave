@@ -3,7 +3,7 @@ use gilvave_core::{
         command::{CommandArgs, CommandResponse, CommandResult},
         user::SessionView,
     },
-    settings::{collect_device_info, DeviceInfo},
+    settings::collect_device_info,
 };
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
@@ -59,10 +59,7 @@ fn format_created_date(dt: time::OffsetDateTime) -> String {
     )
 }
 
-async fn fetch_sessions_data(
-    sessions_sig: Signal<Vec<SessionView>>,
-    loading_sig: Signal<bool>,
-) {
+async fn fetch_sessions_data(sessions_sig: Signal<Vec<SessionView>>, loading_sig: Signal<bool>) {
     loading_sig.set(true);
 
     // 1. Collect real device info from Tauri desktop or Web browser runtime
@@ -73,8 +70,15 @@ async fn fetch_sessions_data(
 
     // 2. Fetch from backend API
     match Api::get_sessions().await {
-        Ok(server_sessions) if !server_sessions.is_empty() => {
-            let mut list = server_sessions;
+        Ok(server_sessions) => {
+            tracing::info!("[SessionsTab] Received {} sessions from server", server_sessions.len());
+            let mut list: Vec<SessionView> = server_sessions
+                .into_iter()
+                .map(|(mut s, c)| {
+                    s.is_current = c;
+                    s
+                })
+                .collect();
             let has_current = list.iter().any(|s| s.is_current);
             if !has_current {
                 list.insert(
@@ -92,55 +96,22 @@ async fn fetch_sessions_data(
             }
             sessions_sig.set(list);
         }
-        _ => {
-            // Fallback / mock sessions so the UI is fully functional and interactive
+        Err(err) => {
+            tracing::error!("[SessionsTab] Failed to fetch sessions: {:?}", err);
+            // Fallback: show the current local device as the active session
             let now = time::OffsetDateTime::now_utc();
-            let sample_list = vec![
+            let fallback_list = vec![
                 SessionView {
                     id: "curr-session-local".to_string(),
                     device_info: current_device,
                     ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
                     location: Some("Текущее рабочее место".to_string()),
                     last_used_at: now,
-                    created_at: now - time::Duration::days(4),
+                    created_at: now,
                     is_current: true,
                 },
-                SessionView {
-                    id: "sess-mobile-ios".to_string(),
-                    device_info: DeviceInfo {
-                        platform: Some("iOS 17.5".to_string()),
-                        os_version: Some("17.5".to_string()),
-                        client: "mobile".to_string(),
-                        client_version: DeviceInfo::client_version(),
-                        device_name: Some("iPhone 15 Pro".to_string()),
-                        browser: Some("Safari Mobile".to_string()),
-                        browser_version: None,
-                    },
-                    ip_address: Some("178.62.204.18".to_string()),
-                    location: Some("Москва, Россия".to_string()),
-                    last_used_at: now - time::Duration::hours(2),
-                    created_at: now - time::Duration::days(7),
-                    is_current: false,
-                },
-                SessionView {
-                    id: "sess-web-chrome".to_string(),
-                    device_info: DeviceInfo {
-                        platform: Some("macOS Sonoma".to_string()),
-                        os_version: Some("14.4".to_string()),
-                        client: "web".to_string(),
-                        client_version: DeviceInfo::client_version(),
-                        device_name: Some("MacBook Air".to_string()),
-                        browser: Some("Google Chrome 128".to_string()),
-                        browser_version: Some("128.0".to_string()),
-                    },
-                    ip_address: Some("94.25.178.10".to_string()),
-                    location: Some("Санкт-Петербург, Россия".to_string()),
-                    last_used_at: now - time::Duration::days(1),
-                    created_at: now - time::Duration::days(15),
-                    is_current: false,
-                },
             ];
-            sessions_sig.set(sample_list);
+            sessions_sig.set(fallback_list);
         }
     }
 
@@ -168,15 +139,26 @@ pub fn SessionsTab() -> View {
 
     let on_terminate_all = move |_| {
         spawn_local_scoped(async move {
-            let _ = Api::terminate_all_other_sessions().await;
-            let mut list = sessions.get_clone();
-            list.retain(|s| s.is_current);
-            sessions.set(list);
-            confirm_terminate_all.set(false);
-            status_msg.set(Some((
-                "Все остальные сессии успешно завершены.".to_string(),
-                false,
-            )));
+            match Api::terminate_all_other_sessions().await {
+                Ok(_) => {
+                    let mut list = sessions.get_clone();
+                    list.retain(|s| s.is_current);
+                    sessions.set(list);
+                    confirm_terminate_all.set(false);
+                    status_msg.set(Some((
+                        "Все остальные сессии успешно завершены.".to_string(),
+                        false,
+                    )));
+                }
+                Err(err) => {
+                    tracing::error!("[SessionsTab] terminate_all_other_sessions error: {:?}", err);
+                    confirm_terminate_all.set(false);
+                    status_msg.set(Some((
+                        format!("Ошибка завершения сессий: {}", err.1),
+                        true,
+                    )));
+                }
+            }
         });
     };
 
@@ -184,12 +166,8 @@ pub fn SessionsTab() -> View {
         status_msg.set(None);
     };
 
-    let current_session = create_memo(move || {
-        sessions
-            .get_clone()
-            .into_iter()
-            .find(|s| s.is_current)
-    });
+    let current_session =
+        create_memo(move || sessions.get_clone().into_iter().find(|s| s.is_current));
 
     let other_sessions = create_memo(move || {
         sessions
@@ -421,14 +399,24 @@ pub fn SessionsTab() -> View {
                                 let on_single_terminate = move |_| {
                                     let target_id = sess_id_del.clone();
                                     spawn_local_scoped(async move {
-                                        let _ = Api::terminate_session(&target_id).await;
-                                        let mut list = sessions.get_clone();
-                                        list.retain(|s| s.id != target_id);
-                                        sessions.set(list);
-                                        status_msg.set(Some((
-                                            "Сессия завершена.".to_string(),
-                                            false,
-                                        )));
+                                        match Api::terminate_session(&target_id).await {
+                                            Ok(_) => {
+                                                let mut list = sessions.get_clone();
+                                                list.retain(|s| s.id != target_id);
+                                                sessions.set(list);
+                                                status_msg.set(Some((
+                                                    "Сессия завершена.".to_string(),
+                                                    false,
+                                                )));
+                                            }
+                                            Err(err) => {
+                                                tracing::error!("[SessionsTab] terminate_session error: {:?}", err);
+                                                status_msg.set(Some((
+                                                    format!("Ошибка завершения сессии: {}", err.1),
+                                                    true,
+                                                )));
+                                            }
+                                        }
                                     });
                                 };
 

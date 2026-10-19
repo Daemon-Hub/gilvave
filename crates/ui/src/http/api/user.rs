@@ -111,8 +111,7 @@ impl Api {
         Api::response_to::<UserView>(res).await
     }
 
-    // TODO [HTTP]: GET /users/sessions — получить список всех активных сессий пользователя
-    pub async fn get_sessions() -> Result<Vec<SessionView>, ErrorInfo> {
+    pub async fn get_sessions() -> Result<Vec<(SessionView, bool)>, ErrorInfo> {
         let token = Self::fetch_access_token().await;
         let res = Api::request_raw(
             "GET",
@@ -121,10 +120,9 @@ impl Api {
             Some(&token),
         )
         .await?;
-        Api::response_to::<Vec<SessionView>>(res).await
+        Api::response_to::<Vec<(SessionView, bool)>>(res).await
     }
 
-    // TODO [HTTP]: DELETE /users/sessions/{session_id} — принудительно завершить сессию на конкретном устройстве
     pub async fn terminate_session(session_id: &str) -> Result<(), ErrorInfo> {
         let token = Self::fetch_access_token().await;
         let res = Api::request_raw(
@@ -137,7 +135,6 @@ impl Api {
         Api::response_to_empty(res).await
     }
 
-    // TODO [HTTP]: DELETE /users/sessions/other — завершить все сессии кроме текущей
     pub async fn terminate_all_other_sessions() -> Result<(), ErrorInfo> {
         let token = Self::fetch_access_token().await;
         let res = Api::request_raw(

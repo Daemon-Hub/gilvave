@@ -56,7 +56,7 @@ pub fn LoginPanel(props: LoginFormProps) -> View {
                 loading.set(true);
                 let device_info = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
                     CommandResult::Ok(CommandResponse::GetDeviceInfo(info)) => info.to_json(),
-                    _ => serde_json::Value::Null,
+                    _ => gilvave_core::settings::collect_device_info().to_json(),
                 };
                 let res = Api::login(LoginRequest {
                     email: email.get_clone(),

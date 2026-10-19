@@ -28,13 +28,15 @@ pub struct UpdateTokensRequest {
     pub refresh_token: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UserView {
     pub id: UserId,
     pub username: String,
     pub email: String,
     pub is_active: bool,
     pub avatar: String,
+    #[serde(default)]
+    pub bio: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

@@ -6,7 +6,7 @@ use gilvave_core::{
         command::{CommandArgs, CommandResponse, CommandResult},
         traits::RequestBody,
     },
-    error::{ErrorInfo, ErrorMessage},
+    error::{ErrorCode, ErrorInfo, ErrorMessage},
 };
 
 use crate::utils::invoke_command;
@@ -31,27 +31,38 @@ impl Api {
         body: &Option<String>,
         auth_token: Option<&str>,
     ) -> Result<web_sys::Response, ErrorInfo> {
-        let window =
-            web_sys::window().ok_or_else(|| ErrorInfo(1, "No window available".to_string()))?;
+        let window = web_sys::window().ok_or_else(|| {
+            ErrorInfo::from_code(
+                ErrorCode::WindowUnavailable,
+                "No window available".to_string(),
+            )
+        })?;
+
         let opts = web_sys::RequestInit::new();
         opts.set_method(method);
         opts.set_credentials(web_sys::RequestCredentials::Include);
 
-        let headers = web_sys::Headers::new().map_err(|e| ErrorInfo(1, format!("{e:?}")))?;
+        let headers = web_sys::Headers::new()
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}")))?;
         headers
             .set("Accept", "application/json")
-            .map_err(|e| ErrorInfo(1, format!("{e:?}")))?;
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}")))?;
+        
         if body.is_some() {
             headers
                 .set("Content-Type", "application/json")
-                .map_err(|e| ErrorInfo(1, format!("{e:?}")))?;
+                .map_err(|e| {
+                    ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}"))
+                })?;
         }
         if let Some(token) = auth_token
             && !token.is_empty()
         {
             headers
                 .set("Authorization", &format!("Bearer {token}"))
-                .map_err(|e| ErrorInfo(1, format!("{e:?}")))?;
+                .map_err(|e| {
+                    ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}"))
+                })?;
         }
         opts.set_headers(&headers);
 
@@ -60,16 +71,21 @@ impl Api {
         }
 
         let request = web_sys::Request::new_with_str_and_init(url, &opts)
-            .map_err(|e| ErrorInfo(1, format!("{e:?}")))?;
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpRequestFailed, format!("{e:?}")))?;
 
         let promise = window.fetch_with_request(&request);
         let resp_value = wasm_bindgen_futures::JsFuture::from(promise)
             .await
-            .map_err(|e| ErrorInfo(1, format!("Fetch error: {e:?}")))?;
+            .map_err(|e| {
+                ErrorInfo::from_code(ErrorCode::HttpRequestFailed, format!("Fetch error: {e:?}"))
+            })?;
 
-        let response: web_sys::Response = resp_value
-            .dyn_into()
-            .map_err(|e| ErrorInfo(1, format!("Invalid response: {e:?}")))?;
+        let response: web_sys::Response = resp_value.dyn_into().map_err(|e| {
+            ErrorInfo::from_code(
+                ErrorCode::HttpInvalidResponse,
+                format!("Invalid response: {e:?}"),
+            )
+        })?;
 
         Ok(response)
     }
@@ -93,26 +109,45 @@ impl Api {
     }
 
     pub async fn response_to_bytes(response: web_sys::Response) -> Result<Vec<u8>, ErrorInfo> {
-        let promise = response
-            .array_buffer()
-            .map_err(|e| ErrorInfo(1, format!("Response.array_buffer error: {e:?}")))?;
+        let promise = response.array_buffer().map_err(|e| {
+            ErrorInfo::from_code(
+                ErrorCode::HttpBodyReadFailed,
+                format!("Response.array_buffer error: {e:?}"),
+            )
+        })?;
         let js_value = wasm_bindgen_futures::JsFuture::from(promise)
             .await
-            .map_err(|e| ErrorInfo(1, format!("Response.array_buffer promise error: {e:?}")))?;
+            .map_err(|e| {
+                ErrorInfo::from_code(
+                    ErrorCode::HttpBodyReadFailed,
+                    format!("Response.array_buffer promise error: {e:?}"),
+                )
+            })?;
         let uint8_array = js_sys::Uint8Array::new(&js_value);
         Ok(uint8_array.to_vec())
     }
 
     pub async fn response_to_text(response: web_sys::Response) -> Result<String, ErrorInfo> {
-        let promise = response
-            .text()
-            .map_err(|e| ErrorInfo(1, format!("Response.text error: {e:?}")))?;
+        let promise = response.text().map_err(|e| {
+            ErrorInfo::from_code(
+                ErrorCode::HttpBodyReadFailed,
+                format!("Response.text error: {e:?}"),
+            )
+        })?;
         let js_value = wasm_bindgen_futures::JsFuture::from(promise)
             .await
-            .map_err(|e| ErrorInfo(1, format!("Response.text promise error: {e:?}")))?;
-        js_value
-            .as_string()
-            .ok_or_else(|| ErrorInfo(1, "Response text is not a valid string".to_string()))
+            .map_err(|e| {
+                ErrorInfo::from_code(
+                    ErrorCode::HttpBodyReadFailed,
+                    format!("Response.text promise error: {e:?}"),
+                )
+            })?;
+        js_value.as_string().ok_or_else(|| {
+            ErrorInfo::from_code(
+                ErrorCode::HttpBodyReadFailed,
+                "Response text is not a valid string".to_string(),
+            )
+        })
     }
 
     pub async fn response_to<T: DeserializeOwned>(
@@ -121,8 +156,12 @@ impl Api {
         let status = response.status();
         if (200..=299).contains(&status) {
             let text = Self::response_to_text(response).await?;
-            serde_json::from_str::<T>(&text)
-                .map_err(|e| ErrorInfo(1, format!("JSON decode error: {e}")))
+            serde_json::from_str::<T>(&text).map_err(|e| {
+                ErrorInfo::from_code(
+                    ErrorCode::HttpJsonDecodeFailed,
+                    format!("JSON decode error: {e}"),
+                )
+            })
         } else {
             Err(Self::response_to_error(response).await)
         }

@@ -473,3 +473,50 @@ fn test_session_view_serialization() {
     let legacy_parsed: SessionView = serde_json::from_str(&json).unwrap();
     assert_eq!(legacy_parsed.id, "sess_123");
 }
+
+#[test]
+fn test_device_info_numeric_os_version() {
+    let json = r#"{"client":"desktop","platform":"Windows","os_version":11,"client_version":"0.1.0"}"#;
+    let parsed: DeviceInfo = serde_json::from_str(json).unwrap();
+    assert_eq!(parsed.os_version.as_deref(), Some("11"));
+
+    let json_float = r#"{"client":"desktop","platform":"Windows","os_version":11.5,"client_version":"0.1.0"}"#;
+    let parsed_float: DeviceInfo = serde_json::from_str(json_float).unwrap();
+    assert_eq!(parsed_float.os_version.as_deref(), Some("11.5"));
+
+    let json_str = r#"{"client":"desktop","platform":"Windows","os_version":"11","client_version":"0.1.0"}"#;
+    let parsed_str: DeviceInfo = serde_json::from_str(json_str).unwrap();
+    assert_eq!(parsed_str.os_version.as_deref(), Some("11"));
+
+    let json_null = r#"{"client":"desktop","platform":"Windows","os_version":null,"client_version":"0.1.0"}"#;
+    let parsed_null: DeviceInfo = serde_json::from_str(json_null).unwrap();
+    assert_eq!(parsed_null.os_version, None);
+
+    // Test exact backend response: Vec<(SessionView, bool)>
+    let server_payload = r#"[
+        [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "device_info": {
+                    "client": "desktop",
+                    "platform": "Windows",
+                    "os_version": 11,
+                    "client_version": "0.1.0"
+                },
+                "ip_address": "127.0.0.1",
+                "location": null,
+                "last_used_at": "2026-10-19T20:00:00Z",
+                "created_at": "2026-10-19T19:00:00Z"
+            },
+            true
+        ]
+    ]"#;
+
+    let sessions_tuple: Vec<(SessionView, bool)> = serde_json::from_str(server_payload).unwrap();
+    assert_eq!(sessions_tuple.len(), 1);
+    let (mut session, is_curr) = sessions_tuple.into_iter().next().unwrap();
+    session.is_current = is_curr;
+    assert_eq!(session.id, "550e8400-e29b-41d4-a716-446655440000");
+    assert!(session.is_current);
+    assert_eq!(session.device_info.os_version.as_deref(), Some("11"));
+}

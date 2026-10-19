@@ -100,6 +100,7 @@ pub fn HomePanel() -> View {
                 if let Ok(user) = Api::get_profile().await {
                     user_profile.username.set(user.username);
                     user_profile.avatar.set(user.avatar);
+                    user_profile.bio.set(user.bio);
                 }
             });
 
