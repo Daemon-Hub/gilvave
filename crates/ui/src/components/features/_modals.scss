@@ -163,6 +163,30 @@
     overflow-y: auto;
     @include scrollbar(4px, $color-white-alpha-10);
 
+    @include respond-to(md) {
+        width: 95vw;
+        max-width: 95vw;
+        padding: 16px 14px;
+        max-height: 92vh;
+        border-radius: $radius-md;
+
+        .server-preview-banner {
+            height: 90px;
+            margin-bottom: 20px;
+
+            .server-preview-avatar {
+                width: 48px;
+                height: 48px;
+                bottom: -12px;
+                left: 12px;
+
+                span {
+                    font-size: 20px;
+                }
+            }
+        }
+    }
+
     .server-preview-banner {
         position: relative;
         height: 120px;
@@ -247,18 +271,21 @@
 .profile-settings-modal {
     width: 980px;
     max-width: min(980px, 96vw);
+    height: 700px;
+    max-height: 90vh;
     background: $color-bg-container;
     border-radius: $radius-lg;
     padding: 0;
     overflow: hidden;
     box-shadow: 0 20px 60px $color-black-alpha-60;
-    max-height: 90vh;
     display: flex;
     flex-direction: column;
 
     @include respond-to(md) {
         width: 95vw;
-        max-height: 94vh;
+        max-width: 95vw;
+        height: 92vh;
+        max-height: 92vh;
         border-radius: $radius-md;
     }
 
@@ -315,6 +342,14 @@
             overflow-x: auto;
             flex-wrap: nowrap;
             box-sizing: border-box;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+                width: 0;
+                height: 0;
+            }
 
             h4 {
                 display: none;
@@ -355,6 +390,9 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
             transition: background 0.15s, color 0.15s;
 
             svg {
@@ -731,34 +769,6 @@
                     }
                 }
 
-                .sessions-refresh-btn {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 14px;
-                    border-radius: $radius-md;
-                    background: $color-white-alpha-06;
-                    border: 1px solid $color-border-subtle;
-                    color: $color-text-channel;
-                    font-size: $font-size-xs;
-                    font-weight: $font-weight-medium;
-                    cursor: pointer;
-                    transition: background 0.15s, color 0.15s, border-color 0.15s;
-                    flex-shrink: 0;
-
-                    svg {
-                        width: 14px;
-                        height: 14px;
-                        stroke: currentColor;
-                        fill: none;
-                    }
-
-                    &:hover {
-                        background: $color-bg-panel-hover;
-                        color: $color-text-white;
-                        border-color: $color-border;
-                    }
-                }
             }
 
             .sessions-alert {
@@ -813,17 +823,70 @@
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
-                }
+                    flex-wrap: wrap;
 
-                .sessions-section-title {
-                    font-size: $font-size-xxs;
-                    font-weight: $font-weight-bold;
-                    color: $color-text-muted;
-                    letter-spacing: 0.05em;
-                    margin: 0;
-                }
+                    .sessions-section-title {
+                        font-size: $font-size-xxs;
+                        font-weight: $font-weight-bold;
+                        color: $color-text-muted;
+                        letter-spacing: 0.05em;
+                        margin: 0;
+                    }
 
-                .terminate-all-action-btn {
+                    .sessions-section-actions {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin-left: auto;
+                    }
+
+                    .sessions-refresh-icon-btn {
+                        width: 32px;
+                        height: 32px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: $radius-sm;
+                        background: $color-white-alpha-06;
+                        border: 1px solid $color-border-subtle;
+                        color: $color-text-channel;
+                        cursor: pointer;
+                        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+                        flex-shrink: 0;
+                        user-select: none;
+                        -webkit-tap-highlight-color: transparent;
+
+                        svg {
+                            width: 15px;
+                            height: 15px;
+                            stroke: currentColor;
+                            fill: none;
+                            display: block;
+                            transform-origin: 50% 50%;
+                            transition: transform 0.3s ease;
+                        }
+
+                        &:hover:not(:disabled) {
+                            background: $color-bg-panel-hover;
+                            color: $color-text-white;
+                            border-color: $color-border;
+                        }
+
+                        &:active:not(:disabled) {
+                            transform: scale(0.92);
+                        }
+
+                        &:disabled {
+                            cursor: default;
+                            opacity: 0.8;
+                        }
+
+                        &.is-loading svg {
+                            animation: spin 0.75s linear infinite;
+                        }
+                    }
+
+                    .terminate-all-action-btn {
                     display: inline-flex;
                     align-items: center;
                     gap: 6px;
@@ -850,6 +913,7 @@
                         border-color: $color-danger;
                     }
                 }
+            }
             }
 
             // Confirmation banner
@@ -1307,6 +1371,8 @@
                     gap: 12px;
                     cursor: pointer;
                     user-select: none;
+                    -webkit-user-select: none;
+                    -webkit-tap-highlight-color: transparent;
 
                     .vscode-switch {
                         position: relative;
@@ -1948,6 +2014,7 @@
 
         .theme-cards-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            padding-bottom: 56px;
 
             @media (max-width: 960px) {
                 grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1,6 +1,6 @@
-use gilvave_core::dto::channel::ChannelType;
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
+use super::channel_item::ChannelItem;
 use crate::{
     components::{
         common::{ChannelContext, ServerContext, UiModalContext},
@@ -9,8 +9,7 @@ use crate::{
     gateway::service::WsService,
     http::api::Api,
 };
-
-use super::channel_item::ChannelItem;
+use gilvave_core::dto::servers::channels::ChannelType;
 
 #[component(inline_props)]
 pub fn ChannelPanel() -> View {
@@ -82,7 +81,10 @@ pub fn ChannelPanel() -> View {
     create_effect(move || {
         let server_id_opt = current_server_id.get();
 
-        if let Some(channel_id) = context.current.with_untracked(|c| c.as_ref().map(|ch| ch.id)) {
+        if let Some(channel_id) = context
+            .current
+            .with_untracked(|c| c.as_ref().map(|ch| ch.id))
+        {
             context.current.set(None);
             spawn_local_scoped(async move {
                 let _ = WsService::left_channel(channel_id).await;

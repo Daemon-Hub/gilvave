@@ -11,9 +11,8 @@ use gilvave_core::{
 
 use crate::utils::invoke_command;
 
-pub mod channel;
-pub mod server;
-pub mod user;
+pub mod servers;
+pub mod users;
 
 pub struct Api;
 
@@ -47,7 +46,7 @@ impl Api {
         headers
             .set("Accept", "application/json")
             .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}")))?;
-        
+
         if body.is_some() {
             headers
                 .set("Content-Type", "application/json")

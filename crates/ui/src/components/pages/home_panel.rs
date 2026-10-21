@@ -1,15 +1,19 @@
-use gilvave_core::dto::{
-    channel::{ChannelType, ChannelView},
-    message::MessageView,
-    server::{MemberView, Server, ServerSmallPart},
-};
 use sycamore::{futures::spawn_local_scoped, prelude::*};
+
+use gilvave_core::dto::{
+    messages::MessageView,
+    servers::{
+        MemberView, Server, ServerSmallPart,
+        channels::{ChannelType, ChannelView},
+    },
+};
 
 use crate::{
     components::{
         common::{
-            ChannelContext, ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
-            classes,
+            AppTheme, ChannelContext, CustomTheme, HomeTab, ScreenWrapper, ServerContext,
+            UiModalContext, UserProfileContext, classes, is_mobile_device, load_windowed_mode,
+            save_windowed_mode,
         },
         features::{
             channels::{
@@ -21,8 +25,8 @@ use crate::{
             members::members_panel::MembersPanel,
             profile::{ProfileSettingsModal, ThemeCatalogModal, ThemeJsonEditorModal},
             servers::{
-                server_settings_modal::ServerSettingsModal, server_sidebar::ServerSidebar,
-                SidebarControls,
+                SidebarControls, server_settings_modal::ServerSettingsModal,
+                server_sidebar::ServerSidebar,
             },
         },
         ui::icons::{GearIcon, HashIcon, HomeIcon},
@@ -46,21 +50,21 @@ pub fn HomePanel() -> View {
     };
     provide_context(user_profile);
 
-    let initial_custom_themes = crate::components::common::CustomTheme::load_all();
-    crate::components::common::CustomTheme::sync_preview_styles(&initial_custom_themes);
+    let initial_custom_themes = CustomTheme::load_all();
+    CustomTheme::sync_preview_styles(&initial_custom_themes);
 
     let ui_modal_context = UiModalContext {
         is_server_settings_open: create_signal(false),
         is_create_channel_open: create_signal(false),
-        create_channel_type: create_signal(gilvave_core::dto::channel::ChannelType::TEXT),
+        create_channel_type: create_signal(ChannelType::TEXT),
         is_profile_settings_open: create_signal(false),
         selected_dm_name: create_signal(None),
-        home_tab: create_signal(crate::components::common::HomeTab::Chats),
+        home_tab: create_signal(HomeTab::Chats),
         draft_message: create_signal(String::new()),
         is_message_editor_open: create_signal(false),
-        app_theme: create_signal(crate::components::common::AppTheme::load_saved()),
+        app_theme: create_signal(AppTheme::load_saved()),
         custom_themes: create_signal(initial_custom_themes),
-        is_windowed_mode: create_signal(crate::components::common::load_windowed_mode()),
+        is_windowed_mode: create_signal(load_windowed_mode()),
         is_theme_catalog_open: create_signal(false),
         is_theme_json_editor_open: create_signal(false),
         theme_json_editor_content: create_signal(String::new()),
@@ -75,7 +79,7 @@ pub fn HomePanel() -> View {
 
     create_effect(move || {
         let windowed = ui_modal_context.is_windowed_mode.get();
-        crate::components::common::save_windowed_mode(windowed);
+        save_windowed_mode(windowed);
     });
 
     let server_context = ServerContext {
@@ -98,9 +102,11 @@ pub fn HomePanel() -> View {
         if screen_wrapper.is_home() {
             spawn_local_scoped(async move {
                 if let Ok(user) = Api::get_profile().await {
+                    let avatar = user.avatar().to_string();
+                    let bio = user.bio().to_string();
                     user_profile.username.set(user.username);
-                    user_profile.avatar.set(user.avatar);
-                    user_profile.bio.set(user.bio);
+                    user_profile.avatar.set(avatar);
+                    user_profile.bio.set(bio);
                 }
             });
 
@@ -133,16 +139,28 @@ pub fn HomePanel() -> View {
     };
 
     let is_home_active = create_memo(move || server_context.current.with(|c| c.is_none()));
-    let home_pill_class = move || if is_home_active.get() { "home-pill active" } else { "home-pill" };
-    let home_btn_class = move || if is_home_active.get() { "home-avatar-btn active" } else { "home-avatar-btn" };
+    let home_pill_class = move || {
+        if is_home_active.get() {
+            "home-pill active"
+        } else {
+            "home-pill"
+        }
+    };
+    let home_btn_class = move || {
+        if is_home_active.get() {
+            "home-avatar-btn active"
+        } else {
+            "home-avatar-btn"
+        }
+    };
 
     let discord_content_class = create_memo(move || {
         if server_context.current.with(|c| c.is_some()) {
             "discord-content in-server"
         } else {
             match ui_modal_context.home_tab.get() {
-                crate::components::common::HomeTab::Chats => "discord-content in-home show-chats",
-                crate::components::common::HomeTab::Dashboard => "discord-content in-home show-dashboard",
+                HomeTab::Chats => "discord-content in-home show-chats",
+                HomeTab::Dashboard => "discord-content in-home show-dashboard",
             }
         }
     });
@@ -153,12 +171,13 @@ pub fn HomePanel() -> View {
     let is_theme_catalog_open = ui_modal_context.is_theme_catalog_open;
     let is_theme_json_editor_open = ui_modal_context.is_theme_json_editor_open;
     let is_message_editor_open = ui_modal_context.is_message_editor_open;
-    let is_fullbleed: MaybeDyn<bool> = (move || {
-        crate::components::common::is_mobile_device() || !ui_modal_context.is_windowed_mode.get()
-    }).into();
+    let is_fullbleed: MaybeDyn<bool> =
+        (move || is_mobile_device() || !ui_modal_context.is_windowed_mode.get()).into();
 
     let active_channel_type = create_memo(move || {
-        channel_context.current.with(|c| c.as_ref().map(|ch| ch.r#type))
+        channel_context
+            .current
+            .with(|c| c.as_ref().map(|ch| ch.r#type))
     });
 
     view! {
@@ -295,7 +314,10 @@ pub fn HomePanel() -> View {
     }
 }
 
-fn header_server_view(server_signal: Signal<Option<Server>>, modal_context: UiModalContext) -> View {
+fn header_server_view(
+    server_signal: Signal<Option<Server>>,
+    modal_context: UiModalContext,
+) -> View {
     let header_data = server_signal.with(|server_opt| {
         server_opt.as_ref().map(|server| {
             let cover = (!server.cover.is_empty()).then(|| server.cover.clone());

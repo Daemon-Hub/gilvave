@@ -1,6 +1,7 @@
+use futures_channel::mpsc::{UnboundedReceiver, UnboundedSender, unbounded};
 use std::sync::{Arc, LazyLock, Mutex};
-use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
-use gilvave_core::dto::{message::MessageView, ws::ServerRecieve};
+
+use gilvave_core::dto::{messages::MessageView, ws::ServerRecieve};
 
 #[derive(Clone, Debug)]
 pub enum GatewayEvent {
@@ -42,20 +43,36 @@ pub async fn handle(text: String) {
                 web_sys::console::log_1(&"[WS] JoinSuccess received".into());
             }
             ServerRecieve::MessageNew(message_view) => {
-                web_sys::console::log_1(&format!("[WS] MessageNew received: {:?}", message_view).into());
+                web_sys::console::log_1(
+                    &format!("[WS] MessageNew received: {:?}", message_view).into(),
+                );
                 dispatch_gateway_event(GatewayEvent::MessageNew(message_view));
             }
             ServerRecieve::ChannelHistoryBefore(messages) => {
-                web_sys::console::log_1(&format!("[WS] ChannelHistoryBefore received {} messages", messages.len()).into());
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] ChannelHistoryBefore received {} messages",
+                        messages.len()
+                    )
+                    .into(),
+                );
                 dispatch_gateway_event(GatewayEvent::ChannelHistoryBefore(messages));
             }
             ServerRecieve::ChannelHistoryAfter(messages) => {
-                web_sys::console::log_1(&format!("[WS] ChannelHistoryAfter received {} messages", messages.len()).into());
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] ChannelHistoryAfter received {} messages",
+                        messages.len()
+                    )
+                    .into(),
+                );
                 dispatch_gateway_event(GatewayEvent::ChannelHistoryAfter(messages));
             }
         },
         Err(e) => {
-            web_sys::console::error_1(&format!("[WS] parse ServerRecieve error: {e}, text: {text}").into());
+            web_sys::console::error_1(
+                &format!("[WS] parse ServerRecieve error: {e}, text: {text}").into(),
+            );
         }
     }
 }

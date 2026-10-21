@@ -1,4 +1,3 @@
-use gilvave_core::dto::channel::{ChannelCreateInfo, ChannelType};
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::{
@@ -8,6 +7,7 @@ use crate::{
     },
     http::api::Api,
 };
+use gilvave_core::dto::servers::channels::{ChannelCreateInfo, ChannelType};
 
 #[component]
 pub fn CreateChannelModal() -> View {
@@ -60,7 +60,7 @@ pub fn CreateChannelModal() -> View {
         create_memo(move || modal_context.create_channel_type.get() == ChannelType::TEXT);
     let is_voice_type =
         create_memo(move || modal_context.create_channel_type.get() == ChannelType::VOICE);
-    
+
     let text_option_class = move || {
         if is_text_type.get() {
             "type-option active"

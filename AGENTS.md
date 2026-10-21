@@ -70,12 +70,16 @@ crates/ui/src/
   security.rs               — Browser cookie helpers (get/set access & refresh tokens)
   utils.rs                  — Unified invoke_command (Tauri IPC vs Web), local timezone conversion
   http/                     — Direct WASM HTTP client (web-sys fetch, auto-401 refresh)
-    api/                    — Domain endpoints (user, server, channel)
+    api/                    — Domain endpoints matching server infra (users, servers, messages)
+      servers/              — Server and channel endpoints (mod.rs, channels.rs)
+      users/                — User endpoints (auth.rs, profile.rs, sessions.rs)
+      messages.rs           — Message history endpoints
   gateway/                  — Direct WASM WebSocket client (ws_stream_wasm) & event dispatcher
   components/
     common/                 — Shared reactive contexts, theme engine, mixins, variables, animations
       contexts.rs           — ScreenWrapper, UserProfileContext, ServerContext, ChannelContext,
                               UiModalContext, CreateServerContext
+      emoji.rs              — Twemoji URL generator, text segment parser for cross-platform emoji rendering
       theme.rs              — AppTheme (Advanced, Standard, Custom), CustomTheme JSON parser,
                               CSS variable generator, localStorage persistence, preview style injector
       _themes.scss          — Root CSS Custom Properties (:root / [data-theme="advanced"] & [data-theme="standard"])
@@ -102,7 +106,7 @@ crates/ui/src/
                               appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal,
                               active sessions management tab SessionsTab)
       auth/                 — Social buttons, auth form cards
-    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons)
+    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons, show_more_banner.rs)
 ```
 
 ### Reactive Contexts (`components/common/contexts.rs`)
@@ -190,6 +194,17 @@ crates/ui/src/
   - For other members, avatars are retrieved from `ServerContext.members`. If unavailable, a circular initial placeholder is rendered with an author-based color.
 - **Keyed Memo Key**:
   - Sycamore `Keyed` message list must include `(message.id, is_first, is_last, date_divider.clone(), avatar_url.clone())` so reactive changes to avatar loading or group status re-render cleanly without recreating entire message elements.
+- **Twemoji & Cross-Platform Emoji Rendering (`crates/ui/src/components/common/emoji.rs`, `message_item.rs`, `messages_area.rs`)**:
+  - Windows `Segoe UI Emoji` intentionally does not render country flags (showing two-letter regional codes like `"RU"`) and shows tofu (`▯`) for newer Unicode 14/15/16 emojis.
+  - Handled via Twemoji SVG URLs (`https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/{codepoints}.svg`).
+  - In `MessageItem`, text is segmented by `parse_message_segments` into plain text and `.chat-inline-emoji` SVG images (`1.35em`, baseline aligned).
+  - Emoji picker supports category switching without `"Все"` tab, strict vertical scrolling, and an expand toggle (`arrow1.svg`/`arrow2.svg`) that enlarges emojis 2~2.5x (`46px` on desktop, `38px` on mobile) against a dimmed modal backdrop.
+- **Pagination & Show More Banner (`show_more_banner.rs`, `_show_more_banner.scss`)**:
+  - Reusable `ShowMoreBanner` component for paginated lists (theme catalog, server discovery).
+  - Listens to bottom scroll reaches, displays a button with an animated arrow and hover lift, and fetches the next page without layout jumps.
+- **Profile Settings Window Dimensions (`profile_settings_modal.rs`, `sessions_tab.rs`)**:
+  - Fixed modal dimensions (`min(880px, 92vw)` × `min(680px, 86vh)`) prevent window resizing between tabs.
+  - Sessions tab uses an in-place rotating refresh icon button without list flicker or height jumps.
 
 ### Mobile & Responsive Layout
 - **Breakpoints**:

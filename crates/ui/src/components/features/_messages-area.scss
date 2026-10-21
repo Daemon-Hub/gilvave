@@ -249,6 +249,17 @@
             display: inline;
         }
 
+        .chat-inline-emoji {
+            display: inline-block;
+            width: 1.35em;
+            height: 1.35em;
+            vertical-align: -0.22em;
+            margin: 0 0.08em;
+            object-fit: contain;
+            user-select: none;
+            pointer-events: none;
+        }
+
         .message-read-more-btn {
             display: inline-flex;
             align-items: center;
@@ -390,6 +401,15 @@
         inset: 0;
         z-index: 30;
         background: transparent;
+        transition: background 0.2s ease;
+
+        &.is-dimmed {
+            z-index: 999;
+            background: $color-black-alpha-60;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            animation: editorOverlayFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
     }
 
     .chat-input {
@@ -651,8 +671,8 @@
         bottom: calc(100% + 10px);
         right: 0;
         z-index: 45;
-        width: 340px;
-        max-width: calc(100vw - 32px);
+        width: 350px;
+        max-width: calc(100vw - 20px);
         height: 390px;
         border-radius: $radius-lg;
         background: $color-bg-container;
@@ -662,8 +682,23 @@
         -webkit-backdrop-filter: blur(14px);
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: hidden !important;
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
         animation: editorModalFadeIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        box-sizing: border-box;
+
+        @include respond-to(md) {
+            position: fixed;
+            left: 8px;
+            right: 8px;
+            bottom: 68px;
+            width: auto;
+            max-width: calc(100vw - 16px);
+            height: 330px;
+            max-height: 52vh;
+            margin: 0 auto;
+        }
 
         .emoji-modal-header {
             display: flex;
@@ -677,6 +712,46 @@
                 font-size: 14px;
                 font-weight: $font-weight-bold;
                 color: $color-text-white;
+            }
+
+            .emoji-expand-toggle-btn {
+                width: 30px;
+                height: 30px;
+                border-radius: $radius-sm;
+                background: $color-white-alpha-08;
+                border: 1px solid $color-white-alpha-08;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-tap-highlight-color: transparent;
+
+                img {
+                    width: 16px;
+                    height: 16px;
+                    display: block;
+                    filter: brightness(0) invert(0.82);
+                    transition: filter 0.15s ease, transform 0.15s ease;
+                    pointer-events: none;
+                }
+
+                &:hover {
+                    background: $color-primary-alpha-24;
+                    border-color: $color-primary-alpha-45;
+
+                    img {
+                        filter: brightness(0) invert(1);
+                        transform: scale(1.1);
+                    }
+                }
+
+                &:active {
+                    transform: scale(0.92);
+                }
             }
         }
 
@@ -736,24 +811,39 @@
         .emoji-category-tabs {
             display: flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 12px 8px;
+            gap: 3px;
+            padding: 4px 10px 8px;
             border-bottom: 1px solid $color-border-subtle;
             overflow-x: auto;
+            overflow-y: hidden;
             flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-x;
             @include scrollbar(3px, $color-white-alpha-10);
 
             .emoji-cat-btn {
-                padding: 5px 8px;
+                padding: 4px 7px;
                 border-radius: 6px;
                 border: 1px solid transparent;
                 background: transparent;
                 color: $color-text-label;
-                font-size: 14px;
-                font-weight: $font-weight-semibold;
                 cursor: pointer;
                 flex-shrink: 0;
                 transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+                -webkit-tap-highlight-color: transparent;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                img {
+                    width: 18px;
+                    height: 18px;
+                    object-fit: contain;
+                    display: block;
+                    pointer-events: none;
+                    user-select: none;
+                }
 
                 &:hover {
                     background: $color-white-alpha-08;
@@ -770,46 +860,188 @@
 
         .emoji-modal-body {
             flex: 1;
-            overflow-y: auto;
-            padding: 10px 12px;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            touch-action: pan-y !important;
+            overscroll-behavior-x: none !important;
+            overscroll-behavior-y: contain;
+            padding: 8px 10px;
+            box-sizing: border-box;
             @include scrollbar(5px, $color-white-alpha-18);
 
             .emoji-grid {
+                width: 100%;
+                box-sizing: border-box;
                 display: grid;
-                grid-template-columns: repeat(7, 1fr);
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+                gap: 3px;
+                overflow-x: hidden !important;
             }
 
             .emoji-grid-item {
-                height: 38px;
-                border-radius: 8px;
+                width: 100%;
+                min-width: 0;
+                height: 36px;
+                border-radius: 7px;
                 border: none;
                 background: transparent;
-                font-size: 21px;
-                line-height: 1;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
+                box-sizing: border-box;
+                overflow: hidden;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-tap-highlight-color: transparent;
                 transition: background 0.12s ease, transform 0.12s ease;
+                padding: 0;
+
+                img {
+                    width: 24px;
+                    height: 24px;
+                    object-fit: contain;
+                    display: block;
+                    pointer-events: none;
+                    user-select: none;
+                }
 
                 &:hover {
                     background: $color-white-alpha-10;
-                    transform: scale(1.16);
+                    transform: scale(1.15);
                 }
 
                 &:active {
-                    transform: scale(0.95);
+                    transform: scale(0.92);
                 }
             }
 
             .emoji-empty-state {
                 height: 100%;
+                min-height: 120px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: $color-text-muted;
                 font-size: 13px;
+            }
+        }
+
+        &.is-expanded {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            bottom: auto !important;
+            right: auto !important;
+            width: min(860px, 94vw) !important;
+            height: min(640px, 86vh) !important;
+            max-width: 95vw !important;
+            max-height: 88vh !important;
+            border-radius: 18px !important;
+            z-index: 1000 !important;
+            background: $color-bg-panel-dark !important;
+            border: 1px solid $color-primary-alpha-32 !important;
+            box-shadow:
+                0 24px 64px $color-black-alpha-75,
+                0 0 0 1px $color-white-alpha-05 inset !important;
+            margin: 0 !important;
+
+            @include respond-to(md) {
+                width: 95vw !important;
+                height: 86vh !important;
+                max-height: 86vh !important;
+            }
+
+            .emoji-modal-header {
+                padding: 16px 20px 12px;
+
+                .emoji-modal-title {
+                    font-size: 16px;
+                }
+
+                .emoji-expand-toggle-btn {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 8px;
+
+                    img {
+                        width: 18px;
+                        height: 18px;
+                    }
+                }
+            }
+
+            .emoji-modal-search {
+                margin: 12px 18px 8px;
+
+                .emoji-search-icon {
+                    left: 14px;
+
+                    svg {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+
+                input {
+                    padding: 10px 14px 10px 40px;
+                    font-size: 14px;
+                    border-radius: 8px;
+                }
+            }
+
+            .emoji-category-tabs {
+                padding: 6px 16px 10px;
+                gap: 6px;
+
+                .emoji-cat-btn {
+                    padding: 6px 12px;
+                    border-radius: 8px;
+
+                    img {
+                        width: 22px;
+                        height: 22px;
+                    }
+                }
+            }
+
+            .emoji-modal-body {
+                padding: 14px 18px;
+
+                .emoji-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
+                    gap: 8px !important;
+
+                    @include respond-to(md) {
+                        grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)) !important;
+                        gap: 6px !important;
+                    }
+                }
+
+                .emoji-grid-item {
+                    height: 70px !important;
+                    border-radius: 12px !important;
+
+                    img {
+                        width: 48px !important;
+                        height: 48px !important;
+
+                        @include respond-to(md) {
+                            width: 38px !important;
+                            height: 38px !important;
+                        }
+                    }
+
+                    &:hover {
+                        transform: scale(1.15) !important;
+                        background: $color-white-alpha-12 !important;
+                    }
+
+                    &:active {
+                        transform: scale(0.95) !important;
+                    }
+                }
             }
         }
     }

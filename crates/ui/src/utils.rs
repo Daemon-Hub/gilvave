@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_event_message_view_deserialization() {
-        use gilvave_core::dto::message::MessageView;
+        use gilvave_core::dto::messages::MessageView;
         use gilvave_core::ids::{ChannelId, MessageId, UserId};
 
         let view = MessageView {

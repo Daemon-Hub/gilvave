@@ -87,7 +87,7 @@ fn dashboard_main_view(
             div(class="home-hero-banner") {
                 div(class="hero-content") {
                     h1 { (greeting_text.get_clone()) }
-                    p { "Ваше уютное пространство для текстовых, голосовых и видеочатов без ограничений." }
+                    p { "Ваше уютное пространство для текстовых, голосовых и видео чатов без ограничений." }
                 }
                 div(class="hero-decoration") {
                     object(

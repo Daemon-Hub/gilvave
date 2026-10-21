@@ -1,5 +1,7 @@
+pub mod channels;
+
 use gilvave_core::{
-    dto::server::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
+    dto::servers::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
     error::ErrorInfo,
     ids::ServerId,
     settings::BASE_HTTP_URL,

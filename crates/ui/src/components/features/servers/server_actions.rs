@@ -1,5 +1,5 @@
 use gilvave_core::{
-    dto::server::{ServerCreateInfo, ServerSmallPart},
+    dto::servers::{Server, ServerCreateInfo, ServerSmallPart},
     ids::ServerId,
 };
 use sycamore::{futures::spawn_local_scoped, prelude::*};
@@ -23,9 +23,12 @@ pub(super) fn select_server(server_id: ServerId) {
     ch_ctx.current.set(None);
     ch_ctx.messages.set(vec![]);
 
-    if let Some(small) = context.list.with(|l| l.iter().find(|s| s.id == server_id).cloned()) {
+    if let Some(small) = context
+        .list
+        .with(|l| l.iter().find(|s| s.id == server_id).cloned())
+    {
         let epoch = time::OffsetDateTime::from_unix_timestamp(0).unwrap();
-        let current_srv = gilvave_core::dto::server::Server {
+        let current_srv = Server {
             id: small.id,
             owner_id: gilvave_core::ids::UserId::default(),
             name: small.name,

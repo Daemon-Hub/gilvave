@@ -1,0 +1,79 @@
+@use '../common/variables' as *;
+@use '../common/mixins' as *;
+
+.show-more-floating-container {
+    position: absolute;
+    bottom: 76px;
+    left: 50%;
+    transform: translateX(-50%) translateY(14px);
+    z-index: 30;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.show-more-banner {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 22px;
+    background: $color-bg-panel;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-full;
+    color: $color-text-white;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    box-shadow: $shadow-panel;
+    backdrop-filter: blur(14px);
+    transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background-color 0.24s ease,
+                border-color 0.24s ease,
+                color 0.24s ease,
+                box-shadow 0.24s ease;
+    user-select: none;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: $color-icon-cyan;
+        stroke: currentColor;
+        transition: color 0.24s ease;
+    }
+
+    &:hover {
+        background: $color-bg-panel-hover;
+        border-color: $color-primary;
+        color: $color-primary;
+        transform: translateY(-2px);
+        box-shadow: $shadow-modal;
+
+        svg {
+            color: $color-primary;
+        }
+    }
+
+    &:active {
+        transform: translateY(0) scale(0.98);
+        transition-duration: 0.1s;
+    }
+
+    &.loading {
+        cursor: not-allowed;
+        opacity: 0.85;
+
+        svg {
+            animation: orbit 0.8s linear infinite;
+        }
+    }
+}

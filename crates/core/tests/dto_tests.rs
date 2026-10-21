@@ -1,10 +1,10 @@
 use gilvave_core::{
     dto::{
-        channel::{ChannelType, ChannelView},
         command::{CommandArgs, CommandResponse, CommandResult},
-        message::MessageView,
-        server::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
-        user::{
+        messages::MessageView,
+        servers::channels::{ChannelType, ChannelView},
+        servers::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
+        users::{
             AuthTokensResponse, LoginRequest, RegisterRequest, SessionView, UpdateTokensRequest,
             UserView,
         },
@@ -120,23 +120,35 @@ fn test_update_tokens_request_serialize() {
 #[test]
 fn test_user_view_deserialize() {
     let json = format!(
-        r#"{{"id":"{}","username":"alice","email":"alice@example.com","is_active":true,"avatar":"https://example.com/avatar.png"}}"#,
+        r#"{{"id":"{}","username":"alice","email":"alice@example.com","is_active":true,"joined_at":"2026-10-20T20:26:00Z","profile":{{"avatar":"https://example.com/avatar.png","bio":"hello"}}}}"#,
         TEST_UUID
     );
     let user: UserView = serde_json::from_str(&json).unwrap();
     assert_eq!(user.id.0, test_uuid());
     assert_eq!(user.username, "alice");
     assert!(user.is_active);
+    assert_eq!(user.avatar(), "https://example.com/avatar.png");
+    assert_eq!(user.bio(), "hello");
 }
 
 #[test]
 fn test_user_view_inactive() {
     let json = format!(
-        r#"{{"id":"{}","username":"bob","email":"bob@test.com","is_active":false,"avatar":""}}"#,
+        r#"{{"id":"{}","username":"bob","email":"bob@test.com","is_active":false,"profile":{{"avatar":""}}}}"#,
         TEST_UUID
     );
     let user: UserView = serde_json::from_str(&json).unwrap();
     assert!(!user.is_active);
+}
+
+#[test]
+fn test_user_view_null_joined_at() {
+    let json = format!(
+        r#"{{"id":"{}","username":"bob","email":"bob@test.com","is_active":false,"joined_at":null,"profile":{{"avatar":""}}}}"#,
+        TEST_UUID
+    );
+    let user: UserView = serde_json::from_str(&json).unwrap();
+    assert_eq!(user.joined_at, None);
 }
 
 #[test]
@@ -221,7 +233,7 @@ fn test_channel_type_invalid() {
 #[test]
 fn test_user_view_debug() {
     let json = format!(
-        r#"{{"id":"{}","username":"test","email":"test@test.com","is_active":false,"avatar":""}}"#,
+        r#"{{"id":"{}","username":"test","email":"test@test.com","is_active":false,"profile":{{"avatar":""}}}}"#,
         TEST_UUID
     );
     let user: UserView = serde_json::from_str(&json).unwrap();
@@ -476,19 +488,23 @@ fn test_session_view_serialization() {
 
 #[test]
 fn test_device_info_numeric_os_version() {
-    let json = r#"{"client":"desktop","platform":"Windows","os_version":11,"client_version":"0.1.0"}"#;
+    let json =
+        r#"{"client":"desktop","platform":"Windows","os_version":11,"client_version":"0.1.0"}"#;
     let parsed: DeviceInfo = serde_json::from_str(json).unwrap();
     assert_eq!(parsed.os_version.as_deref(), Some("11"));
 
-    let json_float = r#"{"client":"desktop","platform":"Windows","os_version":11.5,"client_version":"0.1.0"}"#;
+    let json_float =
+        r#"{"client":"desktop","platform":"Windows","os_version":11.5,"client_version":"0.1.0"}"#;
     let parsed_float: DeviceInfo = serde_json::from_str(json_float).unwrap();
     assert_eq!(parsed_float.os_version.as_deref(), Some("11.5"));
 
-    let json_str = r#"{"client":"desktop","platform":"Windows","os_version":"11","client_version":"0.1.0"}"#;
+    let json_str =
+        r#"{"client":"desktop","platform":"Windows","os_version":"11","client_version":"0.1.0"}"#;
     let parsed_str: DeviceInfo = serde_json::from_str(json_str).unwrap();
     assert_eq!(parsed_str.os_version.as_deref(), Some("11"));
 
-    let json_null = r#"{"client":"desktop","platform":"Windows","os_version":null,"client_version":"0.1.0"}"#;
+    let json_null =
+        r#"{"client":"desktop","platform":"Windows","os_version":null,"client_version":"0.1.0"}"#;
     let parsed_null: DeviceInfo = serde_json::from_str(json_null).unwrap();
     assert_eq!(parsed_null.os_version, None);
 

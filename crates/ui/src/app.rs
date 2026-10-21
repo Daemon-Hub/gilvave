@@ -39,10 +39,14 @@ pub fn App() -> View {
 
     spawn_local_scoped(async move {
         // Check if saved authentication tokens are valid
-        if Api::get_profile().await.is_ok() {
-            screen_wrapper.set(ActiveScreen::Home);
-        } else {
-            screen_wrapper.set(ActiveScreen::Login);
+        match Api::get_profile().await {
+            Ok(_) => {
+                screen_wrapper.set(ActiveScreen::Home);
+            }
+            Err(e) => {
+                web_sys::console::warn_1(&format!("[APP] Session check failed: {:?}", e).into());
+                screen_wrapper.set(ActiveScreen::Login);
+            }
         }
     });
 

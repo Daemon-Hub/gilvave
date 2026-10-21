@@ -1,5 +1,5 @@
 use gilvave_core::{
-    dto::server::{Server, ServerSmallPart},
+    dto::servers::{Server, ServerSmallPart},
     ids::ServerId,
 };
 use sycamore::{futures::spawn_local_scoped, prelude::*};

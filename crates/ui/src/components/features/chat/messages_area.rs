@@ -1,14 +1,13 @@
 use futures_util::StreamExt;
-use gilvave_core::dto::message::MessageView;
 use sycamore::{futures::spawn_local_scoped, prelude::*, web::queue_microtask};
-use crate::gateway::handler::{subscribe_gateway_events, GatewayEvent};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
+use gilvave_core::dto::messages::MessageView;
 use super::message_item::MessageItem;
 use crate::{
-    components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext},
-    gateway::service::WsService,
+    components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext, emoji_to_twemoji_url},
+    gateway::{service::WsService, handler::{subscribe_gateway_events, GatewayEvent}},
     utils::{get_local_offset, to_local_datetime},
 };
 
@@ -24,183 +23,142 @@ pub fn adjust_textarea_height(el: &HtmlElement, min_h: i32, max_h: i32) -> bool 
     has_scrollbar
 }
 
-const EMOJI_CATALOG: &[(&str, &str, &[(&str, &str)])] = &[
-    (
-        "smileys",
-        "😀",
-        &[
-            ("😀", "улыбка радость smile"),
-            ("😃", "улыбка смех smile"),
-            ("😄", "смех радость happy"),
-            ("😁", "ухмылка grin"),
-            ("😆", "хаха смех laugh"),
-            ("😅", "нервный смех sweat"),
-            ("🤣", "рофл смех до слез rofl"),
-            ("😂", "слезы радости смех joy"),
-            ("🙂", "легкая улыбка slight smile"),
-            ("😉", "подмигивание wink"),
-            ("😊", "смущение мило blush"),
-            ("😇", "ангел нимб innocent"),
-            ("🥰", "любовь сердечки in love"),
-            ("😍", "влюбленный глаза сердечки heart eyes"),
-            ("🤩", "восторг звезды star struck"),
-            ("😘", "поцелуй kiss"),
-            ("😋", "вкусно ням yum"),
-            ("😜", "язык подмигивание crazy"),
-            ("🤪", "безумие веселье zany"),
-            ("😎", "крутой очки cool"),
-            ("🤓", "ботан очки nerd"),
-            ("🧐", "монокль анализ monocle"),
-            ("🤔", "думаю размышление thinking"),
-            ("🫡", "честь салют salute"),
-            ("🤫", "тихо секрет shh"),
-            ("🫠", "таю неловко melting"),
-            ("😏", "ухмылка хитрый smirk"),
-            ("😒", "недовольство unamused"),
-            ("🙄", "закатил глаза eye roll"),
-            ("😮‍💨", "выдох усталость sigh"),
-            ("😔", "грусть печаль pensive"),
-            ("😴", "сон спать sleep"),
-            ("🤯", "взрыв мозга шок mind blown"),
-            ("🥳", "праздник вечеринка party"),
-            ("🥺", "пожалуйста милые глаза pleading"),
-            ("😭", "плач рыдание sob"),
-            ("😱", "крик ужас шок scream"),
-            ("😡", "злость гнев angry"),
-            ("🤬", "ругань злость swear"),
-            ("🤡", "клоун clown"),
-            ("👻", "призрак бу ghost"),
-            ("💀", "череп мертв skull"),
-        ],
-    ),
-    (
-        "gestures",
-        "👋",
-        &[
-            ("👋", "привет пока махать wave"),
-            ("🤚", "ладонь стоп raised back hand"),
-            ("✋", "рука стоп пять high five"),
-            ("👌", "ок отлично ok"),
-            ("🤌", "италия жест pinched fingers"),
-            ("✌️", "мир победа peace victory"),
-            ("🤞", "удача скрестить пальцы crossed fingers"),
-            ("🫰", "сердечко пальцами hand heart"),
-            ("🤟", "рок люблю love you"),
-            ("🤘", "рок коза rock"),
-            ("🤙", "позвони шака call me"),
-            ("👍", "лайк супер класс thumbs up"),
-            ("👎", "дизлайк плохо thumbs down"),
-            ("👊", "кулак броуфист fist"),
-            ("👏", "аплодисменты хлопать clap"),
-            ("🙌", "ура руки вверх raised hands"),
-            ("🫶", "сердце руками heart hands"),
-            ("🤝", "рукопожатие сделка handshake"),
-            ("🙏", "спасибо пожалуйста молитва pray"),
-            ("💪", "сила бицепс muscle"),
-            ("👀", "глаза смотрю eyes"),
-            ("🧠", "мозг ум brain"),
-        ],
-    ),
-    (
-        "hearts",
-        "❤️",
-        &[
-            ("❤️", "красное сердце любовь red heart"),
-            ("🧡", "оранжевое сердце orange heart"),
-            ("💛", "желтое сердце yellow heart"),
-            ("💚", "зеленое сердце green heart"),
-            ("💙", "синее сердце blue heart"),
-            ("💜", "фиолетовое сердце purple heart"),
-            ("🖤", "черное сердце black heart"),
-            ("🤍", "белое сердце white heart"),
-            ("💔", "разбитое сердце broken heart"),
-            ("❤️‍🔥", "горящее сердце страсть heart on fire"),
-            ("💖", "сверкающее сердце sparkling heart"),
-            ("💘", "сердце со стрелой cupid"),
-            ("💝", "сердце с лентой gift heart"),
-            ("💯", "сто процентов идеал 100"),
-            ("💢", "злость гнев anger"),
-            ("💥", "взрыв бум boom"),
-            ("💫", "головокружение звезда dizzy"),
-            ("💬", "облачко чат сообщение speech"),
-        ],
-    ),
-    (
-        "animals",
-        "🐱",
-        &[
-            ("🐱", "кот кошка cat"),
-            ("🐶", "собака пес dog"),
-            ("🦊", "лиса хитрая fox"),
-            ("🐻", "медведь мишка bear"),
-            ("🐼", "панда panda"),
-            ("🐨", "коала koala"),
-            ("🦁", "лев царь lion"),
-            ("🐯", "тигр tiger"),
-            ("🐸", "лягушка пепе frog"),
-            ("🐵", "обезьяна monkey"),
-            ("🐧", "пингвин linux penguin"),
-            ("🦉", "сова мудрость owl"),
-            ("🦋", "бабочка butterfly"),
-            ("🐢", "черепаха turtle"),
-            ("🐙", "осьминог octopus"),
-            ("🦀", "краб раст rust crab"),
-            ("🐳", "кит докер whale"),
-            ("🦄", "единорог магия unicorn"),
-        ],
-    ),
-    (
-        "food",
-        "🍕",
-        &[
-            ("🍕", "пицца еда pizza"),
-            ("🍔", "бургер гамбургер burger"),
-            ("🍟", "картошка фри fries"),
-            ("🌭", "хотдог hotdog"),
-            ("🍿", "попкорн кино popcorn"),
-            ("🍩", "пончик сладкое donut"),
-            ("🍪", "печенье куки cookie"),
-            ("🎂", "торт день рождения cake"),
-            ("🍰", "пирожное тортик shortcake"),
-            ("🍫", "шоколад chocolate"),
-            ("🍓", "клубника ягода strawberry"),
-            ("🍒", "вишня черешня cherry"),
-            ("🍉", "арбуз лето watermelon"),
-            ("☕", "кофе чай утро coffee"),
-            ("🧋", "бабл ти чай boba"),
-            ("🥤", "газировка напиток soda"),
-            ("🍺", "пиво кружка beer"),
-            ("🥂", "бокалы праздник cheers"),
-        ],
-    ),
-    (
-        "misc",
-        "🔥",
-        &[
-            ("🔥", "огонь топ жарко fire"),
-            ("✨", "блестки магия звезды sparkles"),
-            ("🌟", "звезда сияние star"),
-            ("⚡", "молния быстро энергия zap"),
-            ("🌈", "радуга rainbow"),
-            ("☀️", "солнце тепло sun"),
-            ("🌙", "луна ночь месяц moon"),
-            ("🎉", "хлопушка праздник ура tada"),
-            ("🎊", "конфетти праздник confetti"),
-            ("🎈", "шарик праздник balloon"),
-            ("🏆", "кубок победа чемпион trophy"),
-            ("🥇", "первое место золото медаль gold"),
-            ("🎮", "геймпад игры джойстик game"),
-            ("🎧", "наушники музыка headphones"),
-            ("🎵", "музыка нота music"),
-            ("🚀", "ракета старт космос rocket"),
-            ("💻", "ноутбук код работа laptop"),
-            ("💎", "алмаз бриллиант gem"),
-            ("🔒", "замок безопасность lock"),
-            ("✅", "галочка готово да check"),
-            ("❌", "крестик отмена нет cross"),
-        ],
-    ),
+const EMOJI_GROUPS: &[(&str, &str, &str, emojis::Group)] = &[
+    ("smileys", "😀", "Смайлики и эмоции", emojis::Group::SmileysAndEmotion),
+    ("people", "👋", "Люди и жесты", emojis::Group::PeopleAndBody),
+    ("animals", "🐱", "Животные и природа", emojis::Group::AnimalsAndNature),
+    ("food", "🍔", "Еда и напитки", emojis::Group::FoodAndDrink),
+    ("travel", "✈️", "Путешествия и места", emojis::Group::TravelAndPlaces),
+    ("activities", "⚽", "Активности и спорт", emojis::Group::Activities),
+    ("objects", "💡", "Предметы", emojis::Group::Objects),
+    ("symbols", "❤️", "Символы", emojis::Group::Symbols),
+    ("flags", "🚩", "Флаги", emojis::Group::Flags),
 ];
+
+fn map_ru_query_to_en(ru: &str) -> &'static [&'static str] {
+    let lower = ru.trim().to_lowercase();
+    match lower.as_str() {
+        s if s.starts_with("улыб") || s.starts_with("смех") || s.starts_with("радос") || s == "хаха" || s == "весел" => {
+            &["smile", "grin", "laugh", "happy", "joy"]
+        }
+        s if s.starts_with("смущ") || s.starts_with("мил") => &["blush", "shy"],
+        s if s.starts_with("люб") || s.starts_with("серд") => &["heart", "love"],
+        s if s.starts_with("поцел") => &["kiss"],
+        s if s.starts_with("глаз") => &["eye", "eyes"],
+        s if s.starts_with("слез") || s.starts_with("плач") || s.starts_with("рыд") => &["cry", "sob", "tear"],
+        s if s.starts_with("груст") || s.starts_with("печал") || s.starts_with("тоск") => &["sad", "pensive", "disappointed"],
+        s if s.starts_with("зло") || s.starts_with("гнев") || s.starts_with("ярос") => &["angry", "rage", "mad"],
+        s if s.starts_with("шок") || s.starts_with("ужас") || s.starts_with("страх") => &["scream", "fear", "shock"],
+        s if s.starts_with("сон") || s.starts_with("спат") || s.starts_with("устал") => &["sleep", "yawn", "tired", "zzz"],
+        s if s.starts_with("дум") || s.starts_with("мысл") => &["thinking", "thought"],
+        s if s.starts_with("крут") || s.starts_with("очки") => &["cool", "sunglasses"],
+        s if s.starts_with("праздн") || s.starts_with("вечерин") || s.starts_with("ура") => &["party", "tada", "celebration"],
+        s if s.starts_with("ботан") || s.starts_with("умн") => &["nerd"],
+        s if s.starts_with("клоун") => &["clown"],
+        s if s.starts_with("призрак") || s.starts_with("привид") => &["ghost"],
+        s if s.starts_with("череп") || s.starts_with("смерт") => &["skull"],
+        s if s.starts_with("огонь") || s.starts_with("плам") || s.starts_with("жар") || s == "топ" => &["fire", "flame"],
+        s if s.starts_with("звезд") || s.starts_with("блеск") || s.starts_with("сиян") => &["star", "sparkle"],
+        s if s.starts_with("молни") || s.starts_with("гром") || s.starts_with("ток") => &["zap", "lightning"],
+        s if s.starts_with("взрыв") || s.starts_with("бум") => &["boom", "explosion", "collision"],
+
+        s if s.starts_with("рук") || s.starts_with("ладон") || s.starts_with("привет") || s.starts_with("пок") => {
+            &["hand", "wave", "raised"]
+        }
+        s if s.starts_with("лайк") || s.starts_with("класс") || s.starts_with("супер") => &["thumbs up"],
+        s if s.starts_with("дизлайк") || s.starts_with("плох") => &["thumbs down"],
+        s if s.starts_with("палец") || s.starts_with("пальц") => &["finger", "point"],
+        s if s.starts_with("кулак") => &["fist"],
+        s if s.starts_with("хлоп") || s.starts_with("аплодис") => &["clap"],
+        s if s.starts_with("молитв") || s.starts_with("спасиб") || s.starts_with("пожалуйст") => &["pray"],
+        s if s.starts_with("сил") || s.starts_with("бицепс") || s.starts_with("мышц") => &["muscle"],
+        s if s.starts_with("ок") => &["ok"],
+        s if s.starts_with("мир") || s.starts_with("побед") => &["peace", "victory"],
+
+        s if s.starts_with("кот") || s.starts_with("кош") => &["cat"],
+        s if s.starts_with("собак") || s.starts_with("пес") || s.starts_with("щен") => &["dog"],
+        s if s.starts_with("лис") => &["fox"],
+        s if s.starts_with("медвед") || s.starts_with("мишк") => &["bear"],
+        s if s.starts_with("панд") => &["panda"],
+        s if s.starts_with("лев") => &["lion"],
+        s if s.starts_with("тигр") => &["tiger"],
+        s if s.starts_with("обезьян") => &["monkey"],
+        s if s.starts_with("лягушк") || s.starts_with("жаб") => &["frog"],
+        s if s.starts_with("птиц") => &["bird"],
+        s if s.starts_with("пингвин") => &["penguin"],
+        s if s.starts_with("сов") => &["owl"],
+        s if s.starts_with("бабочк") => &["butterfly"],
+        s if s.starts_with("рыб") => &["fish"],
+        s if s.starts_with("кит") => &["whale"],
+        s if s.starts_with("краб") => &["crab"],
+        s if s.starts_with("осьминог") => &["octopus"],
+
+        s if s.starts_with("ед") || s.starts_with("кушат") => &["food"],
+        s if s.starts_with("пицц") => &["pizza"],
+        s if s.starts_with("бургер") => &["burger", "hamburger"],
+        s if s.starts_with("картошк") || s.starts_with("фри") => &["fries"],
+        s if s.starts_with("хотдог") => &["hotdog"],
+        s if s.starts_with("торт") || s.starts_with("пирож") => &["cake"],
+        s if s.starts_with("пончик") => &["donut"],
+        s if s.starts_with("шоколад") => &["chocolate"],
+        s if s.starts_with("печень") => &["cookie"],
+        s if s.starts_with("кофе") => &["coffee"],
+        s if s.starts_with("чай") => &["tea"],
+        s if s.starts_with("пив") => &["beer"],
+        s if s.starts_with("вин") || s.starts_with("бокал") => &["wine", "cheers"],
+        s if s.starts_with("яблок") => &["apple"],
+        s if s.starts_with("банан") => &["banana"],
+        s if s.starts_with("клубник") => &["strawberry"],
+        s if s.starts_with("арбуз") => &["watermelon"],
+
+        s if s.starts_with("машин") || s.starts_with("авто") => &["car", "automobile"],
+        s if s.starts_with("самолет") => &["airplane"],
+        s if s.starts_with("поезд") => &["train"],
+        s if s.starts_with("ракет") => &["rocket"],
+        s if s.starts_with("дом") => &["house", "building"],
+        s if s.starts_with("комп") || s.starts_with("ноут") => &["laptop", "computer"],
+        s if s.starts_with("телефон") => &["phone", "mobile"],
+        s if s.starts_with("наушник") => &["headphone"],
+        s if s.starts_with("музык") || s.starts_with("нот") => &["music", "note"],
+        s if s.starts_with("игр") || s.starts_with("гейм") => &["game", "video game"],
+        s if s.starts_with("деньг") || s.starts_with("рубл") || s.starts_with("доллар") => &["money", "dollar"],
+        s if s.starts_with("подар") => &["gift", "present"],
+        s if s.starts_with("замок") => &["lock"],
+        s if s.starts_with("ключ") => &["key"],
+        s if s.starts_with("галочк") => &["check"],
+        s if s.starts_with("крестик") => &["cross"],
+        s if s.starts_with("флаг") => &["flag"],
+        s if s.starts_with("росси") => &["russia"],
+        _ => &[],
+    }
+}
+
+fn matches_emoji_query(emoji: &emojis::Emoji, query: &str) -> bool {
+    if emoji.as_str().contains(query) {
+        return true;
+    }
+    let name = emoji.name();
+    if name.to_lowercase().contains(query) {
+        return true;
+    }
+    if let Some(sc) = emoji.shortcode() {
+        if sc.to_lowercase().contains(query) {
+            return true;
+        }
+    }
+    let en_keywords = map_ru_query_to_en(query);
+    for kw in en_keywords {
+        if name.to_lowercase().contains(kw) {
+            return true;
+        }
+        if let Some(sc) = emoji.shortcode() {
+            if sc.to_lowercase().contains(kw) {
+                return true;
+            }
+        }
+    }
+    false
+}
 
 #[derive(Clone, PartialEq)]
 struct EnrichedMessage {
@@ -285,8 +243,9 @@ where
     let has_scrollbar = create_signal(false);
     let is_attach_menu_open = create_signal(false);
     let is_emoji_modal_open = create_signal(false);
+    let is_emoji_expanded = create_signal(false);
     let emoji_search = create_signal(String::new());
-    let emoji_category = create_signal("all".to_string());
+    let emoji_category = create_signal("smileys".to_string());
 
     create_effect(move || {
         draft_message.track();
@@ -307,6 +266,7 @@ where
         event.prevent_default();
         is_attach_menu_open.set(false);
         is_emoji_modal_open.set(false);
+        is_emoji_expanded.set(false);
         on_send();
     };
 
@@ -319,10 +279,22 @@ where
     };
 
     let on_keydown = move |event: web_sys::KeyboardEvent| {
+        if event.key() == "Escape" {
+            if is_emoji_modal_open.get() {
+                is_emoji_modal_open.set(false);
+                is_emoji_expanded.set(false);
+                return;
+            }
+            if is_attach_menu_open.get() {
+                is_attach_menu_open.set(false);
+                return;
+            }
+        }
         if event.key() == "Enter" && !event.shift_key() {
             event.prevent_default();
             is_attach_menu_open.set(false);
             is_emoji_modal_open.set(false);
+            is_emoji_expanded.set(false);
             on_send();
         }
     };
@@ -330,6 +302,7 @@ where
     let on_open_editor = move |_| {
         is_attach_menu_open.set(false);
         is_emoji_modal_open.set(false);
+        is_emoji_expanded.set(false);
         modal_context.is_message_editor_open.set(true);
     };
 
@@ -339,6 +312,7 @@ where
         is_attach_menu_open.set(next);
         if next {
             is_emoji_modal_open.set(false);
+            is_emoji_expanded.set(false);
         }
     };
 
@@ -348,6 +322,8 @@ where
         is_emoji_modal_open.set(next);
         if next {
             is_attach_menu_open.set(false);
+        } else {
+            is_emoji_expanded.set(false);
         }
     };
 
@@ -367,10 +343,17 @@ where
                 (move || if is_attach_menu_open.get() || is_emoji_modal_open.get() {
                     view! {
                         div(
-                            class="chat-popover-backdrop",
+                            class=move || {
+                                if is_emoji_expanded.get() {
+                                    "chat-popover-backdrop is-dimmed"
+                                } else {
+                                    "chat-popover-backdrop"
+                                }
+                            },
                             on:click=move |_| {
                                 is_attach_menu_open.set(false);
                                 is_emoji_modal_open.set(false);
+                                is_emoji_expanded.set(false);
                             },
                         )
                     }
@@ -460,17 +443,41 @@ where
                 (move || if is_emoji_modal_open.get() {
                     view! {
                         div(
-                            class="chat-emoji-modal",
+                            class=move || {
+                                if is_emoji_expanded.get() {
+                                    "chat-emoji-modal is-expanded"
+                                } else {
+                                    "chat-emoji-modal"
+                                }
+                            },
                             on:click=move |e: web_sys::MouseEvent| e.stop_propagation(),
                         ) {
                             div(class="emoji-modal-header") {
                                 span(class="emoji-modal-title") { "😊 Эмодзи" }
                                 button(
                                     r#type="button",
-                                    class="modal-close-icon-btn",
-                                    title="Закрыть",
-                                    on:click=move |_| is_emoji_modal_open.set(false),
-                                ) { "✕" }
+                                    class="emoji-expand-toggle-btn",
+                                    title=move || if is_emoji_expanded.get() {
+                                        "Вернуть обычный размер"
+                                    } else {
+                                        "Развернуть окно эмодзи"
+                                    },
+                                    on:click=move |e: web_sys::MouseEvent| {
+                                        e.stop_propagation();
+                                        let next = !is_emoji_expanded.get();
+                                        is_emoji_expanded.set(next);
+                                    },
+                                ) {
+                                    (move || if is_emoji_expanded.get() {
+                                        view! {
+                                            img(src="/public/arrow2.svg", alt="Свернуть")
+                                        }
+                                    } else {
+                                        view! {
+                                            img(src="/public/arrow1.svg", alt="Развернуть")
+                                        }
+                                    })
+                                }
                             }
                             div(class="emoji-modal-search") {
                                 span(class="emoji-search-icon") {
@@ -486,22 +493,14 @@ where
                                 )
                             }
                             div(class="emoji-category-tabs") {
-                                button(
-                                    r#type="button",
-                                    class=move || if emoji_category.get_clone() == "all" {
-                                        "emoji-cat-btn active"
-                                    } else {
-                                        "emoji-cat-btn"
-                                    },
-                                    title="Все эмодзи",
-                                    on:click=move |_| emoji_category.set("all".to_string()),
-                                ) { "Все" }
-                                (EMOJI_CATALOG
+                                (EMOJI_GROUPS
                                     .iter()
-                                    .map(|(cat_id, cat_icon, _)| {
+                                    .map(|(cat_id, cat_icon, cat_title, _)| {
                                         let id_str = (*cat_id).to_string();
                                         let id_check = id_str.clone();
                                         let icon_str = (*cat_icon).to_string();
+                                        let icon_url = emoji_to_twemoji_url(cat_icon);
+                                        let title_str = (*cat_title).to_string();
                                         view! {
                                             button(
                                                 r#type="button",
@@ -510,8 +509,15 @@ where
                                                 } else {
                                                     "emoji-cat-btn"
                                                 },
+                                                title=title_str,
                                                 on:click=move |_| emoji_category.set(id_str.clone()),
-                                            ) { (icon_str) }
+                                            ) {
+                                                img(
+                                                    src=icon_url,
+                                                    alt=icon_str,
+                                                    draggable="false",
+                                                )
+                                            }
                                         }
                                     })
                                     .collect::<Vec<View>>())
@@ -520,41 +526,53 @@ where
                                 (move || {
                                     let query = emoji_search.get_clone().trim().to_lowercase();
                                     let active_cat = emoji_category.get_clone();
-                                    let mut items: Vec<View> = Vec::new();
 
-                                    for (cat_id, _, list) in EMOJI_CATALOG {
-                                        if active_cat != "all" && active_cat != *cat_id {
-                                            continue;
-                                        }
-                                        for (ch, keywords) in *list {
-                                            if !query.is_empty()
-                                                && !keywords.contains(&query)
-                                                && !ch.contains(&query)
-                                            {
-                                                continue;
-                                            }
-                                            let emoji_str = (*ch).to_string();
-                                            let emoji_click = emoji_str.clone();
-                                            items.push(view! {
-                                                button(
-                                                    r#type="button",
-                                                    class="emoji-grid-item",
-                                                    on:click=move |_| {
-                                                        let to_add = emoji_click.clone();
-                                                        draft_message.update(|msg| msg.push_str(&to_add));
-                                                    },
-                                                ) { (emoji_str) }
-                                            });
-                                        }
-                                    }
+                                    let list: Vec<&'static emojis::Emoji> = if !query.is_empty() {
+                                        emojis::iter()
+                                            .filter(|e| matches_emoji_query(e, &query))
+                                            .take(150)
+                                            .collect()
+                                    } else if let Some((_, _, _, grp)) = EMOJI_GROUPS.iter().find(|(id, _, _, _)| *id == active_cat) {
+                                        grp.emojis().collect()
+                                    } else {
+                                        emojis::Group::SmileysAndEmotion.emojis().collect()
+                                    };
 
-                                    if items.is_empty() {
+                                    if list.is_empty() {
                                         view! {
                                             div(class="emoji-empty-state") {
                                                 "Эмодзи не найдены"
                                             }
                                         }
                                     } else {
+                                        let items: Vec<View> = list
+                                            .into_iter()
+                                            .map(|e| {
+                                                let emoji_char = e.as_str().to_string();
+                                                let emoji_click = emoji_char.clone();
+                                                let emoji_title = e.name().to_string();
+                                                let emoji_url = emoji_to_twemoji_url(&emoji_char);
+                                                view! {
+                                                    button(
+                                                        r#type="button",
+                                                        class="emoji-grid-item",
+                                                        title=emoji_title,
+                                                        on:click=move |_| {
+                                                            let to_add = emoji_click.clone();
+                                                            draft_message.update(|msg| msg.push_str(&to_add));
+                                                        },
+                                                    ) {
+                                                        img(
+                                                            src=emoji_url,
+                                                            alt=emoji_char,
+                                                            loading="lazy",
+                                                            draggable="false",
+                                                        )
+                                                    }
+                                                }
+                                            })
+                                            .collect();
+
                                         view! {
                                             div(class="emoji-grid") {
                                                 (items)

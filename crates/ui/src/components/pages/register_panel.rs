@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
-use gilvave_core::dto::user::RegisterRequest;
 use serde::Deserialize;
+use std::collections::HashMap;
 use sycamore::{
     futures::spawn_local_scoped,
     prelude::*,
@@ -20,6 +18,7 @@ use crate::{
     },
     http::api::Api,
 };
+use gilvave_core::dto::users::RegisterRequest;
 
 #[derive(Props)]
 pub struct RegisterFormProps {

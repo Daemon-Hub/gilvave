@@ -1,5 +1,8 @@
-use crate::utils::to_local_datetime;
-use gilvave_core::dto::message::MessageView;
+use crate::{
+    components::common::{parse_message_segments, MessageSegment},
+    utils::to_local_datetime,
+};
+use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHARS};
 use sycamore::prelude::*;
 use time::format_description::parse_borrowed;
 
@@ -73,12 +76,9 @@ pub fn MessageItem(
 
     let full_content = message_view.content;
     let char_count = full_content.chars().count();
-    let is_long = char_count > gilvave_core::validation::MESSAGE_COLLAPSE_CHARS;
+    let is_long = char_count > MESSAGE_COLLAPSE_CHARS;
     let truncated_content = if is_long {
-        let prefix: String = full_content
-            .chars()
-            .take(gilvave_core::validation::MESSAGE_COLLAPSE_CHARS)
-            .collect();
+        let prefix: String = full_content.chars().take(MESSAGE_COLLAPSE_CHARS).collect();
         format!("{prefix}…")
     } else {
         full_content.clone()
@@ -99,7 +99,28 @@ pub fn MessageItem(
             div(class="message-body") {
                 (header_node)
                 div(class="message-bubble") {
-                    p { (displayed_text.get_clone()) }
+                    p {
+                        (move || {
+                            let text = displayed_text.get_clone();
+                            let segments = parse_message_segments(&text);
+                            let views: Vec<View> = segments
+                                .into_iter()
+                                .map(|seg| match seg {
+                                    MessageSegment::Text(t) => view! { (t) },
+                                    MessageSegment::Emoji { char, url, name } => view! {
+                                        img(
+                                            class="chat-inline-emoji",
+                                            src=url,
+                                            alt=char,
+                                            title=name,
+                                            draggable="false",
+                                        )
+                                    },
+                                })
+                                .collect();
+                            views
+                        })
+                    }
                     (if is_long {
                         let toggle_label = move || {
                             if is_expanded.get() {

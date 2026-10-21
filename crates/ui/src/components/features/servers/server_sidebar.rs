@@ -1,5 +1,5 @@
 use gilvave_core::{
-    dto::server::{Server, ServerCreateInfo},
+    dto::servers::{Server, ServerCreateInfo},
     ids::{ServerId, UserId},
 };
 use sycamore::{futures::spawn_local_scoped, prelude::*};
@@ -77,12 +77,19 @@ pub fn open_join_modal(context: CreateServerContext) {
             owner_id: UserId::default(),
         },
     ];
-    context.public_servers.set(hardcoded);
+    context.public_servers_page.set(1);
+    context.has_more_public_servers.set(false);
     spawn_local_scoped(async move {
-        if let Ok((servers, _has_more)) = Api::get_public_servers(1).await
-            && !servers.is_empty()
-        {
-            context.public_servers.set(servers);
+        match Api::get_public_servers(1).await {
+            Ok((servers, has_more)) => {
+                context.public_servers.set(servers);
+                context.has_more_public_servers.set(has_more);
+            }
+            Err(_) => {
+                if context.public_servers.get_clone().is_empty() {
+                    context.public_servers.set(hardcoded);
+                }
+            }
         }
     });
 }
@@ -97,6 +104,8 @@ pub fn ServerSidebar() -> View {
         public_servers: create_signal::<Vec<Server>>(vec![]),
         expanded_id: create_signal::<Option<ServerId>>(None),
         from_dashboard: create_signal(false),
+        public_servers_page: create_signal(1),
+        has_more_public_servers: create_signal(false),
     };
     provide_context(context);
 

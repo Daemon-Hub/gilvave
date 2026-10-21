@@ -1,7 +1,7 @@
 use gilvave_core::{
     dto::{
         command::{CommandArgs, CommandResponse, CommandResult},
-        user::SessionView,
+        users::SessionView,
     },
     settings::collect_device_info,
 };
@@ -59,9 +59,10 @@ fn format_created_date(dt: time::OffsetDateTime) -> String {
     )
 }
 
-async fn fetch_sessions_data(sessions_sig: Signal<Vec<SessionView>>, loading_sig: Signal<bool>) {
-    loading_sig.set(true);
-
+async fn fetch_sessions_data(
+    sessions_sig: Signal<Vec<SessionView>>,
+    initial_load_sig: Signal<bool>,
+) {
     // 1. Collect real device info from Tauri desktop or Web browser runtime
     let current_device = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
         CommandResult::Ok(CommandResponse::GetDeviceInfo(info)) => info,
@@ -98,42 +99,51 @@ async fn fetch_sessions_data(sessions_sig: Signal<Vec<SessionView>>, loading_sig
         }
         Err(err) => {
             tracing::error!("[SessionsTab] Failed to fetch sessions: {:?}", err);
-            // Fallback: show the current local device as the active session
-            let now = time::OffsetDateTime::now_utc();
-            let fallback_list = vec![
-                SessionView {
-                    id: "curr-session-local".to_string(),
-                    device_info: current_device,
-                    ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
-                    location: Some("Текущее рабочее место".to_string()),
-                    last_used_at: now,
-                    created_at: now,
-                    is_current: true,
-                },
-            ];
-            sessions_sig.set(fallback_list);
+            // Fallback: show the current local device as the active session if list was empty
+            if sessions_sig.with(|v| v.is_empty()) {
+                let now = time::OffsetDateTime::now_utc();
+                let fallback_list = vec![
+                    SessionView {
+                        id: "curr-session-local".to_string(),
+                        device_info: current_device,
+                        ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
+                        location: Some("Текущее рабочее место".to_string()),
+                        last_used_at: now,
+                        created_at: now,
+                        is_current: true,
+                    },
+                ];
+                sessions_sig.set(fallback_list);
+            }
         }
     }
 
-    loading_sig.set(false);
+    initial_load_sig.set(false);
 }
 
 #[component]
 pub fn SessionsTab() -> View {
     let sessions = create_signal::<Vec<SessionView>>(Vec::new());
-    let is_loading = create_signal(true);
+    let is_initial_load = create_signal(true);
+    let is_refreshing = create_signal(false);
     let status_msg = create_signal::<Option<(String, bool)>>(None);
     let confirm_terminate_all = create_signal(false);
 
     // Initial load
     spawn_local_scoped(async move {
-        fetch_sessions_data(sessions, is_loading).await;
+        fetch_sessions_data(sessions, is_initial_load).await;
     });
 
     let on_refresh = move |_| {
+        if is_refreshing.get() {
+            return;
+        }
         spawn_local_scoped(async move {
-            fetch_sessions_data(sessions, is_loading).await;
-            status_msg.set(Some(("Список сессий обновлён.".to_string(), false)));
+            is_refreshing.set(true);
+            let fetch_fut = fetch_sessions_data(sessions, is_initial_load);
+            let timer_fut = gloo_timers::future::sleep(core::time::Duration::from_millis(600));
+            futures_util::join!(fetch_fut, timer_fut);
+            is_refreshing.set(false);
         });
     };
 
@@ -185,14 +195,6 @@ pub fn SessionsTab() -> View {
                     p(class="sessions-header-desc") {
                         "Список устройств и приложений, где выполнен вход в вашу учётную запись."
                     }
-                }
-                button(
-                    class="sessions-refresh-btn",
-                    on:click=on_refresh,
-                    title="Обновить список сессий",
-                ) {
-                    RefreshCwIcon()
-                    span { "Обновить" }
                 }
             }
 
@@ -273,7 +275,7 @@ pub fn SessionsTab() -> View {
                                 }
                             }
                         }
-                    } else if is_loading.get() {
+                    } else if is_initial_load.get() {
                         view! {
                             div(class="session-card-skeleton") {
                                 span { "Загрузка информации о текущем устройстве..." }
@@ -300,22 +302,39 @@ pub fn SessionsTab() -> View {
                         })
                     }
 
-                    (move || {
-                        let has_others = other_sessions.with(|v| !v.is_empty());
-                        if has_others && !confirm_terminate_all.get() {
-                            view! {
-                                button(
-                                    class="terminate-all-action-btn",
-                                    on:click=move |_| confirm_terminate_all.set(true),
-                                ) {
-                                    LogOutIcon()
-                                    span { "Завершить все остальные" }
+                    div(class="sessions-section-actions") {
+                        (move || {
+                            let has_others = other_sessions.with(|v| !v.is_empty());
+                            if has_others && !confirm_terminate_all.get() {
+                                view! {
+                                    button(
+                                        class="terminate-all-action-btn",
+                                        on:click=move |_| confirm_terminate_all.set(true),
+                                    ) {
+                                        LogOutIcon()
+                                        span { "Завершить все остальные" }
+                                    }
                                 }
+                            } else {
+                                view! {}
                             }
-                        } else {
-                            view! {}
+                        })
+
+                        button(
+                            class=move || {
+                                if is_refreshing.get() {
+                                    "sessions-refresh-icon-btn is-loading"
+                                } else {
+                                    "sessions-refresh-icon-btn"
+                                }
+                            },
+                            disabled=is_refreshing.get(),
+                            on:click=on_refresh,
+                            title="Обновить список сессий",
+                        ) {
+                            RefreshCwIcon()
                         }
-                    })
+                    }
                 }
 
                 // Confirmation Prompt for Terminate All
@@ -353,7 +372,7 @@ pub fn SessionsTab() -> View {
                 // Other sessions list or empty state
                 (move || {
                     let is_empty = other_sessions.with(|v| v.is_empty());
-                    if is_loading.get() {
+                    if is_initial_load.get() {
                         view! {
                             div(class="sessions-loading-state") {
                                 span { "Загрузка списка сессий..." }

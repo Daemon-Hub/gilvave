@@ -111,7 +111,14 @@
         overflow-y: auto;
         overflow-x: hidden;
         padding: 4px 0;
-        @include scrollbar(3px, $color-white-alpha-10);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
     }
 
     .discord-sidebar-bottom {
@@ -126,9 +133,10 @@
     }
 
     .separator {
-        width: 32px;
+        width: 44px;
         height: 2px;
         background: $gradient-server-separator;
+        border-radius: 1px;
         margin: 2px 0;
         flex-shrink: 0;
     }
@@ -227,13 +235,26 @@
         padding: 10px 0 8px;
         gap: 4px;
 
+        .home-avatar-btn {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            min-height: 42px;
+            max-width: 42px;
+            max-height: 42px;
+        }
+
         .server-icon {
             width: 42px;
             height: 42px;
+            min-width: 42px;
+            min-height: 42px;
+            max-width: 42px;
+            max-height: 42px;
         }
 
         .separator {
-            width: 24px;
+            width: 38px;
             height: 2px;
             margin: 1px 0;
         }
@@ -331,20 +352,24 @@
     .header-server-icon {
         width: 36px;
         height: 36px;
+        min-width: 36px;
+        min-height: 36px;
         border-radius: $radius-md;
         overflow: hidden;
-        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+        background: $gradient-server-icon;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         box-shadow: 0 2px 8px $color-black-alpha-35;
-        border: 1px solid $color-white-alpha-10;
+        border: none;
+        position: relative;
+        z-index: 1;
 
         span {
             font-size: 16px;
             font-weight: 700;
-            color: $color-text-white;
+            color: $color-text-on-accent;
             line-height: 1;
             user-select: none;
         }

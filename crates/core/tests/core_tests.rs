@@ -1,8 +1,8 @@
 use gilvave_core::{
     dto::{
         command::{CommandArgs, CommandResponse, CommandResult},
-        message::MessageView,
-        server::Server,
+        messages::MessageView,
+        servers::Server,
         ws::{ServerRecieve, ServerSend},
     },
     error::{ErrorInfo, ErrorMessage},

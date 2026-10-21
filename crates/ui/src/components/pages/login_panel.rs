@@ -1,17 +1,19 @@
-use gilvave_core::dto::command::{CommandArgs, CommandResponse, CommandResult};
-use gilvave_core::dto::user::LoginRequest;
-use sycamore::web::console_error;
-use sycamore::web::events::SubmitEvent;
+use sycamore::web::{console_error, events::SubmitEvent};
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
-use crate::components::common::{ActiveScreen, ScreenWrapper, classes};
-use crate::components::features::auth::social_buttons::SocialButtons;
-use crate::components::ui::divider::Divider;
-use crate::components::ui::input_group::InputGroup;
-use crate::components::ui::spinner::Spinner;
-use crate::components::ui::submit_button::SubmitButton;
+use crate::components::{
+    common::{ActiveScreen, ScreenWrapper, classes},
+    features::auth::social_buttons::SocialButtons,
+    ui::{
+        divider::Divider, input_group::InputGroup, spinner::Spinner, submit_button::SubmitButton,
+    },
+};
 use crate::http::api::Api;
 use crate::utils::invoke_command;
+use gilvave_core::dto::{
+    command::{CommandArgs, CommandResponse, CommandResult},
+    users::LoginRequest,
+};
 
 #[derive(Props)]
 pub struct LoginFormProps {

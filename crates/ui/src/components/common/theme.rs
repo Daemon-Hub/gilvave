@@ -291,225 +291,7 @@ impl CustomTheme {
     }
 
     pub fn catalog_themes() -> Vec<Self> {
-        vec![
-            Self {
-                id: "catppuccin-mocha".to_string(),
-                name: "Catppuccin Mocha".to_string(),
-                author: "catppuccin".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Уютная пастельная тёмная тема в кофейно-лавандовых тонах с мягким контрастом."
-                    .to_string(),
-                base: "standard".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#11111b".to_string()),
-                    bg_sidebar: Some("#11111b".to_string()),
-                    bg_channels: Some("#181825".to_string()),
-                    bg_chat: Some("#1e1e2e".to_string()),
-                    bg_input: Some("#313244".to_string()),
-                    bg_modal: Some("#1e1e2e".to_string()),
-                    bg_message: Some("rgba(17, 17, 27, 0.55)".to_string()),
-                    border: Some("#45475a".to_string()),
-                    primary: Some("#cba6f7".to_string()),
-                    primary_end: Some("#f5c2e7".to_string()),
-                    accent: Some("#89b4fa".to_string()),
-                    accent_warm: Some("#fab387".to_string()),
-                    text_heading: Some("#cdd6f4".to_string()),
-                    text_chat: Some("#bac2de".to_string()),
-                    text_muted: Some("#7f849c".to_string()),
-                    text_author: Some("#89dceb".to_string()),
-                    online: Some("#a6e3a1".to_string()),
-                    idle: Some("#f9e2af".to_string()),
-                    danger: Some("#f38ba8".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "tokyo-night".to_string(),
-                name: "Tokyo Night".to_string(),
-                author: "enkia".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Неоновые огни ночного Токио: глубокий индиго, электрический голубой и пурпурный."
-                    .to_string(),
-                base: "advanced".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#0f0f17".to_string()),
-                    bg_sidebar: Some("#101018".to_string()),
-                    bg_channels: Some("#16161e".to_string()),
-                    bg_chat: Some("#1a1b26".to_string()),
-                    bg_input: Some("#24283b".to_string()),
-                    bg_modal: Some("#16161e".to_string()),
-                    bg_message: Some("rgba(16, 16, 24, 0.6)".to_string()),
-                    border: Some("#292e42".to_string()),
-                    primary: Some("#7aa2f7".to_string()),
-                    primary_end: Some("#bb9af7".to_string()),
-                    accent: Some("#7dcfff".to_string()),
-                    accent_warm: Some("#e0af68".to_string()),
-                    text_heading: Some("#c0caf5".to_string()),
-                    text_chat: Some("#a9b1d6".to_string()),
-                    text_muted: Some("#565f89".to_string()),
-                    text_author: Some("#7dcfff".to_string()),
-                    online: Some("#73daca".to_string()),
-                    idle: Some("#e0af68".to_string()),
-                    danger: Some("#f7768e".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "dracula-official".to_string(),
-                name: "Dracula Official".to_string(),
-                author: "zenorocha".to_string(),
-                version: "1.2.0".to_string(),
-                description: "Классическая вампирская тёмная палитра с яркими фиолетовыми, розовыми и мятными акцентами."
-                    .to_string(),
-                base: "standard".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#191a21".to_string()),
-                    bg_sidebar: Some("#191a21".to_string()),
-                    bg_channels: Some("#21222c".to_string()),
-                    bg_chat: Some("#282a36".to_string()),
-                    bg_input: Some("#343746".to_string()),
-                    bg_modal: Some("#21222c".to_string()),
-                    bg_message: Some("rgba(25, 26, 33, 0.58)".to_string()),
-                    border: Some("#44475a".to_string()),
-                    primary: Some("#bd93f9".to_string()),
-                    primary_end: Some("#ff79c6".to_string()),
-                    accent: Some("#8be9fd".to_string()),
-                    accent_warm: Some("#ffb86c".to_string()),
-                    text_heading: Some("#f8f8f2".to_string()),
-                    text_chat: Some("#e6e6e0".to_string()),
-                    text_muted: Some("#6272a4".to_string()),
-                    text_author: Some("#8be9fd".to_string()),
-                    online: Some("#50fa7b".to_string()),
-                    idle: Some("#f1fa8c".to_string()),
-                    danger: Some("#ff5555".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "nord-polar".to_string(),
-                name: "Nord Polar Night".to_string(),
-                author: "arcticicestudio".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Холодная арктическая палитра: морозный синий, ледяной циан и спокойный сланцевый фон."
-                    .to_string(),
-                base: "standard".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#242933".to_string()),
-                    bg_sidebar: Some("#242933".to_string()),
-                    bg_channels: Some("#2e3440".to_string()),
-                    bg_chat: Some("#3b4252".to_string()),
-                    bg_input: Some("#434c5e".to_string()),
-                    bg_modal: Some("#2e3440".to_string()),
-                    bg_message: Some("rgba(36, 41, 51, 0.55)".to_string()),
-                    border: Some("#4c566a".to_string()),
-                    primary: Some("#88c0d0".to_string()),
-                    primary_end: Some("#81a1c1".to_string()),
-                    accent: Some("#8fbcbb".to_string()),
-                    accent_warm: Some("#d08770".to_string()),
-                    text_heading: Some("#eceff4".to_string()),
-                    text_chat: Some("#e5e9f0".to_string()),
-                    text_muted: Some("#9099ab".to_string()),
-                    text_author: Some("#88c0d0".to_string()),
-                    online: Some("#a3be8c".to_string()),
-                    idle: Some("#ebcb8b".to_string()),
-                    danger: Some("#bf616a".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "cyberpunk-2077".to_string(),
-                name: "Cyberpunk 2077".to_string(),
-                author: "nightcity".to_string(),
-                version: "2.0.77".to_string(),
-                description: "Высококонтрастный неон Найт-Сити: горячая маджента, электрический циан и хромово-жёлтый."
-                    .to_string(),
-                base: "advanced".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#070510".to_string()),
-                    bg_sidebar: Some("#090714".to_string()),
-                    bg_channels: Some("#100c22".to_string()),
-                    bg_chat: Some("#140f2d".to_string()),
-                    bg_input: Some("#1e1740".to_string()),
-                    bg_modal: Some("#100c22".to_string()),
-                    bg_message: Some("rgba(9, 7, 20, 0.68)".to_string()),
-                    border: Some("#382368".to_string()),
-                    primary: Some("#ff2a6d".to_string()),
-                    primary_end: Some("#05d9e8".to_string()),
-                    accent: Some("#05d9e8".to_string()),
-                    accent_warm: Some("#fcee09".to_string()),
-                    text_heading: Some("#d1f7ff".to_string()),
-                    text_chat: Some("#c2e8f5".to_string()),
-                    text_muted: Some("#7a6b9e".to_string()),
-                    text_author: Some("#fcee09".to_string()),
-                    online: Some("#00ff9f".to_string()),
-                    idle: Some("#fcee09".to_string()),
-                    danger: Some("#ff2a6d".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "rose-pine".to_string(),
-                name: "Rosé Pine".to_string(),
-                author: "rose-pine".to_string(),
-                version: "1.1.0".to_string(),
-                description: "Натуральная сосновая хвоя, искусственный мех и бархатные розово-золотые сумерки."
-                    .to_string(),
-                base: "standard".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#12101a".to_string()),
-                    bg_sidebar: Some("#12101a".to_string()),
-                    bg_channels: Some("#191724".to_string()),
-                    bg_chat: Some("#1f1d2e".to_string()),
-                    bg_input: Some("#26233a".to_string()),
-                    bg_modal: Some("#191724".to_string()),
-                    bg_message: Some("rgba(18, 16, 26, 0.58)".to_string()),
-                    border: Some("#403d52".to_string()),
-                    primary: Some("#ebbcba".to_string()),
-                    primary_end: Some("#c4a7e7".to_string()),
-                    accent: Some("#9ccfd8".to_string()),
-                    accent_warm: Some("#f6c177".to_string()),
-                    text_heading: Some("#e0def4".to_string()),
-                    text_chat: Some("#d2d0e8".to_string()),
-                    text_muted: Some("#6e6a86".to_string()),
-                    text_author: Some("#9ccfd8".to_string()),
-                    online: Some("#31748f".to_string()),
-                    idle: Some("#f6c177".to_string()),
-                    danger: Some("#eb6f92".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-            Self {
-                id: "catppuccin-latte".to_string(),
-                name: "Catppuccin Latte".to_string(),
-                author: "catppuccin".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Нежная, тёплая и контрастная светлая палитра Catppuccin в молочно-кофейных тонах."
-                    .to_string(),
-                base: "light".to_string(),
-                palette: ThemePalette {
-                    bg_page: Some("#dce0e8".to_string()),
-                    bg_sidebar: Some("#e6e9ef".to_string()),
-                    bg_channels: Some("#eff1f5".to_string()),
-                    bg_chat: Some("#ffffff".to_string()),
-                    bg_input: Some("#e6e9ef".to_string()),
-                    bg_modal: Some("#ffffff".to_string()),
-                    bg_message: Some("rgba(230, 233, 239, 0.6)".to_string()),
-                    border: Some("#ccd0da".to_string()),
-                    primary: Some("#8839ef".to_string()),
-                    primary_end: Some("#ea76cb".to_string()),
-                    accent: Some("#1e66f5".to_string()),
-                    accent_warm: Some("#fe640b".to_string()),
-                    text_heading: Some("#4c4f69".to_string()),
-                    text_chat: Some("#5c5f77".to_string()),
-                    text_muted: Some("#8c8fa1".to_string()),
-                    text_author: Some("#1e66f5".to_string()),
-                    online: Some("#40a02b".to_string()),
-                    idle: Some("#df8e1d".to_string()),
-                    danger: Some("#d20f39".to_string()),
-                },
-                variables: BTreeMap::new(),
-            },
-        ]
+        vec![]
     }
 
     pub fn template_json() -> String {
@@ -1071,6 +853,65 @@ impl CustomTheme {
     }
 }
 
+impl From<gilvave_core::dto::users::Theme> for CustomTheme {
+    fn from(t: gilvave_core::dto::users::Theme) -> Self {
+        if let Ok(mut c) = serde_json::from_value::<CustomTheme>(t.config.clone()) {
+            if c.name.is_empty() {
+                c.name = t.name;
+            }
+            if c.author.is_empty() {
+                c.author = t.author;
+            }
+            if c.description.is_empty() {
+                c.description = t.description;
+            }
+            if c.id.is_empty() {
+                c.id = sanitize_id(&c.name);
+            }
+            return c;
+        }
+
+        #[derive(Deserialize)]
+        struct PartialConfig {
+            #[serde(default)]
+            id: Option<String>,
+            #[serde(default = "default_version")]
+            version: String,
+            #[serde(default = "default_base")]
+            base: String,
+            #[serde(default)]
+            palette: ThemePalette,
+            #[serde(default)]
+            variables: BTreeMap<String, String>,
+        }
+
+        if let Ok(p) = serde_json::from_value::<PartialConfig>(t.config) {
+            let id = p.id.filter(|s| !s.is_empty()).unwrap_or_else(|| sanitize_id(&t.name));
+            CustomTheme {
+                id,
+                name: t.name,
+                author: t.author,
+                version: p.version,
+                description: t.description,
+                base: p.base,
+                palette: p.palette,
+                variables: p.variables,
+            }
+        } else {
+            CustomTheme {
+                id: sanitize_id(&t.name),
+                name: t.name,
+                author: t.author,
+                version: default_version(),
+                description: t.description,
+                base: default_base(),
+                palette: ThemePalette::default(),
+                variables: BTreeMap::new(),
+            }
+        }
+    }
+}
+
 fn sanitize_id(input: &str) -> String {
     input
         .trim()
@@ -1193,13 +1034,24 @@ mod tests {
         assert!(css.contains("--color-bg-panel:"));
         assert!(css.contains("--color-primary:"));
 
-        for starter in CustomTheme::catalog_themes() {
-            let json = starter.to_pretty_json();
-            let roundtrip = CustomTheme::from_json_str(&json).expect("catalog theme roundtrip");
-            assert_eq!(roundtrip.id, starter.id);
-            assert!(!roundtrip.to_active_css().is_empty());
-            assert!(!roundtrip.to_preview_css().is_empty());
-        }
+        let server_theme = gilvave_core::dto::users::Theme {
+            name: "Server Dark".to_string(),
+            author: "Gilvave".to_string(),
+            description: "A dark theme from server".to_string(),
+            config: serde_json::json!({
+                "id": "server-dark",
+                "base": "standard",
+                "palette": {
+                    "primary": "#89b4fa"
+                }
+            }),
+            created_at: time::OffsetDateTime::UNIX_EPOCH,
+            updated_at: time::OffsetDateTime::UNIX_EPOCH,
+        };
+        let converted: CustomTheme = server_theme.into();
+        assert_eq!(converted.name, "Server Dark");
+        assert_eq!(converted.author, "Gilvave");
+        assert_eq!(converted.palette.primary.as_deref(), Some("#89b4fa"));
     }
 
     #[test]

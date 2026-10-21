@@ -2,6 +2,8 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use wasm_bindgen::JsCast;
 use crate::components::features::profile::sessions_tab::SessionsTab;
+use crate::components::ui::ShowMoreBanner;
+use crate::http::api::Api;
 use crate::components::ui::icons::{
     ArrowLeftIcon, CatalogIcon, CheckIcon, CloseSmallIcon, CodeIcon,
     DownloadIcon, EditIcon, FileTextIcon, LockIcon, LogOutIcon, MonitorIcon, PaletteIcon, TrashIcon,
@@ -854,7 +856,18 @@ pub fn ThemeCatalogModal() -> View {
     let custom_themes_sig = modal_context.custom_themes;
 
     let search_query = create_signal(String::new());
-    let server_themes = create_signal::<Vec<CustomTheme>>(CustomTheme::catalog_themes());
+    let server_themes = create_signal::<Vec<CustomTheme>>(vec![]);
+    let current_page = create_signal::<i64>(1);
+    let has_more = create_signal::<bool>(false);
+    let is_loading = create_signal::<bool>(false);
+    let is_at_bottom = create_signal::<bool>(false);
+    let body_ref = create_node_ref();
+
+    let is_banner_visible = create_signal(false);
+    create_effect(move || {
+        let visible = has_more.get() && (is_at_bottom.get() || is_loading.get());
+        is_banner_visible.set(visible);
+    });
 
     // Keep preview CSS synced for any themes returned from the server catalog
     create_effect(move || {
@@ -867,19 +880,53 @@ pub fn ThemeCatalogModal() -> View {
         CustomTheme::sync_preview_styles(&combined);
     });
 
-    // Fetch public themes from the server (similar to open_join_modal in server_sidebar.rs)
+    // Fetch initial public themes from the server
+    is_loading.set(true);
     spawn_local_scoped(async move {
-        // TODO: Сделать запрос на сервер для получения списка публичных тем каталога
-        // (аналогично Api::get_public_servers(1).await в server_sidebar.rs):
-        //
-        // if let Ok(themes) = Api::get_public_themes().await
-        //     && !themes.is_empty()
-        // {
-        //     if modal_context.is_theme_catalog_open.get() {
-        //         server_themes.set(themes);
-        //     }
-        // }
+        if let Ok((themes, more)) = Api::get_themes_catalog(1).await {
+            let customs: Vec<CustomTheme> = themes.into_iter().map(CustomTheme::from).collect();
+            if modal_context.is_theme_catalog_open.get() {
+                server_themes.set(customs);
+                has_more.set(more);
+            }
+        }
+        is_loading.set(false);
     });
+
+    let check_bottom = move || {
+        if let Some(node) = body_ref.try_get() {
+            let el = node.unchecked_into::<web_sys::HtmlElement>();
+            let top = el.scroll_top();
+            let sh = el.scroll_height();
+            let ch = el.client_height();
+            let distance = sh - ch - top;
+            is_at_bottom.set(distance <= 64);
+        }
+    };
+
+    let on_scroll = move |_| {
+        check_bottom();
+    };
+
+    let handle_load_more = move |_| {
+        if is_loading.get() || !has_more.get() {
+            return;
+        }
+        is_loading.set(true);
+        let next_page = current_page.get() + 1;
+        spawn_local_scoped(async move {
+            if let Ok((new_themes, more)) = Api::get_themes_catalog(next_page).await {
+                let new_customs: Vec<CustomTheme> = new_themes.into_iter().map(CustomTheme::from).collect();
+                let mut current = server_themes.get_clone();
+                current.extend(new_customs);
+                server_themes.set(current);
+                current_page.set(next_page);
+                has_more.set(more);
+                is_at_bottom.set(false);
+            }
+            is_loading.set(false);
+        });
+    };
 
     let close_catalog = move |_| {
         modal_context.is_theme_catalog_open.set(false);
@@ -917,7 +964,11 @@ pub fn ThemeCatalogModal() -> View {
                     }
                 }
 
-                div(class="join-modal-body theme-catalog-body") {
+                div(
+                    class="join-modal-body theme-catalog-body",
+                    r#ref=body_ref,
+                    on:scroll=on_scroll,
+                ) {
                     (move || {
                         let query = search_query.get_clone().trim().to_lowercase();
                         let filtered: Vec<CustomTheme> = server_themes
@@ -1052,7 +1103,14 @@ pub fn ThemeCatalogModal() -> View {
                             }
                         }
                     })
+
                 }
+
+                ShowMoreBanner(
+                    is_visible=is_banner_visible,
+                    is_loading=is_loading,
+                    on_click=handle_load_more,
+                )
 
                 div(class="join-modal-footer") {
                     button(class="back-btn", on:click=close_catalog) {

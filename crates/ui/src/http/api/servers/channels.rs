@@ -1,5 +1,5 @@
 use gilvave_core::{
-    dto::channel::{ChannelCreateInfo, ChannelView},
+    dto::servers::channels::{ChannelCreateInfo, ChannelView},
     error::ErrorInfo,
     ids::ServerId,
     settings::BASE_HTTP_URL,

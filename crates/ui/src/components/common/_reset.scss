@@ -1,8 +1,9 @@
-// ─── Box sizing ──────────────────────────────────────────────────────────────
+// ─── Box sizing & Mobile Tap Highlight ──────────────────────────────────────
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 // ─── Margins / paddings ───────────────────────────────────────────────────────
@@ -46,6 +47,9 @@ button {
     border: none;
     cursor: pointer;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 // ─── Remove list styles ───────────────────────────────────────────────────────

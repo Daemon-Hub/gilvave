@@ -1,12 +1,13 @@
+use sycamore::prelude::*;
+
 use gilvave_core::{
     dto::{
-        channel::ChannelView,
-        message::MessageView,
-        server::{MemberView, Server, ServerSmallPart},
+        messages::MessageView,
+        servers::channels::{ChannelType, ChannelView},
+        servers::{MemberView, Server, ServerSmallPart},
     },
     ids::ServerId,
 };
-use sycamore::prelude::*;
 
 #[derive(Clone, Copy)]
 pub struct ChannelContext {
@@ -39,6 +40,8 @@ pub struct CreateServerContext {
     pub public_servers: Signal<Vec<Server>>,
     pub expanded_id: Signal<Option<ServerId>>,
     pub from_dashboard: Signal<bool>,
+    pub public_servers_page: Signal<u32>,
+    pub has_more_public_servers: Signal<bool>,
 }
 
 #[derive(Clone, Copy)]
@@ -64,7 +67,7 @@ use super::theme::{AppTheme, CustomTheme};
 pub struct UiModalContext {
     pub is_server_settings_open: Signal<bool>,
     pub is_create_channel_open: Signal<bool>,
-    pub create_channel_type: Signal<gilvave_core::dto::channel::ChannelType>,
+    pub create_channel_type: Signal<ChannelType>,
     pub is_profile_settings_open: Signal<bool>,
     pub selected_dm_name: Signal<Option<String>>,
     pub home_tab: Signal<HomeTab>,
@@ -77,4 +80,3 @@ pub struct UiModalContext {
     pub is_theme_json_editor_open: Signal<bool>,
     pub theme_json_editor_content: Signal<String>,
 }
-

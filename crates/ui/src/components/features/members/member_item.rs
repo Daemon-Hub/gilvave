@@ -1,4 +1,4 @@
-use gilvave_core::dto::server::MemberView;
+use gilvave_core::dto::servers::MemberView;
 use sycamore::prelude::*;
 
 use crate::components::ui::icons::UserAvatar;

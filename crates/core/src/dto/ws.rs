@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{dto::message::MessageView, ids::ChannelId};
+use crate::{dto::messages::MessageView, ids::ChannelId};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "op", content = "d")]

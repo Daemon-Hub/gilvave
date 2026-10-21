@@ -1,13 +1,13 @@
-use gilvave_core::dto::channel::{ChannelType, ChannelView};
 use sycamore::{futures::spawn_local_scoped, prelude::*, web::console_error};
 
 use crate::{
     components::{
-        common::{classes, ChannelContext},
+        common::{ChannelContext, classes},
         ui::icons::{HashIcon, Volume2Icon},
     },
     gateway::service::WsService,
 };
+use gilvave_core::dto::servers::channels::{ChannelType, ChannelView};
 
 #[component(inline_props)]
 pub fn ChannelItem(channel_view: ChannelView) -> View {
@@ -43,7 +43,9 @@ pub fn ChannelItem(channel_view: ChannelView) -> View {
             }
 
             if channel_item.r#type == ChannelType::TEXT {
-                web_sys::console::log_1(&format!("[CHANNEL_ITEM] clicked text channel: {channel_item_id}").into());
+                web_sys::console::log_1(
+                    &format!("[CHANNEL_ITEM] clicked text channel: {channel_item_id}").into(),
+                );
                 let res = WsService::join_channel(channel_item_id).await;
                 match res {
                     Ok(()) => {
@@ -60,7 +62,9 @@ pub fn ChannelItem(channel_view: ChannelView) -> View {
                 )
                 .await;
             } else {
-                web_sys::console::log_1(&format!("[CHANNEL_ITEM] clicked voice channel: {channel_item_id}").into());
+                web_sys::console::log_1(
+                    &format!("[CHANNEL_ITEM] clicked voice channel: {channel_item_id}").into(),
+                );
                 // TODO [WS]: Отправка ServerSend::SubscribeVoiceChannel { channel_id: channel_item_id }
                 // Подписка на поток статусов участников в данном голосовом канале для отображения их списка в сайдбаре.
                 //

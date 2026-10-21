@@ -98,6 +98,7 @@ $pill-triangle-polygon: polygon(
     height: 0;
     background: $gradient-pill-hover;
     clip-path: $pill-bar-polygon;
+    z-index: 2;
     transition:
         height 0.2s cubic-bezier(0.22, 1, 0.36, 1),
         width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
@@ -125,6 +126,10 @@ $pill-triangle-polygon: polygon(
     position: relative;
     width: 48px;
     height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    max-width: 48px;
+    max-height: 48px;
     border-radius: $radius-lg;
     background: $gradient-home-btn;
     border: none;
@@ -136,6 +141,7 @@ $pill-triangle-polygon: polygon(
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px $color-black-alpha-35;
+    flex-shrink: 0;
 
     &::before {
         content: '';
@@ -230,6 +236,10 @@ $pill-triangle-polygon: polygon(
 .server-icon {
     width: 48px;
     height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    max-width: 48px;
+    max-height: 48px;
     border-radius: $radius-lg;
     @include flex-center;
     cursor: pointer;
@@ -306,6 +316,7 @@ $pill-triangle-polygon: polygon(
     position: relative;
     @include flex-center;
     width: 100%;
+    flex-shrink: 0;
 
     &:hover {
         .server-icon-pill:not(.active) {
@@ -324,6 +335,7 @@ $pill-triangle-polygon: polygon(
     height: 0;
     background: $gradient-pill-hover;
     clip-path: $pill-bar-polygon;
+    z-index: 2;
     transition:
         height 0.2s cubic-bezier(0.22, 1, 0.36, 1),
         width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
@@ -349,7 +361,7 @@ $pill-triangle-polygon: polygon(
 
 // Visual divider between server groups
 .server-separator {
-    width: 32px;
+    width: 44px;
     height: 2px;
     background: $gradient-server-separator;
     border-radius: 1px;
@@ -382,6 +394,7 @@ $pill-triangle-polygon: polygon(
 // ─── Base modal ───────────────────────────────────────────────────────────────
 .server-modal {
     @include modal-base(420px, 500px);
+    position: relative;
     animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -619,11 +632,19 @@ $pill-triangle-polygon: polygon(
     color: $color-white-alpha-35;
     letter-spacing: 0.3px;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     position: relative;
     z-index: 3;
     background: transparent;
     white-space: nowrap;
     @include focus-visible-ring;
+
+    @include respond-to(md) {
+        padding: 10px 14px;
+        font-size: 13.5px;
+        gap: 6px;
+    }
 
     svg {
         width: 17px;
@@ -756,7 +777,7 @@ $pill-triangle-polygon: polygon(
 .join-modal-grid {
     @include flex-col;
     gap: 10px;
-    padding: 4px 0;
+    padding: 4px 0 56px;
 }
 
 // ─── Server browser card ──────────────────────────────────────────────────────
