@@ -3,33 +3,51 @@ use sycamore::{futures::spawn_local_scoped, prelude::*, web::queue_microtask};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
-use gilvave_core::dto::messages::MessageView;
 use super::message_item::MessageItem;
 use crate::{
-    components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext, emoji_to_twemoji_url},
-    gateway::{service::WsService, handler::{subscribe_gateway_events, GatewayEvent}},
+    components::{
+        common::{
+            ChannelContext, ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
+            emoji_to_twemoji_url, insert_emoji_into_editor, insert_text_into_editor,
+            serialize_contenteditable, sync_editor_content,
+        },
+        ui::icons::CloseSmallIcon,
+    },
+    gateway::{
+        handler::{GatewayEvent, subscribe_gateway_events},
+        service::WsService,
+    },
     utils::{get_local_offset, to_local_datetime},
 };
-
-pub fn adjust_textarea_height(el: &HtmlElement, min_h: i32, max_h: i32) -> bool {
-    let style = el.style();
-    let _ = style.set_property("height", "auto");
-    let sh = el.scroll_height();
-    let target_h = sh.clamp(min_h, max_h);
-    let _ = style.set_property("height", &format!("{target_h}px"));
-    let has_scrollbar = sh > max_h;
-    let overflow = if has_scrollbar { "auto" } else { "hidden" };
-    let _ = style.set_property("overflow-y", overflow);
-    has_scrollbar
-}
+use gilvave_core::dto::messages::MessageView;
 
 const EMOJI_GROUPS: &[(&str, &str, &str, emojis::Group)] = &[
-    ("smileys", "😀", "Смайлики и эмоции", emojis::Group::SmileysAndEmotion),
+    (
+        "smileys",
+        "😀",
+        "Смайлики и эмоции",
+        emojis::Group::SmileysAndEmotion,
+    ),
     ("people", "👋", "Люди и жесты", emojis::Group::PeopleAndBody),
-    ("animals", "🐱", "Животные и природа", emojis::Group::AnimalsAndNature),
+    (
+        "animals",
+        "🐱",
+        "Животные и природа",
+        emojis::Group::AnimalsAndNature,
+    ),
     ("food", "🍔", "Еда и напитки", emojis::Group::FoodAndDrink),
-    ("travel", "✈️", "Путешествия и места", emojis::Group::TravelAndPlaces),
-    ("activities", "⚽", "Активности и спорт", emojis::Group::Activities),
+    (
+        "travel",
+        "✈️",
+        "Путешествия и места",
+        emojis::Group::TravelAndPlaces,
+    ),
+    (
+        "activities",
+        "⚽",
+        "Активности и спорт",
+        emojis::Group::Activities,
+    ),
     ("objects", "💡", "Предметы", emojis::Group::Objects),
     ("symbols", "❤️", "Символы", emojis::Group::Symbols),
     ("flags", "🚩", "Флаги", emojis::Group::Flags),
@@ -38,45 +56,86 @@ const EMOJI_GROUPS: &[(&str, &str, &str, emojis::Group)] = &[
 fn map_ru_query_to_en(ru: &str) -> &'static [&'static str] {
     let lower = ru.trim().to_lowercase();
     match lower.as_str() {
-        s if s.starts_with("улыб") || s.starts_with("смех") || s.starts_with("радос") || s == "хаха" || s == "весел" => {
+        s if s.starts_with("улыб")
+            || s.starts_with("смех")
+            || s.starts_with("радос")
+            || s == "хаха"
+            || s == "весел" =>
+        {
             &["smile", "grin", "laugh", "happy", "joy"]
         }
         s if s.starts_with("смущ") || s.starts_with("мил") => &["blush", "shy"],
         s if s.starts_with("люб") || s.starts_with("серд") => &["heart", "love"],
         s if s.starts_with("поцел") => &["kiss"],
         s if s.starts_with("глаз") => &["eye", "eyes"],
-        s if s.starts_with("слез") || s.starts_with("плач") || s.starts_with("рыд") => &["cry", "sob", "tear"],
-        s if s.starts_with("груст") || s.starts_with("печал") || s.starts_with("тоск") => &["sad", "pensive", "disappointed"],
-        s if s.starts_with("зло") || s.starts_with("гнев") || s.starts_with("ярос") => &["angry", "rage", "mad"],
-        s if s.starts_with("шок") || s.starts_with("ужас") || s.starts_with("страх") => &["scream", "fear", "shock"],
-        s if s.starts_with("сон") || s.starts_with("спат") || s.starts_with("устал") => &["sleep", "yawn", "tired", "zzz"],
+        s if s.starts_with("слез") || s.starts_with("плач") || s.starts_with("рыд") => {
+            &["cry", "sob", "tear"]
+        }
+        s if s.starts_with("груст") || s.starts_with("печал") || s.starts_with("тоск") => {
+            &["sad", "pensive", "disappointed"]
+        }
+        s if s.starts_with("зло") || s.starts_with("гнев") || s.starts_with("ярос") => {
+            &["angry", "rage", "mad"]
+        }
+        s if s.starts_with("шок") || s.starts_with("ужас") || s.starts_with("страх") => {
+            &["scream", "fear", "shock"]
+        }
+        s if s.starts_with("сон") || s.starts_with("спат") || s.starts_with("устал") => {
+            &["sleep", "yawn", "tired", "zzz"]
+        }
         s if s.starts_with("дум") || s.starts_with("мысл") => &["thinking", "thought"],
         s if s.starts_with("крут") || s.starts_with("очки") => &["cool", "sunglasses"],
-        s if s.starts_with("праздн") || s.starts_with("вечерин") || s.starts_with("ура") => &["party", "tada", "celebration"],
+        s if s.starts_with("праздн") || s.starts_with("вечерин") || s.starts_with("ура") => {
+            &["party", "tada", "celebration"]
+        }
         s if s.starts_with("ботан") || s.starts_with("умн") => &["nerd"],
         s if s.starts_with("клоун") => &["clown"],
         s if s.starts_with("призрак") || s.starts_with("привид") => &["ghost"],
         s if s.starts_with("череп") || s.starts_with("смерт") => &["skull"],
-        s if s.starts_with("огонь") || s.starts_with("плам") || s.starts_with("жар") || s == "топ" => &["fire", "flame"],
-        s if s.starts_with("звезд") || s.starts_with("блеск") || s.starts_with("сиян") => &["star", "sparkle"],
-        s if s.starts_with("молни") || s.starts_with("гром") || s.starts_with("ток") => &["zap", "lightning"],
-        s if s.starts_with("взрыв") || s.starts_with("бум") => &["boom", "explosion", "collision"],
+        s if s.starts_with("огонь")
+            || s.starts_with("плам")
+            || s.starts_with("жар")
+            || s == "топ" =>
+        {
+            &["fire", "flame"]
+        }
+        s if s.starts_with("звезд") || s.starts_with("блеск") || s.starts_with("сиян") => {
+            &["star", "sparkle"]
+        }
+        s if s.starts_with("молни") || s.starts_with("гром") || s.starts_with("ток") => {
+            &["zap", "lightning"]
+        }
+        s if s.starts_with("взрыв") || s.starts_with("бум") => {
+            &["boom", "explosion", "collision"]
+        }
 
-        s if s.starts_with("рук") || s.starts_with("ладон") || s.starts_with("привет") || s.starts_with("пок") => {
+        s if s.starts_with("рук")
+            || s.starts_with("ладон")
+            || s.starts_with("привет")
+            || s.starts_with("пок") =>
+        {
             &["hand", "wave", "raised"]
         }
-        s if s.starts_with("лайк") || s.starts_with("класс") || s.starts_with("супер") => &["thumbs up"],
+        s if s.starts_with("лайк") || s.starts_with("класс") || s.starts_with("супер") => {
+            &["thumbs up"]
+        }
         s if s.starts_with("дизлайк") || s.starts_with("плох") => &["thumbs down"],
         s if s.starts_with("палец") || s.starts_with("пальц") => &["finger", "point"],
         s if s.starts_with("кулак") => &["fist"],
         s if s.starts_with("хлоп") || s.starts_with("аплодис") => &["clap"],
-        s if s.starts_with("молитв") || s.starts_with("спасиб") || s.starts_with("пожалуйст") => &["pray"],
-        s if s.starts_with("сил") || s.starts_with("бицепс") || s.starts_with("мышц") => &["muscle"],
+        s if s.starts_with("молитв") || s.starts_with("спасиб") || s.starts_with("пожалуйст") => {
+            &["pray"]
+        }
+        s if s.starts_with("сил") || s.starts_with("бицепс") || s.starts_with("мышц") => {
+            &["muscle"]
+        }
         s if s.starts_with("ок") => &["ok"],
         s if s.starts_with("мир") || s.starts_with("побед") => &["peace", "victory"],
 
         s if s.starts_with("кот") || s.starts_with("кош") => &["cat"],
-        s if s.starts_with("собак") || s.starts_with("пес") || s.starts_with("щен") => &["dog"],
+        s if s.starts_with("собак") || s.starts_with("пес") || s.starts_with("щен") => {
+            &["dog"]
+        }
         s if s.starts_with("лис") => &["fox"],
         s if s.starts_with("медвед") || s.starts_with("мишк") => &["bear"],
         s if s.starts_with("панд") => &["panda"],
@@ -121,7 +180,9 @@ fn map_ru_query_to_en(ru: &str) -> &'static [&'static str] {
         s if s.starts_with("наушник") => &["headphone"],
         s if s.starts_with("музык") || s.starts_with("нот") => &["music", "note"],
         s if s.starts_with("игр") || s.starts_with("гейм") => &["game", "video game"],
-        s if s.starts_with("деньг") || s.starts_with("рубл") || s.starts_with("доллар") => &["money", "dollar"],
+        s if s.starts_with("деньг") || s.starts_with("рубл") || s.starts_with("доллар") => {
+            &["money", "dollar"]
+        }
         s if s.starts_with("подар") => &["gift", "present"],
         s if s.starts_with("замок") => &["lock"],
         s if s.starts_with("ключ") => &["key"],
@@ -215,7 +276,8 @@ fn send_channel_message(channel_context: ChannelContext, draft_message: Signal<S
         return;
     };
 
-    let sanitized = match draft_message.with(|msg| gilvave_core::validation::validate_message(msg)) {
+    let sanitized = match draft_message.with(|msg| gilvave_core::validation::validate_message(msg))
+    {
         Ok(s) => s,
         Err(e) => {
             web_sys::console::warn_1(&format!("[MESSAGES_AREA] on_submit ignored: {e}").into());
@@ -224,7 +286,9 @@ fn send_channel_message(channel_context: ChannelContext, draft_message: Signal<S
     };
 
     spawn_local_scoped(async move {
-        web_sys::console::log_1(&format!("[MESSAGES_AREA] invoking MessageCreate for {channel_id}").into());
+        web_sys::console::log_1(
+            &format!("[MESSAGES_AREA] invoking MessageCreate for {channel_id}").into(),
+        );
         let res = WsService::message_create(channel_id, sanitized).await;
         web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageCreate res: {res:?}").into());
     });
@@ -236,9 +300,11 @@ pub fn ChatInputArea<F>(on_send: F) -> View
 where
     F: Fn() + Copy + 'static,
 {
+    let screen_wrapper = use_context::<ScreenWrapper>();
+    let channel_context = use_context::<ChannelContext>();
     let modal_context = use_context::<UiModalContext>();
     let draft_message = modal_context.draft_message;
-    let textarea_ref = create_node_ref();
+    let editor_ref = create_node_ref();
 
     let has_scrollbar = create_signal(false);
     let is_attach_menu_open = create_signal(false);
@@ -247,18 +313,65 @@ where
     let emoji_search = create_signal(String::new());
     let emoji_category = create_signal("smileys".to_string());
 
+    // Auto-close popovers when leaving Home screen
     create_effect(move || {
-        draft_message.track();
-        let is_empty = draft_message.with(|m| m.is_empty());
-        if is_empty {
-            has_scrollbar.set(false);
+        if !screen_wrapper.is_home() {
+            is_attach_menu_open.set(false);
+            is_emoji_modal_open.set(false);
+            is_emoji_expanded.set(false);
         }
-        if let Some(node) = textarea_ref.try_get() {
-            let el: HtmlElement = node.unchecked_into();
-            queue_microtask(move || {
-                let overflowed = adjust_textarea_height(&el, 42, 142);
-                has_scrollbar.set(overflowed);
-            });
+    });
+
+    // Auto-close popovers when active channel changes
+    let last_channel_id =
+        create_signal(channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)));
+    create_effect(move || {
+        let cur_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+        if cur_id != last_channel_id.get_untracked() {
+            last_channel_id.set(cur_id);
+            is_attach_menu_open.set(false);
+            is_emoji_modal_open.set(false);
+            is_emoji_expanded.set(false);
+        }
+    });
+
+    // Global Escape key listener when popover is open
+    create_effect(move || {
+        if is_emoji_modal_open.get() || is_attach_menu_open.get() {
+            #[cfg(target_arch = "wasm32")]
+            if let Some(window) = web_sys::window() {
+                let on_key = wasm_bindgen::closure::Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(
+                    move |e: web_sys::KeyboardEvent| {
+                        if e.key() == "Escape" {
+                            is_attach_menu_open.set(false);
+                            is_emoji_modal_open.set(false);
+                            is_emoji_expanded.set(false);
+                        }
+                    },
+                );
+                let _ = window
+                    .add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
+                on_key.forget();
+            }
+        }
+    });
+
+    create_effect(move || {
+        let msg = draft_message.get_clone();
+        if let Some(node) = editor_ref.try_get() {
+            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                let current = serialize_contenteditable(&editor);
+                if current != msg {
+                    sync_editor_content(&editor, &msg);
+                    if msg.trim().is_empty() {
+                        let _ = editor.set_attribute("data-empty", "true");
+                    } else {
+                        let _ = editor.remove_attribute("data-empty");
+                    }
+                    let overflowed = editor.scroll_height() > 142;
+                    has_scrollbar.set(overflowed);
+                }
+            }
         }
     });
 
@@ -273,8 +386,39 @@ where
     let on_input = move |event: Event| {
         if let Some(target) = event.current_target() {
             let el: HtmlElement = target.unchecked_into();
-            let overflowed = adjust_textarea_height(&el, 42, 142);
+            let serialized = serialize_contenteditable(&el);
+            if serialized.trim().is_empty() {
+                let _ = el.set_attribute("data-empty", "true");
+            } else {
+                let _ = el.remove_attribute("data-empty");
+            }
+            let overflowed = el.scroll_height() > 142;
             has_scrollbar.set(overflowed);
+            draft_message.set(serialized);
+        }
+    };
+
+    let on_paste = move |event: web_sys::Event| {
+        use wasm_bindgen::JsCast;
+        if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>() {
+            paste_event.prevent_default();
+            if let Some(cd) = paste_event.clipboard_data() {
+                if let Ok(text) = cd.get_data("text/plain") {
+                    if let Some(target) = paste_event.current_target() {
+                        let el: HtmlElement = target.unchecked_into();
+                        insert_text_into_editor(&el, &text);
+                        let serialized = serialize_contenteditable(&el);
+                        if serialized.trim().is_empty() {
+                            let _ = el.set_attribute("data-empty", "true");
+                        } else {
+                            let _ = el.remove_attribute("data-empty");
+                        }
+                        let overflowed = el.scroll_height() > 142;
+                        has_scrollbar.set(overflowed);
+                        draft_message.set(serialized);
+                    }
+                }
+            }
         }
     };
 
@@ -290,12 +434,19 @@ where
                 return;
             }
         }
-        if event.key() == "Enter" && !event.shift_key() {
-            event.prevent_default();
-            is_attach_menu_open.set(false);
-            is_emoji_modal_open.set(false);
-            is_emoji_expanded.set(false);
-            on_send();
+        if event.key() == "Enter" {
+            if event.shift_key() {
+                // Allow shift+enter for multiline newline
+            } else {
+                event.prevent_default();
+                if event.is_composing() || event.key_code() == 229 {
+                    return;
+                }
+                is_attach_menu_open.set(false);
+                is_emoji_modal_open.set(false);
+                is_emoji_expanded.set(false);
+                on_send();
+            }
         }
     };
 
@@ -351,6 +502,11 @@ where
                                 }
                             },
                             on:click=move |_| {
+                                is_attach_menu_open.set(false);
+                                is_emoji_modal_open.set(false);
+                                is_emoji_expanded.set(false);
+                            },
+                            on:touchstart=move |_| {
                                 is_attach_menu_open.set(false);
                                 is_emoji_modal_open.set(false);
                                 is_emoji_expanded.set(false);
@@ -454,29 +610,43 @@ where
                         ) {
                             div(class="emoji-modal-header") {
                                 span(class="emoji-modal-title") { "😊 Эмодзи" }
-                                button(
-                                    r#type="button",
-                                    class="emoji-expand-toggle-btn",
-                                    title=move || if is_emoji_expanded.get() {
-                                        "Вернуть обычный размер"
-                                    } else {
-                                        "Развернуть окно эмодзи"
-                                    },
-                                    on:click=move |e: web_sys::MouseEvent| {
-                                        e.stop_propagation();
-                                        let next = !is_emoji_expanded.get();
-                                        is_emoji_expanded.set(next);
-                                    },
-                                ) {
-                                    (move || if is_emoji_expanded.get() {
-                                        view! {
-                                            img(src="/public/arrow2.svg", alt="Свернуть")
-                                        }
-                                    } else {
-                                        view! {
-                                            img(src="/public/arrow1.svg", alt="Развернуть")
-                                        }
-                                    })
+                                div(class="emoji-modal-actions") {
+                                    button(
+                                        r#type="button",
+                                        class="emoji-expand-toggle-btn",
+                                        title=move || if is_emoji_expanded.get() {
+                                            "Вернуть обычный размер"
+                                        } else {
+                                            "Развернуть окно эмодзи"
+                                        },
+                                        on:click=move |e: web_sys::MouseEvent| {
+                                            e.stop_propagation();
+                                            let next = !is_emoji_expanded.get();
+                                            is_emoji_expanded.set(next);
+                                        },
+                                    ) {
+                                        (move || if is_emoji_expanded.get() {
+                                            view! {
+                                                img(src="/public/arrow2.svg", alt="Свернуть")
+                                            }
+                                        } else {
+                                            view! {
+                                                img(src="/public/arrow1.svg", alt="Развернуть")
+                                            }
+                                        })
+                                    }
+                                    button(
+                                        r#type="button",
+                                        class="emoji-close-btn",
+                                        title="Закрыть окно эмодзи (Esc)",
+                                        on:click=move |e: web_sys::MouseEvent| {
+                                            e.stop_propagation();
+                                            is_emoji_modal_open.set(false);
+                                            is_emoji_expanded.set(false);
+                                        },
+                                    ) {
+                                        CloseSmallIcon()
+                                    }
                                 }
                             }
                             div(class="emoji-modal-search") {
@@ -551,7 +721,9 @@ where
                                                 let emoji_char = e.as_str().to_string();
                                                 let emoji_click = emoji_char.clone();
                                                 let emoji_title = e.name().to_string();
+                                                let emoji_title_click = emoji_title.clone();
                                                 let emoji_url = emoji_to_twemoji_url(&emoji_char);
+                                                let emoji_url_click = emoji_url.clone();
                                                 view! {
                                                     button(
                                                         r#type="button",
@@ -559,7 +731,26 @@ where
                                                         title=emoji_title,
                                                         on:click=move |_| {
                                                             let to_add = emoji_click.clone();
-                                                            draft_message.update(|msg| msg.push_str(&to_add));
+                                                            let url = emoji_url_click.clone();
+                                                            let title = emoji_title_click.clone();
+                                                            if let Some(node) = editor_ref.try_get() {
+                                                                if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                                                                    insert_emoji_into_editor(&editor, &to_add, &url, &title);
+                                                                    let serialized = serialize_contenteditable(&editor);
+                                                                    if serialized.trim().is_empty() {
+                                                                        let _ = editor.set_attribute("data-empty", "true");
+                                                                    } else {
+                                                                        let _ = editor.remove_attribute("data-empty");
+                                                                    }
+                                                                    let overflowed = editor.scroll_height() > 142;
+                                                                    has_scrollbar.set(overflowed);
+                                                                    draft_message.set(serialized);
+                                                                } else {
+                                                                    draft_message.update(|msg| msg.push_str(&to_add));
+                                                                }
+                                                            } else {
+                                                                draft_message.update(|msg| msg.push_str(&to_add));
+                                                            }
                                                         },
                                                     ) {
                                                         img(
@@ -603,14 +794,15 @@ where
                     }
                 }
 
-                textarea(
-                    r#ref=textarea_ref,
+                div(
+                    r#ref=editor_ref,
                     class="chat-input",
-                    rows="1",
-                    placeholder="Напишите сообщение...",
-                    bind:value=draft_message,
+                    contenteditable="true",
+                    role="textbox",
+                                        data-placeholder="Напишите сообщение...",
                     on:input=on_input,
                     on:keydown=on_keydown,
+                    on:paste=on_paste,
                 )
 
                 // Expand editor button at top-right inside input (visible only from 7th line or when scrollbar appears)
@@ -676,9 +868,10 @@ pub fn MessagesArea() -> View {
     let user_profile = use_context::<UserProfileContext>();
     let modal_context = use_context::<UiModalContext>();
     let channel_name = create_memo(move || {
-        channel_context
-            .current
-            .with(|c| c.as_ref().map_or_else(|| "<UNKNOWN>".into(), |ch| ch.name.clone()))
+        channel_context.current.with(|c| {
+            c.as_ref()
+                .map_or_else(|| "<UNKNOWN>".into(), |ch| ch.name.clone())
+        })
     });
 
     let draft_message = modal_context.draft_message;
@@ -701,10 +894,14 @@ pub fn MessagesArea() -> View {
         if is_top {
             console_log!("top message");
             spawn_local_scoped(async move {
-                let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)) else {
+                let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id))
+                else {
                     return;
                 };
-                let Some(first_dt) = channel_context.messages.with(|m| m.first().map(|msg| msg.created_at)) else {
+                let Some(first_dt) = channel_context
+                    .messages
+                    .with(|m| m.first().map(|msg| msg.created_at))
+                else {
                     return;
                 };
                 let _ = WsService::channel_history_before(ch_id, first_dt).await;
@@ -713,10 +910,14 @@ pub fn MessagesArea() -> View {
         if is_bottom {
             console_log!("bottom message");
             spawn_local_scoped(async move {
-                let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)) else {
+                let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id))
+                else {
                     return;
                 };
-                let Some(last_dt) = channel_context.messages.with(|m| m.last().map(|msg| msg.created_at)) else {
+                let Some(last_dt) = channel_context
+                    .messages
+                    .with(|m| m.last().map(|msg| msg.created_at))
+                else {
                     return;
                 };
                 let _ = WsService::channel_history_after(ch_id, last_dt).await;
@@ -735,7 +936,9 @@ pub fn MessagesArea() -> View {
         while let Some(event) = events.next().await {
             match event {
                 GatewayEvent::MessageNew(msg) => {
-                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received MessageNew: {:?}", msg).into());
+                    web_sys::console::log_1(
+                        &format!("[MESSAGES_AREA] received MessageNew: {:?}", msg).into(),
+                    );
                     let Some(node) = container.try_get() else {
                         continue;
                     };
@@ -764,7 +967,13 @@ pub fn MessagesArea() -> View {
                     });
                 }
                 GatewayEvent::ChannelHistoryBefore(messages) => {
-                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received ChannelHistoryBefore with {} items", messages.len()).into());
+                    web_sys::console::log_1(
+                        &format!(
+                            "[MESSAGES_AREA] received ChannelHistoryBefore with {} items",
+                            messages.len()
+                        )
+                        .into(),
+                    );
                     let Some(node) = container.try_get() else {
                         continue;
                     };
@@ -788,7 +997,13 @@ pub fn MessagesArea() -> View {
                     });
                 }
                 GatewayEvent::ChannelHistoryAfter(mut messages) => {
-                    web_sys::console::log_1(&format!("[MESSAGES_AREA] received ChannelHistoryAfter with {} items", messages.len()).into());
+                    web_sys::console::log_1(
+                        &format!(
+                            "[MESSAGES_AREA] received ChannelHistoryAfter with {} items",
+                            messages.len()
+                        )
+                        .into(),
+                    );
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
                         list.append(&mut messages);
@@ -818,11 +1033,14 @@ pub fn MessagesArea() -> View {
                             .map(|m| m.created_at.to_offset(local_offset))
                             .collect();
 
-                        let mut avatar_by_username = std::collections::HashMap::with_capacity(members.len());
-                        let mut avatar_by_id = std::collections::HashMap::with_capacity(members.len());
+                        let mut avatar_by_username =
+                            std::collections::HashMap::with_capacity(members.len());
+                        let mut avatar_by_id =
+                            std::collections::HashMap::with_capacity(members.len());
                         for mem in members.iter() {
                             if !mem.avatar.is_empty() {
-                                avatar_by_username.insert(mem.username.as_str(), mem.avatar.as_str());
+                                avatar_by_username
+                                    .insert(mem.username.as_str(), mem.avatar.as_str());
                                 avatar_by_id.insert(mem.user_id, mem.avatar.as_str());
                             }
                         }
@@ -867,21 +1085,22 @@ pub fn MessagesArea() -> View {
                                         || (next_dt - m_local_dt) > time::Duration::minutes(5)
                                 };
 
-                                let avatar = if !my_avatar.is_empty()
-                                    && m.author_name == *my_username
-                                {
-                                    my_avatar.clone()
-                                } else if let Some(author_id) = m.author_id
-                                    && let Some(&av) = avatar_by_id.get(&author_id)
-                                {
-                                    av.to_string()
-                                } else if let Some(&av) = avatar_by_username.get(m.author_name.as_str()) {
-                                    av.to_string()
-                                } else if m.author_name == *my_username {
-                                    my_avatar.clone()
-                                } else {
-                                    String::new()
-                                };
+                                let avatar =
+                                    if !my_avatar.is_empty() && m.author_name == *my_username {
+                                        my_avatar.clone()
+                                    } else if let Some(author_id) = m.author_id
+                                        && let Some(&av) = avatar_by_id.get(&author_id)
+                                    {
+                                        av.to_string()
+                                    } else if let Some(&av) =
+                                        avatar_by_username.get(m.author_name.as_str())
+                                    {
+                                        av.to_string()
+                                    } else if m.author_name == *my_username {
+                                        my_avatar.clone()
+                                    } else {
+                                        String::new()
+                                    };
 
                                 EnrichedMessage {
                                     message: m.clone(),
@@ -979,8 +1198,10 @@ pub fn ExpandedMessageEditorModal() -> View {
         let in_server = server_context.current.with(|s| s.is_some());
         if in_server {
             channel_context.current.with(|c| {
-                c.as_ref()
-                    .map_or_else(|| "Редактор сообщения".to_string(), |ch| format!("#{}", ch.name))
+                c.as_ref().map_or_else(
+                    || "Редактор сообщения".to_string(),
+                    |ch| format!("#{}", ch.name),
+                )
             })
         } else {
             modal_context.selected_dm_name.with(|dm| {
@@ -1022,8 +1243,8 @@ pub fn ExpandedMessageEditorModal() -> View {
     let do_send = move || {
         let in_server = server_context.current.with(|s| s.is_some());
         if in_server {
-            let is_valid = draft_message
-                .with(|msg| gilvave_core::validation::validate_message(msg).is_ok());
+            let is_valid =
+                draft_message.with(|msg| gilvave_core::validation::validate_message(msg).is_ok());
             if !is_valid {
                 return;
             }
@@ -1041,6 +1262,60 @@ pub fn ExpandedMessageEditorModal() -> View {
     let on_submit = move |e: SubmitEvent| {
         e.prevent_default();
         do_send();
+    };
+
+    let expanded_editor_ref = create_node_ref();
+
+    create_effect(move || {
+        let msg = draft_message.get_clone();
+        if let Some(node) = expanded_editor_ref.try_get() {
+            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                let current = serialize_contenteditable(&editor);
+                if current != msg {
+                    sync_editor_content(&editor, &msg);
+                    if msg.trim().is_empty() {
+                        let _ = editor.set_attribute("data-empty", "true");
+                    } else {
+                        let _ = editor.remove_attribute("data-empty");
+                    }
+                }
+            }
+        }
+    });
+
+    let on_expanded_input = move |event: Event| {
+        if let Some(target) = event.current_target() {
+            let el: HtmlElement = target.unchecked_into();
+            let serialized = serialize_contenteditable(&el);
+            if serialized.trim().is_empty() {
+                let _ = el.set_attribute("data-empty", "true");
+            } else {
+                let _ = el.remove_attribute("data-empty");
+            }
+            draft_message.set(serialized);
+        }
+    };
+
+    let on_expanded_paste = move |event: web_sys::Event| {
+        use wasm_bindgen::JsCast;
+        if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>() {
+            paste_event.prevent_default();
+            if let Some(cd) = paste_event.clipboard_data() {
+                if let Ok(text) = cd.get_data("text/plain") {
+                    if let Some(target) = paste_event.current_target() {
+                        let el: HtmlElement = target.unchecked_into();
+                        insert_text_into_editor(&el, &text);
+                        let serialized = serialize_contenteditable(&el);
+                        if serialized.trim().is_empty() {
+                            let _ = el.set_attribute("data-empty", "true");
+                        } else {
+                            let _ = el.remove_attribute("data-empty");
+                        }
+                        draft_message.set(serialized);
+                    }
+                }
+            }
+        }
     };
 
     let on_keydown = move |e: web_sys::KeyboardEvent| {
@@ -1068,11 +1343,15 @@ pub fn ExpandedMessageEditorModal() -> View {
                 }
 
                 div(class="message-editor-body") {
-                    textarea(
+                    div(
+                        r#ref=expanded_editor_ref,
                         class="expanded-editor-textarea",
-                        placeholder="Напишите сообщение...",
-                        bind:value=draft_message,
+                        contenteditable="true",
+                        role="textbox",
+                                                data-placeholder="Напишите сообщение...",
+                        on:input=on_expanded_input,
                         on:keydown=on_keydown,
+                        on:paste=on_expanded_paste,
                     )
                     button(
                         class="editor-collapse-btn",
@@ -1117,4 +1396,3 @@ pub fn ExpandedMessageEditorModal() -> View {
         }
     }
 }
-

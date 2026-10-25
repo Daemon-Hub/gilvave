@@ -3,8 +3,8 @@
 
 // Auth pages need top padding to push below Tauri titlebar on desktop
 body:has(.container.active) {
-    padding-top: calc(#{$header-height-app} + 40px);
-    align-items: center; // center card on desktop
+    padding-top: $header-height-app;
+    align-items: center; // center card horizontally on desktop
 
     @include respond-to(md) {
         padding-top: 0;
@@ -18,7 +18,17 @@ body:has(.container.active) {
 }
 
 main:has(.container.active) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; // Anchor top so card never jumps vertically on tab switch
+    padding-bottom: 24px;
+    @include scrollbar(6px);
+
     @include respond-to(md) {
+        padding-bottom: 0;
         align-items: stretch;
         height: 100%;
         min-height: 100dvh;
@@ -27,9 +37,9 @@ main:has(.container.active) {
 }
 
 .form-panel {
-    padding: 32px 36px 28px;
+    padding: clamp(22px, 3vh, 28px) clamp(24px, 4vw, 36px) clamp(18px, 2.5vh, 24px);
     display: none;
-    animation: fadeIn 0.25s ease;
+    animation: fadeIn 0.22s ease;
 
     &.active {
         display: block;
@@ -68,16 +78,17 @@ main:has(.container.active) {
 .auth-subtitle {
     text-align: center;
     margin-top: 0;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
     color: $color-text-muted;
     font-size: $font-size-xs;
 }
 
 .forgot-link {
     display: block;
-    margin-top: 4px;
-    margin-bottom: 18px;
+    margin-top: 2px;
+    margin-bottom: 14px;
     font-size: $font-size-xs;
+    line-height: 1.4;
     color: $color-primary;
     text-decoration: none;
     transition: color 0.15s ease;
@@ -85,6 +96,249 @@ main:has(.container.active) {
     &:hover {
         color: $color-primary-light;
         text-decoration: underline;
+    }
+}
+
+.register-form-stage {
+    .input-group:not(:last-child) {
+        margin-bottom: 12px;
+    }
+}
+
+// ─── Hide form tabs when waiting confirmation is displayed ───────────────────
+.container:has(.waiting-confirmation-panel) .form-header {
+    display: none;
+}
+
+// ─── Registration Server Error Banner ─────────────────────────────────────────
+.auth-error-banner {
+    padding: 10px 14px;
+    border-radius: $radius-md;
+    background: $color-danger-alpha-15;
+    border: 1px solid $color-danger-alpha-40;
+    color: $color-danger-light;
+    font-size: $font-size-xs;
+    margin-bottom: 16px;
+    line-height: 1.4;
+    text-align: center;
+    animation: fadeIn 0.2s ease;
+}
+
+// ─── Waiting Confirmation Panel (Discord-style verification stage) ───────────
+.waiting-confirmation-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 6px 8px;
+    animation: fadeIn 0.3s ease;
+
+    .waiting-icon-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 4px auto 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .waiting-icon-halo {
+            position: absolute;
+            inset: -6px;
+            border-radius: $radius-full;
+            background: radial-gradient(circle, $color-primary-alpha-30 0%, transparent 70%);
+            animation: emailPulse 2.8s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .waiting-icon-bubble {
+            width: 72px;
+            height: 72px;
+            border-radius: $radius-full;
+            background: $gradient-send-btn;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: $shadow-send-btn, 0 8px 24px $color-primary-alpha-40;
+            color: $color-text-on-accent;
+            position: relative;
+            z-index: 1;
+
+            svg {
+                width: 34px;
+                height: 34px;
+                stroke: currentColor;
+                fill: none;
+            }
+        }
+    }
+
+    h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: $color-text-heading;
+        margin: 0 0 8px;
+        letter-spacing: -0.015em;
+    }
+
+    .waiting-subtitle {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        margin: 0 0 10px;
+        line-height: 1.45;
+    }
+
+    .waiting-email-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        padding: 6px 14px;
+        border-radius: $radius-full;
+        background: $color-primary-alpha-15;
+        border: 1px solid $color-primary-alpha-30;
+        color: $color-primary-light;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        margin-bottom: 16px;
+        word-break: break-all;
+    }
+
+    .waiting-instruction {
+        font-size: $font-size-xs;
+        color: $color-text-label;
+        line-height: 1.55;
+        margin: 0 0 18px;
+        max-width: 340px;
+    }
+
+    .waiting-polling-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 6px 14px;
+        border-radius: $radius-full;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border-subtle;
+        margin-bottom: 18px;
+
+        .polling-radar {
+            position: relative;
+            width: 10px;
+            height: 10px;
+
+            .radar-core {
+                width: 10px;
+                height: 10px;
+                border-radius: $radius-full;
+                background: $color-status-online;
+            }
+
+            .radar-wave {
+                position: absolute;
+                inset: -3px;
+                border-radius: $radius-full;
+                border: 1.5px solid $color-status-online;
+                animation: radarWave 1.8s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+        }
+
+        .polling-label {
+            font-size: $font-size-xxs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-muted;
+            letter-spacing: 0.02em;
+        }
+    }
+
+    .waiting-status-alert {
+        padding: 9px 14px;
+        border-radius: $radius-md;
+        background: $color-danger-alpha-15;
+        border: 1px solid $color-danger-alpha-40;
+        color: $color-danger-light;
+        font-size: $font-size-xs;
+        margin-bottom: 16px;
+        line-height: 1.4;
+        width: 100%;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .waiting-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 16px;
+
+        .confirm-check-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+            }
+        }
+
+        .waiting-back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 10px 16px;
+            background: transparent;
+            border: 1px solid $color-border-subtle;
+            border-radius: $radius-md;
+            color: $color-text-muted;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+            svg {
+                width: 14px;
+                height: 14px;
+                stroke: currentColor;
+            }
+
+            &:hover {
+                background: $color-white-alpha-08;
+                color: $color-text-white;
+                border-color: $color-border;
+            }
+        }
+    }
+
+    .waiting-spam-hint {
+        font-size: $font-size-xxs;
+        color: $color-text-muted;
+        margin: 0;
+        opacity: 0.85;
+    }
+}
+
+@keyframes emailPulse {
+    0%, 100% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.85;
+    }
+}
+
+@keyframes radarWave {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
     }
 }
 

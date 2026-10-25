@@ -97,6 +97,221 @@ pub fn parse_message_segments(text: &str) -> Vec<MessageSegment> {
     segments
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn serialize_contenteditable(node: &web_sys::Node) -> String {
+    let mut out = String::new();
+    serialize_node_inner(node, &mut out);
+    out
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn serialize_contenteditable(_node: &web_sys::Node) -> String {
+    String::new()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn serialize_node_inner(node: &web_sys::Node, out: &mut String) {
+    use wasm_bindgen::JsCast;
+
+    let node_type = node.node_type();
+    if node_type == web_sys::Node::TEXT_NODE {
+        if let Some(val) = node.node_value() {
+            out.push_str(&val);
+        }
+        return;
+    }
+
+    if node_type == web_sys::Node::ELEMENT_NODE {
+        if let Ok(el) = node.clone().dyn_into::<web_sys::Element>() {
+            let tag = el.tag_name().to_uppercase();
+            if tag == "IMG" {
+                if let Some(emoji) = el.get_attribute("data-emoji") {
+                    out.push_str(&emoji);
+                } else if let Some(alt) = el.get_attribute("alt") {
+                    out.push_str(&alt);
+                }
+                return;
+            } else if tag == "BR" {
+                out.push('\n');
+                return;
+            } else if tag == "DIV" || tag == "P" {
+                if !out.is_empty() && !out.ends_with('\n') {
+                    out.push('\n');
+                }
+            }
+        }
+    }
+
+    let children = node.child_nodes();
+    let len = children.length();
+    for i in 0..len {
+        if let Some(child) = children.item(i) {
+            serialize_node_inner(&child, out);
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn insert_emoji_into_editor(
+    editor: &web_sys::Element,
+    emoji_char: &str,
+    emoji_url: &str,
+    emoji_title: &str,
+) {
+    use wasm_bindgen::JsCast;
+
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = window.document() else {
+        return;
+    };
+
+    let Ok(img_node) = document.create_element("img") else {
+        return;
+    };
+    let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>() else {
+        return;
+    };
+    img.set_class_name("chat-inline-emoji");
+    img.set_src(emoji_url);
+    let _ = img.set_attribute("alt", emoji_char);
+    let _ = img.set_attribute("data-emoji", emoji_char);
+    let _ = img.set_attribute("title", emoji_title);
+    let _ = img.set_attribute("draggable", "false");
+
+    if let Ok(Some(selection)) = window.get_selection() {
+        if selection.range_count() > 0 {
+            if let Ok(range) = selection.get_range_at(0) {
+                let mut common_parent = range.common_ancestor_container().ok();
+                let mut is_inside = false;
+                while let Some(parent) = common_parent {
+                    if parent == *editor.as_ref() {
+                        is_inside = true;
+                        break;
+                    }
+                    common_parent = parent.parent_node();
+                }
+
+                if is_inside {
+                    let _ = range.delete_contents();
+                    if range.insert_node(&img).is_ok() {
+                        let _ = range.set_start_after(&img);
+                        let _ = range.set_end_after(&img);
+                        selection.remove_all_ranges().ok();
+                        selection.add_range(&range).ok();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = editor.append_child(&img);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn insert_emoji_into_editor(
+    _editor: &web_sys::Element,
+    _emoji_char: &str,
+    _emoji_url: &str,
+    _emoji_title: &str,
+) {
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn insert_text_into_editor(editor: &web_sys::Element, text: &str) {
+    use wasm_bindgen::JsCast;
+
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = window.document() else {
+        return;
+    };
+
+    let segments = parse_message_segments(text);
+    let fragment = document.create_document_fragment();
+
+    for seg in segments {
+        match seg {
+            MessageSegment::Text(t) => {
+                let lines: Vec<&str> = t.split('\n').collect();
+                for (idx, line) in lines.iter().enumerate() {
+                    if idx > 0 {
+                        if let Ok(br) = document.create_element("br") {
+                            let _ = fragment.append_child(&br);
+                        }
+                    }
+                    if !line.is_empty() {
+                        let text_node = document.create_text_node(line);
+                        let _ = fragment.append_child(&text_node);
+                    }
+                }
+            }
+            MessageSegment::Emoji { char, url, name } => {
+                if let Ok(img_node) = document.create_element("img") {
+                    if let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>() {
+                        img.set_class_name("chat-inline-emoji");
+                        img.set_src(&url);
+                        let _ = img.set_attribute("alt", &char);
+                        let _ = img.set_attribute("data-emoji", &char);
+                        let _ = img.set_attribute("title", &name);
+                        let _ = img.set_attribute("draggable", "false");
+                        let _ = fragment.append_child(&img);
+                    }
+                }
+            }
+        }
+    }
+
+    if let Ok(Some(selection)) = window.get_selection() {
+        if selection.range_count() > 0 {
+            if let Ok(range) = selection.get_range_at(0) {
+                let mut common_parent = range.common_ancestor_container().ok();
+                let mut is_inside = false;
+                while let Some(parent) = common_parent {
+                    if parent == *editor.as_ref() {
+                        is_inside = true;
+                        break;
+                    }
+                    common_parent = parent.parent_node();
+                }
+
+                if is_inside {
+                    let _ = range.delete_contents();
+                    if range.insert_node(&fragment).is_ok() {
+                        range.collapse_with_to_start(false);
+                        selection.remove_all_ranges().ok();
+                        selection.add_range(&range).ok();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = editor.append_child(&fragment);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn insert_text_into_editor(_editor: &web_sys::Element, _text: &str) {}
+
+#[cfg(target_arch = "wasm32")]
+pub fn sync_editor_content(editor: &web_sys::Element, text: &str) {
+    let current = serialize_contenteditable(editor.as_ref());
+    if current == text {
+        return;
+    }
+    editor.set_inner_html("");
+    if !text.is_empty() {
+        insert_text_into_editor(editor, text);
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn sync_editor_content(_editor: &web_sys::Element, _text: &str) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -144,7 +359,10 @@ mod tests {
         assert!(matches!(&segments[5], MessageSegment::Emoji { char, .. } if char == "👍"));
         assert_eq!(segments[6], MessageSegment::Text(" и ".to_string()));
         assert!(matches!(&segments[7], MessageSegment::Emoji { char, .. } if char == "🏴‍☠️"));
-        assert_eq!(segments[8], MessageSegment::Text(" ого! Цифра 42.".to_string()));
+        assert_eq!(
+            segments[8],
+            MessageSegment::Text(" ого! Цифра 42.".to_string())
+        );
     }
 
     #[test]

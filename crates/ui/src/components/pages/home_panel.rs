@@ -180,6 +180,17 @@ pub fn HomePanel() -> View {
             .with(|c| c.as_ref().map(|ch| ch.r#type))
     });
 
+    let context_menu_ctx = use_context::<crate::components::ui::ContextMenuContext>();
+    let on_context_menu = move |event: web_sys::MouseEvent| {
+        crate::components::ui::context_menu::handle_global_context_menu(
+            &event,
+            &context_menu_ctx,
+            Some(&ui_modal_context),
+            Some(&channel_context),
+            Some(&server_context),
+        );
+    };
+
     view! {
         div(
             class=classes(vec![
@@ -188,6 +199,7 @@ pub fn HomePanel() -> View {
                 ("active", is_home_screen.clone()).into(),
                 ("fullbleed", is_fullbleed.clone()).into(),
             ]),
+            on:contextmenu=on_context_menu,
         ) {
             div(class="discord-sidebar") {
                 div(class="discord-sidebar-top") {

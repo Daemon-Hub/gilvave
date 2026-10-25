@@ -5,8 +5,8 @@ use crate::{
     components::{
         common::CreateServerContext,
         ui::{
-            icons::{ArrowLeftIcon, CloseSmallIcon},
             ShowMoreBanner,
+            icons::{ArrowLeftIcon, CloseSmallIcon},
         },
     },
     http::api::Api,
@@ -26,7 +26,8 @@ pub(super) fn JoinServerModal(
 
     let is_banner_visible = create_signal(false);
     create_effect(move || {
-        let visible = context.has_more_public_servers.get() && (is_at_bottom.get() || is_loading.get());
+        let visible =
+            context.has_more_public_servers.get() && (is_at_bottom.get() || is_loading.get());
         is_banner_visible.set(visible);
     });
 

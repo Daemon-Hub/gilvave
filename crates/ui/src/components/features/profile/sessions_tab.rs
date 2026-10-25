@@ -72,7 +72,10 @@ async fn fetch_sessions_data(
     // 2. Fetch from backend API
     match Api::get_sessions().await {
         Ok(server_sessions) => {
-            tracing::info!("[SessionsTab] Received {} sessions from server", server_sessions.len());
+            tracing::info!(
+                "[SessionsTab] Received {} sessions from server",
+                server_sessions.len()
+            );
             let mut list: Vec<SessionView> = server_sessions
                 .into_iter()
                 .map(|(mut s, c)| {
@@ -102,17 +105,15 @@ async fn fetch_sessions_data(
             // Fallback: show the current local device as the active session if list was empty
             if sessions_sig.with(|v| v.is_empty()) {
                 let now = time::OffsetDateTime::now_utc();
-                let fallback_list = vec![
-                    SessionView {
-                        id: "curr-session-local".to_string(),
-                        device_info: current_device,
-                        ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
-                        location: Some("Текущее рабочее место".to_string()),
-                        last_used_at: now,
-                        created_at: now,
-                        is_current: true,
-                    },
-                ];
+                let fallback_list = vec![SessionView {
+                    id: "curr-session-local".to_string(),
+                    device_info: current_device,
+                    ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
+                    location: Some("Текущее рабочее место".to_string()),
+                    last_used_at: now,
+                    created_at: now,
+                    is_current: true,
+                }];
                 sessions_sig.set(fallback_list);
             }
         }
@@ -161,12 +162,12 @@ pub fn SessionsTab() -> View {
                     )));
                 }
                 Err(err) => {
-                    tracing::error!("[SessionsTab] terminate_all_other_sessions error: {:?}", err);
+                    tracing::error!(
+                        "[SessionsTab] terminate_all_other_sessions error: {:?}",
+                        err
+                    );
                     confirm_terminate_all.set(false);
-                    status_msg.set(Some((
-                        format!("Ошибка завершения сессий: {}", err.1),
-                        true,
-                    )));
+                    status_msg.set(Some((format!("Ошибка завершения сессий: {}", err.1), true)));
                 }
             }
         });

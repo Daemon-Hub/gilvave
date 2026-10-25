@@ -21,7 +21,7 @@ pub fn AuthForm() -> View {
         ) {
             FormTabs()
             LoginPanel(is_active=(move || screen_wrapper.is_login()).into())
-            RegisterPanel(is_active=(move || screen_wrapper.is_register()).into())
+            RegisterPanel(is_active=(move || screen_wrapper.is_register() || screen_wrapper.is_register_confirm()).into())
         }
     }
 }

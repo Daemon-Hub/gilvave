@@ -92,7 +92,8 @@ crates/ui/src/
     pages/                  — Full-page screens
       home_panel.rs         — Authenticated workspace container (sidebar, channels, chat, members, modals, search bar)
       login_panel.rs        — Login form with validation & token persistence
-      register_panel.rs     — Registration form with client-side field validation
+      register_panel.rs     — Registration form with client-side validation,
+                              two-phase email verification waiting screen, and background autologin polling
     features/               — Feature domains
       servers/              — Server sidebar, server actions, create/join/settings modals,
                               sidebar user controls (mic, headphones, settings squircle)
@@ -198,13 +199,32 @@ crates/ui/src/
   - Windows `Segoe UI Emoji` intentionally does not render country flags (showing two-letter regional codes like `"RU"`) and shows tofu (`▯`) for newer Unicode 14/15/16 emojis.
   - Handled via Twemoji SVG URLs (`https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/{codepoints}.svg`).
   - In `MessageItem`, text is segmented by `parse_message_segments` into plain text and `.chat-inline-emoji` SVG images (`1.35em`, baseline aligned).
-  - Emoji picker supports category switching without `"Все"` tab, strict vertical scrolling, and an expand toggle (`arrow1.svg`/`arrow2.svg`) that enlarges emojis 2~2.5x (`46px` on desktop, `38px` on mobile) against a dimmed modal backdrop.
+  - **Inline Emojis in Chat Input**: Both `ChatInputArea` and `ExpandedMessageEditorModal` use rich-text `contenteditable="true"` containers instead of plain `<textarea>`. Selected emojis from the picker and pasted text render as inline `<img class="chat-inline-emoji" src="..." alt="..." data-emoji="..." />` with Twemoji SVG icons directly inside the input (enabling color flags like 🇷🇺 and visual parity with messages).
+  - `serialize_contenteditable` converts DOM nodes (text, `<br>`, and `<img data-emoji="...">`) back to clean plain Unicode text when updating `draft_message` and sending over WebSocket.
+  - Emoji picker supports category switching without `"Все"` tab, strict vertical scrolling, an expand toggle (`arrow1.svg`/`arrow2.svg`) that enlarges emojis 2~2.5x (`46px` on desktop, `38px` on mobile), an explicit close button (`✕` `CloseSmallIcon`), a dimmed click-outside backdrop with touch support, auto-close on screen/channel switch, and a global `Escape` key listener.
 - **Pagination & Show More Banner (`show_more_banner.rs`, `_show_more_banner.scss`)**:
   - Reusable `ShowMoreBanner` component for paginated lists (theme catalog, server discovery).
   - Listens to bottom scroll reaches, displays a button with an animated arrow and hover lift, and fetches the next page without layout jumps.
 - **Profile Settings Window Dimensions (`profile_settings_modal.rs`, `sessions_tab.rs`)**:
   - Fixed modal dimensions (`min(880px, 92vw)` × `min(680px, 86vh)`) prevent window resizing between tabs.
   - Sessions tab uses an in-place rotating refresh icon button without list flicker or height jumps.
+- **Server Theme Publishing (`CreateThemeInfo`, `POST /users/profile/themes`)**:
+  - Users can upload custom themes directly to the server catalog via `Api::create_theme` (`POST /users/profile/themes`).
+  - Payload sends `name`, `description`, and `config: Value`.
+  - The `author` field is omitted in the JSON editor and assigned automatically by the server based on the authenticated user's nickname.
+  - Upload actions are accessible both in `ThemeJsonEditorModal` ("Загрузить на сервер") and from custom theme cards in `ProfileSettingsModal` ("В каталог").
+- **Custom Application Context Menu & DevTools Security (`context_menu.rs`, `_context_menu.scss`, `app.rs`)**:
+  - Unified contextual action menu replacing default browser context menu across Desktop (Tauri) and Web.
+  - Automatically identifies target under right-click:
+    - Messages: copy text, copy message ID, quote in chat.
+    - Text selection: copy selected text.
+    - Editable fields: copy selected text.
+    - Channels & Servers: copy name, copy ID, open settings.
+    - General canvas: profile settings, theme catalog, DevTools toggle (`#[cfg(debug_assertions)]`), reload app.
+  - **Inspection Key Blocker**: All developer keyboard shortcuts (`F12`, `Ctrl+Shift+I/J/C/K/E`, `Ctrl+U`) are globally intercepted and cancelled in the capture phase on `window`, preventing unauthorized inspection in release and keeping debugging exclusively controlled via the context menu button in debug mode.
+  - **DevTools Toggle**: Controlled via `CommandArgs::OpenDevTools` invoking Tauri `window.open_devtools()` / `close_devtools()` backed by `tauri = { workspace = true, features = ["devtools"] }`.
+  - Edge-resilient viewport boundary clamping prevents clipping at bottom and right window edges.
+  - Dismisses on backdrop click, secondary contextmenu, or `Escape` key.
 
 ### Mobile & Responsive Layout
 - **Breakpoints**:
@@ -278,6 +298,10 @@ crates/ui/src/
    - Backend JSON payloads and OS collectors may emit version fields as integers (e.g. `11`) or strings (`"11.0"`).
    - `DeviceInfo.os_version` and `browser_version` use `deserialize_optional_string_or_number` to accept either format without failing DTO decoding.
    - `Api::get_sessions()` receives `Vec<(SessionView, bool)>` where the boolean indicates `is_current`, mapping smoothly onto `SessionView` in `sessions_tab.rs`.
+14. **Async Task Lifecycle (`spawn_local_scoped` vs `wasm_bindgen_futures::spawn_local`)**:
+   - Sycamore's `spawn_local_scoped` binds the spawned future to the *current reactive scope*. If that scope is disposed or re-evaluated (for example, when a reactive signal like `loading.set(true)` causes an enclosing dynamic view expression to re-run), all scoped futures inside it are **immediately cancelled and dropped**.
+   - Any pending `fetch` or HTTP `.await` inside an aborted scoped future will never resume, leaving loading spinners or stale state frozen permanently.
+   - **Always** use `wasm_bindgen_futures::spawn_local` for asynchronous flows triggered by user actions (form submissions, button clicks) and long-running background loops (autologin polling), controlling lifecycle with explicit cancellation tokens (`poll_session_id`, `on_cleanup`).
 
 ---
 

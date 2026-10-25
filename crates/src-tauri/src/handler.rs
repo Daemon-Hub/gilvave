@@ -6,7 +6,9 @@ use gilvave_core::{
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 fn get_main_window(app_handle: &AppHandle) -> Option<WebviewWindow> {
-    app_handle.get_webview_window("main")
+    app_handle
+        .get_webview_window("main")
+        .or_else(|| app_handle.webview_windows().into_values().next())
 }
 
 #[tauri::command]
@@ -59,6 +61,17 @@ pub async fn handle_command(
                 let _ = window.start_dragging();
             }
             CommandResult::Ok(CommandResponse::WindowStartDragging)
+        }
+        CommandArgs::OpenDevTools => {
+            #[cfg(debug_assertions)]
+            if let Some(window) = get_main_window(&app_handle) {
+                if window.is_devtools_open() {
+                    window.close_devtools();
+                } else {
+                    window.open_devtools();
+                }
+            }
+            CommandResult::Ok(CommandResponse::OpenDevTools)
         }
     })
 }

@@ -123,7 +123,7 @@ pub fn LoginPanel(props: LoginFormProps) -> View {
                 SocialButtons()
             }
             (if loading.get() {
-                view! { Spinner() }
+                view! { Spinner(label="Вход в аккаунт...") }
             } else {
                 view! {}
             })

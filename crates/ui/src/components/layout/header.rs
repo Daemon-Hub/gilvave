@@ -3,13 +3,13 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 use wasm_bindgen::JsCast;
 
 #[cfg(debug_assertions)]
+use crate::components::common::{ActiveScreen, ScreenWrapper};
+#[cfg(debug_assertions)]
 use strum::IntoEnumIterator;
 #[cfg(debug_assertions)]
 use sycamore::web::events::Event;
 #[cfg(debug_assertions)]
 use web_sys::HtmlSelectElement;
-#[cfg(debug_assertions)]
-use crate::components::common::{ActiveScreen, ScreenWrapper};
 
 use crate::{
     components::ui::icons::{CloseIcon, MaximizeIcon, MinimizeIcon},

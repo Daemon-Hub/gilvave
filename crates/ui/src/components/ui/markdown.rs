@@ -1,5 +1,5 @@
+use pulldown_cmark::{Options, Parser, html};
 use std::borrow::Cow;
-use pulldown_cmark::{html, Options, Parser};
 use sycamore::prelude::*;
 use sycamore::web::tags::div;
 use sycamore::web::{GlobalProps, HtmlGlobalAttributes};
@@ -60,4 +60,3 @@ mod tests {
         assert!(html.contains("\"name\": \"Test\""));
     }
 }
-

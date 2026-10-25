@@ -5,8 +5,8 @@ use gilvave_core::{
         servers::channels::{ChannelType, ChannelView},
         servers::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
         users::{
-            AuthTokensResponse, LoginRequest, RegisterRequest, SessionView, UpdateTokensRequest,
-            UserView,
+            AuthTokensResponse, CreateThemeInfo, LoginRequest, RegisterRequest, SessionView,
+            UpdateTokensRequest, UserView,
         },
     },
     error::{ErrorInfo, ErrorMessage},
@@ -535,4 +535,20 @@ fn test_device_info_numeric_os_version() {
     assert_eq!(session.id, "550e8400-e29b-41d4-a716-446655440000");
     assert!(session.is_current);
     assert_eq!(session.device_info.os_version.as_deref(), Some("11"));
+}
+
+#[test]
+fn test_create_theme_info_serde() {
+    let info = CreateThemeInfo {
+        name: "Neon Cyber".to_string(),
+        description: "Vibrant synthwave theme".to_string(),
+        config: serde_json::json!({
+            "palette": { "primary": "#ff007f" }
+        }),
+    };
+    let json_str = serde_json::to_string(&info).unwrap();
+    let deserialized: CreateThemeInfo = serde_json::from_str(&json_str).unwrap();
+    assert_eq!(deserialized.name, "Neon Cyber");
+    assert_eq!(deserialized.description, "Vibrant synthwave theme");
+    assert_eq!(deserialized.config["palette"]["primary"], "#ff007f");
 }

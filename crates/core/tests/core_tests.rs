@@ -107,6 +107,7 @@ fn test_all_command_args_variants_to_json() {
         CommandArgs::WindowToggleMaximize,
         CommandArgs::WindowClose,
         CommandArgs::WindowStartDragging,
+        CommandArgs::OpenDevTools,
     ];
 
     for cmd in commands {

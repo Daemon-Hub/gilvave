@@ -6,10 +6,11 @@
     @include glass(24px, $color-bg-container);
     border-radius: 20px;
     box-shadow: $shadow-container, 0 16px 48px rgba(0, 0, 0, 0.55);
-    width: min(430px, 92vw);
-    margin-top: 8vh;
+    width: min(440px, 92vw);
+    margin: clamp(16px, 3.5vh, 36px) auto clamp(20px, 4vh, 40px);
     overflow: hidden;
     border: 1px solid $color-border-container;
+    box-sizing: border-box;
     display: none;
 
     &.active {
@@ -21,6 +22,7 @@
         width: 100%;
         max-width: 100%;
         margin-top: 0;
+        margin-bottom: 0;
         border-radius: 0;
         min-height: 100dvh;
         height: 100%;

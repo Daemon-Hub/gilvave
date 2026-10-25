@@ -1,0 +1,131 @@
+@use '../common/variables' as *;
+@use '../common/mixins' as *;
+
+// ─── Custom Application Context Menu ───────────────────────────────────────────
+.context-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    background: transparent;
+    cursor: default;
+}
+
+.app-context-menu {
+    position: fixed;
+    z-index: 99999;
+    min-width: 210px;
+    max-width: 320px;
+    padding: 6px;
+    background: $color-bg-panel-dark;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    box-shadow: $shadow-panel;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: contextMenuFadeIn 0.12s cubic-bezier(0.2, 0.9, 0.4, 1) forwards;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+
+    .context-menu-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 7px 10px;
+        border: none;
+        border-radius: $radius-sm;
+        background: transparent;
+        color: $color-text-chat;
+        font-size: $font-size-sm;
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.12s ease, color 0.12s ease;
+        gap: 10px;
+
+        .context-menu-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            color: $color-text-muted;
+            flex-shrink: 0;
+
+            svg {
+                width: 15px;
+                height: 15px;
+                stroke: currentColor;
+            }
+        }
+
+        .context-menu-label {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .context-menu-shortcut {
+            font-size: 11px;
+            color: $color-text-muted;
+            margin-left: auto;
+            padding-left: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-text-white;
+
+            .context-menu-icon {
+                color: $color-primary-light;
+            }
+
+            .context-menu-shortcut {
+                color: $color-text-chat;
+            }
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+
+        &.is-danger {
+            color: $color-danger;
+
+            .context-menu-icon {
+                color: $color-danger;
+            }
+
+            &:hover {
+                background: $color-danger-alpha-15;
+                color: $color-danger-light;
+
+                .context-menu-icon {
+                    color: $color-danger-light;
+                }
+            }
+        }
+    }
+
+    .context-menu-separator {
+        height: 1px;
+        background: $color-border-subtle;
+        margin: 4px 6px;
+    }
+}
+
+@keyframes contextMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

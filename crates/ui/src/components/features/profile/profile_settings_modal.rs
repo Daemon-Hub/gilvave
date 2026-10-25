@@ -1,18 +1,18 @@
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
-use wasm_bindgen::JsCast;
-use crate::components::features::profile::sessions_tab::SessionsTab;
-use crate::components::ui::ShowMoreBanner;
-use crate::http::api::Api;
-use crate::components::ui::icons::{
-    ArrowLeftIcon, CatalogIcon, CheckIcon, CloseSmallIcon, CodeIcon,
-    DownloadIcon, EditIcon, FileTextIcon, LockIcon, LogOutIcon, MonitorIcon, PaletteIcon, TrashIcon,
-    UploadIcon, UserIcon,
-};
 use crate::components::common::{
     ActiveScreen, AppTheme, CustomTheme, ScreenWrapper, UiModalContext, UserProfileContext,
     classes, download_json_file,
 };
+use crate::components::features::profile::sessions_tab::SessionsTab;
+use crate::components::ui::ShowMoreBanner;
+use crate::components::ui::icons::{
+    ArrowLeftIcon, CatalogIcon, CheckIcon, CloseSmallIcon, CodeIcon, DownloadIcon, EditIcon,
+    FileTextIcon, LockIcon, LogOutIcon, MonitorIcon, PaletteIcon, TrashIcon, UploadIcon, UserIcon,
+};
+use crate::http::api::Api;
+use gilvave_core::dto::users::CreateThemeInfo;
+use wasm_bindgen::JsCast;
 
 #[derive(Clone, Copy, PartialEq)]
 enum SettingsTab {
@@ -649,6 +649,7 @@ pub fn ProfileSettingsModal() -> View {
                                                     let theme_name_delete = theme.name.clone();
                                                     let theme_for_export = theme.clone();
                                                     let theme_for_edit = theme.clone();
+                                                    let theme_for_upload = theme.clone();
                                                     let name = theme.name.clone();
                                                     let author = format!("by @{}", theme.author);
                                                     let desc = if theme.description.trim().is_empty() {
@@ -740,6 +741,44 @@ pub fn ProfileSettingsModal() -> View {
                                                                     }
                                                                     button(
                                                                         class="theme-card-btn",
+                                                                        title="Опубликовать тему в каталоге на сервере",
+                                                                        on:click=move |_| {
+                                                                            let t_name = theme_for_upload.name.clone();
+                                                                            let t_desc = theme_for_upload.description.clone();
+                                                                            let config_val = match serde_json::to_value(&theme_for_upload) {
+                                                                                Ok(v) => v,
+                                                                                Err(e) => {
+                                                                                    theme_status_is_error.set(true);
+                                                                                    theme_status_msg.set(format!("Ошибка сериализации: {e}"));
+                                                                                    return;
+                                                                                }
+                                                                            };
+                                                                            let info = CreateThemeInfo {
+                                                                                name: t_name.clone(),
+                                                                                description: t_desc,
+                                                                                config: config_val,
+                                                                            };
+                                                                            theme_status_is_error.set(false);
+                                                                            theme_status_msg.set(format!("Загрузка темы «{t_name}» на сервер..."));
+                                                                            spawn_local_scoped(async move {
+                                                                                match Api::create_theme(&info).await {
+                                                                                    Ok(()) => {
+                                                                                        theme_status_is_error.set(false);
+                                                                                        theme_status_msg.set(format!("✓ Тема «{t_name}» успешно опубликована на сервере!"));
+                                                                                    }
+                                                                                    Err(err) => {
+                                                                                        theme_status_is_error.set(true);
+                                                                                        theme_status_msg.set(format!("Ошибка загрузки: {}", err.1));
+                                                                                    }
+                                                                                }
+                                                                            });
+                                                                        },
+                                                                    ) {
+                                                                        UploadIcon()
+                                                                        span { "В каталог" }
+                                                                    }
+                                                                    button(
+                                                                        class="theme-card-btn",
                                                                         on:click=move |_| {
                                                                             let filename = format!(
                                                                                 "{}.gilvave-theme.json",
@@ -749,7 +788,7 @@ pub fn ProfileSettingsModal() -> View {
                                                                             download_json_file(&filename, &content);
                                                                         },
                                                                     ) {
-                                                                        UploadIcon()
+                                                                        DownloadIcon()
                                                                         span { "Экспорт" }
                                                                     }
                                                                     button(
@@ -916,7 +955,8 @@ pub fn ThemeCatalogModal() -> View {
         let next_page = current_page.get() + 1;
         spawn_local_scoped(async move {
             if let Ok((new_themes, more)) = Api::get_themes_catalog(next_page).await {
-                let new_customs: Vec<CustomTheme> = new_themes.into_iter().map(CustomTheme::from).collect();
+                let new_customs: Vec<CustomTheme> =
+                    new_themes.into_iter().map(CustomTheme::from).collect();
                 let mut current = server_themes.get_clone();
                 current.extend(new_customs);
                 server_themes.set(current);
@@ -1122,4 +1162,3 @@ pub fn ThemeCatalogModal() -> View {
         }
     }
 }
-

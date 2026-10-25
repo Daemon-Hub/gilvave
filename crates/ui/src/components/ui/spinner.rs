@@ -1,7 +1,7 @@
 use sycamore::prelude::*;
 
-#[component]
-pub fn Spinner() -> View {
+#[component(inline_props)]
+pub fn Spinner(#[prop(default)] label: Option<&'static str>) -> View {
     view! {
         div(class="spinner-overlay") {
             div(class="spinner") {
@@ -10,6 +10,13 @@ pub fn Spinner() -> View {
                 div(class="spinner-ring")
                 div(class="spinner-core")
             }
+            (if let Some(text) = label {
+                view! {
+                    p(class="spinner-label") { (text) }
+                }
+            } else {
+                view! {}
+            })
         }
     }
 }

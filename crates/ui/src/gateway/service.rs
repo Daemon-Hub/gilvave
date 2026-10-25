@@ -25,36 +25,49 @@ pub struct WsService;
 
 impl WsService {
     pub async fn join_channel(channel_id: ChannelId) -> Result<(), ErrorInfo> {
-        web_sys::console::log_1(&format!("[WS SERVICE] join_channel called: channel_id={channel_id}").into());
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] join_channel called: channel_id={channel_id}").into(),
+        );
         let sender_ptr = SENDER.lock().await;
         match sender_ptr.as_ref() {
-            Some(sender) => {
-                match sender.unbounded_send(ServerSend::JoinChannel { channel_id }) {
-                    Ok(_) => {
-                        web_sys::console::log_1(&"[WS SERVICE] unbounded_send JoinChannel OK".into());
-                        Ok(())
-                    }
-                    Err(e) => {
-                        web_sys::console::error_1(&format!("[WS SERVICE] unbounded_send JoinChannel ERR: {e}").into());
-                        Err(ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string()))
-                    }
+            Some(sender) => match sender.unbounded_send(ServerSend::JoinChannel { channel_id }) {
+                Ok(_) => {
+                    web_sys::console::log_1(&"[WS SERVICE] unbounded_send JoinChannel OK".into());
+                    Ok(())
                 }
-            }
+                Err(e) => {
+                    web_sys::console::error_1(
+                        &format!("[WS SERVICE] unbounded_send JoinChannel ERR: {e}").into(),
+                    );
+                    Err(ErrorInfo::from_code(
+                        ErrorCode::GatewaySendFailed,
+                        e.to_string(),
+                    ))
+                }
+            },
             None => {
                 web_sys::console::error_1(&"[WS SERVICE] join_channel: SENDER is None!".into());
-                Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string()))
+                Err(ErrorInfo::from_code(
+                    ErrorCode::GatewayNotInitialized,
+                    "WebSocket sender not initialized".to_string(),
+                ))
             }
         }
     }
 
     pub async fn left_channel(channel_id: ChannelId) -> Result<(), ErrorInfo> {
-        web_sys::console::log_1(&format!("[WS SERVICE] left_channel called: channel_id={channel_id}").into());
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] left_channel called: channel_id={channel_id}").into(),
+        );
         let sender_ptr = SENDER.lock().await;
         match sender_ptr.as_ref() {
             Some(sender) => sender
                 .unbounded_send(ServerSend::LeftChannel { channel_id })
                 .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
-            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
         }
     }
 
@@ -76,11 +89,13 @@ impl WsService {
     // Обмен сигнальными сообщениями WebRTC (SDP Offer, SDP Answer, ICE Candidates) через WebSocket
     // pub async fn send_voice_signal(channel_id: ChannelId, data: String) -> Result<(), ErrorInfo>
 
-    pub async fn message_create(
-        channel_id: ChannelId,
-        content: String,
-    ) -> Result<(), ErrorInfo> {
-        web_sys::console::log_1(&format!("[WS SERVICE] message_create called: channel_id={channel_id}, content={content}").into());
+    pub async fn message_create(channel_id: ChannelId, content: String) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!(
+                "[WS SERVICE] message_create called: channel_id={channel_id}, content={content}"
+            )
+            .into(),
+        );
         let sender_ptr = SENDER.lock().await;
         match sender_ptr.as_ref() {
             Some(sender) => {
@@ -89,18 +104,28 @@ impl WsService {
                     content,
                 }) {
                     Ok(_) => {
-                        web_sys::console::log_1(&"[WS SERVICE] unbounded_send MessageCreate OK".into());
+                        web_sys::console::log_1(
+                            &"[WS SERVICE] unbounded_send MessageCreate OK".into(),
+                        );
                         Ok(())
                     }
                     Err(e) => {
-                        web_sys::console::error_1(&format!("[WS SERVICE] unbounded_send MessageCreate ERR: {e}").into());
-                        Err(ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string()))
+                        web_sys::console::error_1(
+                            &format!("[WS SERVICE] unbounded_send MessageCreate ERR: {e}").into(),
+                        );
+                        Err(ErrorInfo::from_code(
+                            ErrorCode::GatewaySendFailed,
+                            e.to_string(),
+                        ))
                     }
                 }
             }
             None => {
                 web_sys::console::error_1(&"[WS SERVICE] message_create: SENDER is None!".into());
-                Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string()))
+                Err(ErrorInfo::from_code(
+                    ErrorCode::GatewayNotInitialized,
+                    "WebSocket sender not initialized".to_string(),
+                ))
             }
         }
     }
@@ -109,7 +134,9 @@ impl WsService {
         channel_id: ChannelId,
         timestamp: time::OffsetDateTime,
     ) -> Result<(), ErrorInfo> {
-        web_sys::console::log_1(&format!("[WS SERVICE] channel_history_before called: channel_id={channel_id}").into());
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] channel_history_before called: channel_id={channel_id}").into(),
+        );
         let sender_ptr = SENDER.lock().await;
         match sender_ptr.as_ref() {
             Some(sender) => sender
@@ -118,7 +145,10 @@ impl WsService {
                     timestamp,
                 })
                 .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
-            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
         }
     }
 
@@ -126,7 +156,9 @@ impl WsService {
         channel_id: ChannelId,
         timestamp: time::OffsetDateTime,
     ) -> Result<(), ErrorInfo> {
-        web_sys::console::log_1(&format!("[WS SERVICE] channel_history_after called: channel_id={channel_id}").into());
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] channel_history_after called: channel_id={channel_id}").into(),
+        );
         let sender_ptr = SENDER.lock().await;
         match sender_ptr.as_ref() {
             Some(sender) => sender
@@ -135,7 +167,10 @@ impl WsService {
                     timestamp,
                 })
                 .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
-            None => Err(ErrorInfo::from_code(ErrorCode::GatewayNotInitialized, "WebSocket sender not initialized".to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
         }
     }
 
@@ -144,7 +179,10 @@ impl WsService {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
-            web_sys::console::warn_1(&"[WS SERVICE] listen_web_socket is already running! Skipping duplicate call.".into());
+            web_sys::console::warn_1(
+                &"[WS SERVICE] listen_web_socket is already running! Skipping duplicate call."
+                    .into(),
+            );
             return Ok(true);
         }
 
@@ -180,11 +218,16 @@ impl WsService {
                             while let Some(msg) = ws_receiver.next().await {
                                 match msg {
                                     WsMessage::Text(text) => {
-                                        web_sys::console::log_1(&format!("[WS SERVICE RECV TEXT] {text}").into());
+                                        web_sys::console::log_1(
+                                            &format!("[WS SERVICE RECV TEXT] {text}").into(),
+                                        );
                                         handle(text).await;
                                     }
                                     WsMessage::Binary(bin) => {
-                                        web_sys::console::log_1(&format!("[WS SERVICE RECV BIN] len={}", bin.len()).into());
+                                        web_sys::console::log_1(
+                                            &format!("[WS SERVICE RECV BIN] len={}", bin.len())
+                                                .into(),
+                                        );
                                     }
                                 }
                             }
@@ -196,29 +239,49 @@ impl WsService {
                             while let Some(msg) = receiver.next().await {
                                 match serde_json::to_string(&msg) {
                                     Ok(json) => {
-                                        web_sys::console::log_1(&format!("[WS SERVICE SENDING] {json}").into());
-                                        if let Err(e) = ws_sender.send(WsMessage::Text(json.clone())).await {
-                                            web_sys::console::error_1(&format!("[WS SERVICE SEND ERR] {e:?}, json={json}").into());
+                                        web_sys::console::log_1(
+                                            &format!("[WS SERVICE SENDING] {json}").into(),
+                                        );
+                                        if let Err(e) =
+                                            ws_sender.send(WsMessage::Text(json.clone())).await
+                                        {
+                                            web_sys::console::error_1(
+                                                &format!(
+                                                    "[WS SERVICE SEND ERR] {e:?}, json={json}"
+                                                )
+                                                .into(),
+                                            );
                                             break;
                                         } else {
-                                            web_sys::console::log_1(&format!("[WS SERVICE SEND OK] {json}").into());
+                                            web_sys::console::log_1(
+                                                &format!("[WS SERVICE SEND OK] {json}").into(),
+                                            );
                                         }
                                     }
                                     Err(e) => {
-                                        web_sys::console::error_1(&format!("[WS SERVICE JSON SERIALIZE ERR] {e:?}").into());
+                                        web_sys::console::error_1(
+                                            &format!("[WS SERVICE JSON SERIALIZE ERR] {e:?}")
+                                                .into(),
+                                        );
                                     }
                                 }
                             }
                             web_sys::console::warn_1(&"[WS SERVICE] send_task ended".into());
                         };
 
-                        futures_util::future::select(Box::pin(receive_task), Box::pin(send_task)).await;
-                        web_sys::console::warn_1(&"[WS SERVICE] one of ws tasks finished, closing and reconnecting...".into());
+                        futures_util::future::select(Box::pin(receive_task), Box::pin(send_task))
+                            .await;
+                        web_sys::console::warn_1(
+                            &"[WS SERVICE] one of ws tasks finished, closing and reconnecting..."
+                                .into(),
+                        );
 
                         gloo_timers::future::sleep(core::time::Duration::from_millis(1000)).await;
                     }
                     Err(e) => {
-                        web_sys::console::error_1(&format!("[WS SERVICE] WebSocket connection error: {e:?}").into());
+                        web_sys::console::error_1(
+                            &format!("[WS SERVICE] WebSocket connection error: {e:?}").into(),
+                        );
                         let _ = crate::http::api::Api::update_tokens().await;
                         gloo_timers::future::sleep(core::time::Duration::from_secs(2)).await;
                         continue;

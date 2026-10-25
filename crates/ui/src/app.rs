@@ -1,5 +1,5 @@
 use sycamore::{futures::spawn_local_scoped, prelude::*};
-use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen::{JsCast, closure::Closure};
 
 use crate::{
     components::{
@@ -7,6 +7,7 @@ use crate::{
         layout::header::AppHeader,
         pages::home_panel::HomePanel,
         templates::auth_form::AuthForm,
+        ui::{AppContextMenu, ContextMenuContext, context_menu::handle_global_context_menu},
     },
     http::api::Api,
 };
@@ -15,6 +16,52 @@ use crate::{
 pub fn App() -> View {
     let screen_wrapper = ScreenWrapper(create_signal(ActiveScreen::Loading));
     provide_context(screen_wrapper);
+
+    let context_menu_ctx = ContextMenuContext::new();
+    provide_context(context_menu_ctx);
+
+    let on_global_context_menu = move |event: web_sys::MouseEvent| {
+        if event.default_prevented() {
+            return;
+        }
+        handle_global_context_menu(&event, &context_menu_ctx, None, None, None);
+    };
+
+    // Block all keyboard shortcuts used to debug or inspect the app (F12, Ctrl+Shift+I/J/C/K/E, Ctrl+U)
+    if let Some(window) = web_sys::window() {
+        let on_debug_key =
+            Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
+                let key = e.key();
+                let is_ctrl = e.ctrl_key() || e.meta_key();
+                let is_shift = e.shift_key();
+
+                let is_debug_shortcut = if key == "F12" {
+                    true
+                } else if is_ctrl
+                    && is_shift
+                    && (key.eq_ignore_ascii_case("I")
+                        || key.eq_ignore_ascii_case("J")
+                        || key.eq_ignore_ascii_case("C")
+                        || key.eq_ignore_ascii_case("K")
+                        || key.eq_ignore_ascii_case("E"))
+                {
+                    true
+                } else {
+                    is_ctrl && !is_shift && !e.alt_key() && key.eq_ignore_ascii_case("U")
+                };
+
+                if is_debug_shortcut {
+                    e.prevent_default();
+                    e.stop_propagation();
+                }
+            });
+        let _ = window.add_event_listener_with_callback_and_bool(
+            "keydown",
+            on_debug_key.as_ref().unchecked_ref(),
+            true,
+        );
+        on_debug_key.forget();
+    }
 
     // Pause background aurora animations when window/tab is hidden (0% GPU)
     if let Some(window) = web_sys::window() {
@@ -70,11 +117,11 @@ pub fn App() -> View {
         } else {
             view! {}
         })
-        main() {
+        main(on:contextmenu=on_global_context_menu) {
             AppHeader()
             AuthForm()
             HomePanel()
+            AppContextMenu()
         }
     }
 }
-

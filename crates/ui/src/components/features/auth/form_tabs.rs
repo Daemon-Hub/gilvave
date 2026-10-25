@@ -10,7 +10,9 @@ pub fn FormTabs() -> View {
         let screen_wrapper = use_context::<ScreenWrapper>();
         match screen_wrapper.get() {
             ActiveScreen::Login => screen_wrapper.set(ActiveScreen::Register),
-            ActiveScreen::Register => screen_wrapper.set(ActiveScreen::Login),
+            ActiveScreen::Register | ActiveScreen::RegisterConfirm => {
+                screen_wrapper.set(ActiveScreen::Login)
+            }
             _ => {}
         }
     };
@@ -18,13 +20,13 @@ pub fn FormTabs() -> View {
     view! {
         div(class="form-header") {
             TabButton(
-                on:click=move |_| if screen_wrapper.is_register() { switch_form() },
+                on:click=move |_| if screen_wrapper.is_register() || screen_wrapper.is_register_confirm() { switch_form() },
                 is_active=(move || screen_wrapper.is_login()).into(),
             ) { "Вход" }
 
             TabButton(
                 on:click=move |_| if screen_wrapper.is_login() { switch_form() },
-                is_active=(move || screen_wrapper.is_register()).into(),
+                is_active=(move || screen_wrapper.is_register() || screen_wrapper.is_register_confirm()).into(),
             ) { "Регистрация" }
         }
     }

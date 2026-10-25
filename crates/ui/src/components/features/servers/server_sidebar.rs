@@ -195,8 +195,14 @@ pub fn ServerSidebar() -> View {
                     ("active", is_active_dyn.clone()).into(),
                 ]);
 
+                let s_id_str = id.to_string();
+                let s_name_str = name.get_clone();
                 view! {
-                    div(class="server-icon-wrapper") {
+                    div(
+                        class="server-icon-wrapper",
+                        data-server-id=s_id_str,
+                        data-server-name=s_name_str,
+                    ) {
                         div(class=pill_class)
                         ServerIcon(
                             server_name=name,

@@ -10,15 +10,14 @@ use gilvave_core::{
 use crate::{http::api::Api, utils::invoke_command};
 
 impl Api {
-    pub async fn register(register_request: RegisterRequest) -> Result<(), ErrorInfo> {
-        let res = Api::request_raw(
-            "POST",
-            &format!("{BASE_HTTP_URL}/users/auth/register"),
-            &register_request,
-            None,
-        )
-        .await?;
+    pub async fn register_validate(register_request: RegisterRequest) -> Result<(), ErrorInfo> {
+        let url = format!("{BASE_HTTP_URL}/users/auth/register/validate");
+        let res = Api::request_raw("POST", &url, &register_request, None).await?;
         Api::response_to_empty(res).await
+    }
+
+    pub async fn register(register_request: RegisterRequest) -> Result<(), ErrorInfo> {
+        Self::register_validate(register_request).await
     }
 
     pub async fn login(request: LoginRequest) -> Result<(), ErrorInfo> {

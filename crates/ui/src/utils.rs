@@ -83,6 +83,14 @@ async fn handle_command_web(args: Value) -> CommandResult {
         }
         CommandArgs::WindowClose => CommandResult::Ok(CommandResponse::WindowClose),
         CommandArgs::WindowStartDragging => CommandResult::Ok(CommandResponse::WindowStartDragging),
+        CommandArgs::OpenDevTools => {
+            #[cfg(target_arch = "wasm32")]
+            {
+                web_sys::console::warn_1(&"[Gilvave] Все сочетания клавиш разработчика (F12, Ctrl+Shift+I) заблокированы. В Tauri Desktop DevTools вызываются через данную кнопку.".into());
+                let _ = js_sys::eval("debugger;");
+            }
+            CommandResult::Ok(CommandResponse::OpenDevTools)
+        }
     }
 }
 

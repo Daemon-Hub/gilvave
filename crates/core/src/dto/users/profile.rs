@@ -55,6 +55,13 @@ impl UserView {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CreateThemeInfo {
+    pub name: String,
+    pub description: String,
+    pub config: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Theme {
     pub name: String,
     pub author: String,

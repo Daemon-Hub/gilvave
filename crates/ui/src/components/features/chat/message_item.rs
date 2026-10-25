@@ -1,5 +1,5 @@
 use crate::{
-    components::common::{parse_message_segments, MessageSegment},
+    components::common::{MessageSegment, parse_message_segments},
     utils::to_local_datetime,
 };
 use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHARS};
@@ -55,11 +55,14 @@ pub fn MessageItem(
         }
     };
 
+    let author_name = message_view.author_name.clone();
+    let author_name_attr = author_name.clone();
+
     let (header_node, chained_node) = if is_first_in_group {
         (
             view! {
                 div(class="message-header") {
-                    span(class="author") { (message_view.author_name) }
+                    span(class="author") { (author_name) }
                     span(class="timestamp") { (formatted_timestamp) }
                 }
             },
@@ -75,6 +78,8 @@ pub fn MessageItem(
     };
 
     let full_content = message_view.content;
+    let full_content_attr = full_content.clone();
+    let full_content_for_memo = full_content.clone();
     let char_count = full_content.chars().count();
     let is_long = char_count > MESSAGE_COLLAPSE_CHARS;
     let truncated_content = if is_long {
@@ -87,14 +92,19 @@ pub fn MessageItem(
     let is_expanded = create_signal(false);
     let displayed_text = create_memo(move || {
         if !is_long || is_expanded.get() {
-            full_content.clone()
+            full_content_for_memo.clone()
         } else {
             truncated_content.clone()
         }
     });
 
     view! {
-        div(class=class_list) {
+        div(
+            class=class_list,
+            data-message-id=message_view.id.to_string(),
+            data-message-content=full_content_attr,
+            data-author-name=author_name_attr,
+        ) {
             (avatar_node)
             div(class="message-body") {
                 (header_node)

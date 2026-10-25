@@ -12,6 +12,7 @@ use gilvave_core::dto::servers::channels::{ChannelType, ChannelView};
 #[component(inline_props)]
 pub fn ChannelItem(channel_view: ChannelView) -> View {
     let channel_name = channel_view.name.clone();
+    let channel_name_attr = channel_name.clone();
     let channel_id = channel_view.id;
     let channel_type = channel_view.r#type;
     let is_voice = channel_type == ChannelType::VOICE;
@@ -82,6 +83,8 @@ pub fn ChannelItem(channel_view: ChannelView) -> View {
                 ("voice", is_voice.into()).into(),
                 ("active", is_active.into()).into(),
             ]),
+            data-channel-id=channel_id.to_string(),
+            data-channel-name=channel_name_attr,
             on:click=on_click,
         ) {
             span(class="channel-icon") {

@@ -76,5 +76,3 @@ mod tests {
         assert_eq!(srv_name, "Test Server");
     }
 }
-
-

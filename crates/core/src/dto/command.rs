@@ -14,6 +14,7 @@ pub enum CommandArgs {
     WindowToggleMaximize,
     WindowClose,
     WindowStartDragging,
+    OpenDevTools,
 }
 
 impl CommandArgs {
@@ -33,6 +34,7 @@ pub enum CommandResponse {
     WindowToggleMaximize,
     WindowClose,
     WindowStartDragging,
+    OpenDevTools,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

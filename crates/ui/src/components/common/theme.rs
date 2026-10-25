@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use wasm_bindgen::JsCast;
 
 const STORAGE_KEY_ACTIVE_THEME: &str = "gilvave_theme";
@@ -122,10 +122,6 @@ impl AppTheme {
     }
 }
 
-fn default_author() -> String {
-    "community".to_string()
-}
-
 fn default_version() -> String {
     "1.0.0".to_string()
 }
@@ -180,7 +176,7 @@ pub struct ThemePalette {
 pub struct CustomTheme {
     pub id: String,
     pub name: String,
-    #[serde(default = "default_author")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub author: String,
     #[serde(default = "default_version")]
     pub version: String,
@@ -196,8 +192,8 @@ pub struct CustomTheme {
 
 impl CustomTheme {
     pub fn from_json_str(raw: &str) -> Result<Self, String> {
-        let mut theme: Self = serde_json::from_str(raw)
-            .map_err(|e| format!("Ошибка синтаксиса JSON: {e}"))?;
+        let mut theme: Self =
+            serde_json::from_str(raw).map_err(|e| format!("Ошибка синтаксиса JSON: {e}"))?;
 
         theme.id = sanitize_id(&theme.id);
         theme.name = theme.name.trim().to_string();
@@ -207,7 +203,11 @@ impl CustomTheme {
         if theme.id.is_empty() {
             theme.id = sanitize_id(&theme.name);
         }
-        if theme.id.is_empty() || theme.id == "standard" || theme.id == "advanced" || theme.id == "light" {
+        if theme.id.is_empty()
+            || theme.id == "standard"
+            || theme.id == "advanced"
+            || theme.id == "light"
+        {
             #[cfg(target_arch = "wasm32")]
             {
                 theme.id = format!("custom-{}", js_sys::Date::now() as u64);
@@ -217,9 +217,7 @@ impl CustomTheme {
                 theme.id = "custom-user-theme".to_string();
             }
         }
-        if theme.author.trim().is_empty() {
-            theme.author = default_author();
-        }
+        theme.author = theme.author.trim().to_string();
         if theme.version.trim().is_empty() {
             theme.version = default_version();
         }
@@ -298,7 +296,7 @@ impl CustomTheme {
         let template = Self {
             id: "my-custom-theme".to_string(),
             name: "My Custom Theme".to_string(),
-            author: "your_nickname".to_string(),
+            author: String::new(),
             version: "1.0.0".to_string(),
             description: "Описание вашей пользовательской темы для Gilvave.".to_string(),
             base: "standard".to_string(),
@@ -323,12 +321,10 @@ impl CustomTheme {
                 idle: Some("#d29922".to_string()),
                 danger: Some("#f85149".to_string()),
             },
-            variables: BTreeMap::from([
-                (
-                    "--gradient-send-btn".to_string(),
-                    "linear-gradient(135deg, #58a6ff, #bc8cff)".to_string(),
-                ),
-            ]),
+            variables: BTreeMap::from([(
+                "--gradient-send-btn".to_string(),
+                "linear-gradient(135deg, #58a6ff, #bc8cff)".to_string(),
+            )]),
         };
         template.to_pretty_json()
     }
@@ -488,7 +484,10 @@ impl CustomTheme {
                 ("45", 0.45),
                 ("50", 0.50),
             ] {
-                vars.insert(format!("--color-primary-alpha-{suffix}"), with_alpha(c, alpha));
+                vars.insert(
+                    format!("--color-primary-alpha-{suffix}"),
+                    with_alpha(c, alpha),
+                );
             }
 
             vars.insert(
@@ -592,7 +591,11 @@ impl CustomTheme {
             );
             vars.insert(
                 "--shadow-home-btn-hover".into(),
-                format!("0 0 0 3px {}, 0 0 16px {}", with_alpha(acc, 0.6), with_alpha(acc, 0.4)),
+                format!(
+                    "0 0 0 3px {}, 0 0 16px {}",
+                    with_alpha(acc, 0.6),
+                    with_alpha(acc, 0.4)
+                ),
             );
             vars.insert("--color-border-bubble-hover".into(), with_alpha(acc, 0.32));
             vars.insert("--color-border-input-focus".into(), with_alpha(acc, 0.55));
@@ -632,12 +635,18 @@ impl CustomTheme {
             vars.insert("--color-home-badge-border".into(), warm.clone());
             vars.insert("--color-home-badge-border-hover".into(), spark.clone());
             vars.insert("--color-channel-add-hover-text".into(), warm.clone());
-            vars.insert("--color-channel-add-hover-bg".into(), with_alpha(warm, 0.16));
+            vars.insert(
+                "--color-channel-add-hover-bg".into(),
+                with_alpha(warm, 0.16),
+            );
             vars.insert("--color-char-counter-border".into(), with_alpha(warm, 0.45));
             vars.insert("--color-char-counter-text".into(), spark.clone());
             vars.insert("--color-read-more-border".into(), with_alpha(warm, 0.4));
             vars.insert("--color-read-more-text".into(), warm.clone());
-            vars.insert("--color-read-more-hover-border".into(), with_alpha(warm, 0.65));
+            vars.insert(
+                "--color-read-more-hover-border".into(),
+                with_alpha(warm, 0.65),
+            );
             vars.insert("--color-read-more-hover-text".into(), spark.clone());
             vars.insert("--gradient-read-more".into(), with_alpha(warm, 0.16));
             vars.insert("--gradient-read-more-hover".into(), with_alpha(warm, 0.28));
@@ -649,7 +658,11 @@ impl CustomTheme {
             vars.insert("--color-server-new-hover-bg".into(), with_alpha(warm, 0.18));
             vars.insert(
                 "--shadow-server-new-hover".into(),
-                format!("0 0 0 2px {}, 0 0 14px {}", with_alpha(warm, 0.55), with_alpha(warm, 0.35)),
+                format!(
+                    "0 0 0 2px {}, 0 0 14px {}",
+                    with_alpha(warm, 0.55),
+                    with_alpha(warm, 0.35)
+                ),
             );
         }
 
@@ -711,7 +724,6 @@ impl CustomTheme {
                 format!("radial-gradient(circle, {warm} 0%, transparent 65%)"),
             );
         }
-
 
         if let Some(ref c) = text_heading {
             vars.insert("--color-text-heading".into(), c.clone());
@@ -886,7 +898,9 @@ impl From<gilvave_core::dto::users::Theme> for CustomTheme {
         }
 
         if let Ok(p) = serde_json::from_value::<PartialConfig>(t.config) {
-            let id = p.id.filter(|s| !s.is_empty()).unwrap_or_else(|| sanitize_id(&t.name));
+            let id =
+                p.id.filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| sanitize_id(&t.name));
             CustomTheme {
                 id,
                 name: t.name,
@@ -935,11 +949,7 @@ fn is_allowed_css_var(key: &str) -> bool {
         || key.starts_with("--gradient-")
         || key.starts_with("--shadow-")
         || key.starts_with("--filter-");
-    valid_prefix
-        && key.len() <= 64
-        && key
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-')
+    valid_prefix && key.len() <= 64 && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
 
 fn is_safe_css_value(val: &str) -> bool {
@@ -952,7 +962,7 @@ fn is_safe_css_value(val: &str) -> bool {
         && !val.contains(';')
         && !val.contains('<')
         && !val.contains('>')
-        && ! val.contains('\\')
+        && !val.contains('\\')
         && !lower.contains("url(")
         && !lower.contains("expression(")
         && !lower.contains("javascript:")
@@ -1066,4 +1076,3 @@ mod tests {
         assert!(CustomTheme::from_json_str(bad_json).is_err());
     }
 }
-

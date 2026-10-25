@@ -1,7 +1,7 @@
 use sycamore::prelude::*;
 
 use crate::components::{
-    common::{classes, ChannelContext, ServerContext, UserProfileContext},
+    common::{ChannelContext, ServerContext, UserProfileContext, classes},
     ui::icons::{
         HeadphonesIcon, HeadphonesOffIcon, MicIcon, MicOffIcon, PhoneIcon, PhoneOffIcon,
         Volume2Icon,
@@ -23,15 +23,17 @@ pub fn VoiceChannelArea() -> View {
     });
 
     let channel_name = create_memo(move || {
-        channel_context
-            .current
-            .with(|c| c.as_ref().map_or_else(|| "Голосовой канал".into(), |ch| ch.name.clone()))
+        channel_context.current.with(|c| {
+            c.as_ref()
+                .map_or_else(|| "Голосовой канал".into(), |ch| ch.name.clone())
+        })
     });
 
     let server_name = create_memo(move || {
-        server_context
-            .current
-            .with(|s| s.as_ref().map_or_else(|| String::new(), |srv| srv.name.clone()))
+        server_context.current.with(|s| {
+            s.as_ref()
+                .map_or_else(|| String::new(), |srv| srv.name.clone())
+        })
     });
 
     // TODO [HTTP]: GET /channels/{channel_id}/voice/participants — первоначальный запрос списка активных участников голосового канала

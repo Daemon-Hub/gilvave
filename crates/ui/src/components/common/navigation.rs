@@ -6,6 +6,7 @@ pub enum ActiveScreen {
     Loading,
     Login,
     Register,
+    RegisterConfirm,
     Home,
 }
 
@@ -33,8 +34,12 @@ impl ScreenWrapper {
         self.get() == ActiveScreen::Register
     }
 
+    pub fn is_register_confirm(&self) -> bool {
+        self.get() == ActiveScreen::RegisterConfirm
+    }
+
     pub fn is_auth(&self) -> bool {
-        self.is_login() || self.is_register()
+        self.is_login() || self.is_register() || self.is_register_confirm()
     }
 
     pub fn is_home(&self) -> bool {

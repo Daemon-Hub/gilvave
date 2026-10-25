@@ -1,13 +1,15 @@
-use sycamore::prelude::*;
+use sycamore::{futures::spawn_local_scoped, prelude::*};
 use wasm_bindgen::JsCast;
 
 use crate::components::{
-    common::{download_json_file, AppTheme, CustomTheme, UiModalContext},
+    common::{AppTheme, CustomTheme, UiModalContext, download_json_file},
     ui::{
-        icons::{BookOpenIcon, CloseSmallIcon, CodeIcon, DownloadIcon, FileTextIcon},
+        icons::{BookOpenIcon, CloseSmallIcon, CodeIcon, DownloadIcon, FileTextIcon, UploadIcon},
         markdown::MarkdownView,
     },
 };
+use crate::http::api::Api;
+use gilvave_core::dto::users::CreateThemeInfo;
 
 const GUIDE_CONTENT: &str = include_str!("../../../../../../CUSTOM_THEMES_GUIDE.md");
 
@@ -53,8 +55,7 @@ pub fn ThemeJsonEditorModal() -> View {
                     if let Some(file) = files.get(0) {
                         let promise = file.text();
                         wasm_bindgen_futures::spawn_local(async move {
-                            if let Ok(js_val) =
-                                wasm_bindgen_futures::JsFuture::from(promise).await
+                            if let Ok(js_val) = wasm_bindgen_futures::JsFuture::from(promise).await
                             {
                                 if let Some(content) = js_val.as_string() {
                                     json_input.set(content);
@@ -89,6 +90,56 @@ pub fn ThemeJsonEditorModal() -> View {
                 status_msg.set(format!(
                     "✓ Тема «{new_name}» успешно установлена и активирована!"
                 ));
+            }
+            Err(err_msg) => {
+                is_error.set(true);
+                status_msg.set(err_msg);
+            }
+        }
+    };
+
+    let is_uploading = create_signal(false);
+
+    let on_publish_click = move |_| {
+        if is_uploading.get() {
+            return;
+        }
+        let raw = json_input.get_clone();
+        match CustomTheme::from_json_str(&raw) {
+            Ok(theme) => {
+                let theme_name = theme.name.clone();
+                let theme_desc = theme.description.clone();
+                let config_val = match serde_json::to_value(&theme) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        is_error.set(true);
+                        status_msg.set(format!("Ошибка сериализации: {e}"));
+                        return;
+                    }
+                };
+                let info = CreateThemeInfo {
+                    name: theme_name.clone(),
+                    description: theme_desc,
+                    config: config_val,
+                };
+                is_uploading.set(true);
+                is_error.set(false);
+                status_msg.set("Отправка темы на сервер...".to_string());
+                spawn_local_scoped(async move {
+                    match Api::create_theme(&info).await {
+                        Ok(()) => {
+                            is_error.set(false);
+                            status_msg.set(format!(
+                                "✓ Тема «{theme_name}» успешно загружена на сервер!"
+                            ));
+                        }
+                        Err(err) => {
+                            is_error.set(true);
+                            status_msg.set(format!("Ошибка загрузки на сервер: {}", err.1));
+                        }
+                    }
+                    is_uploading.set(false);
+                });
             }
             Err(err_msg) => {
                 is_error.set(true);
@@ -243,6 +294,15 @@ pub fn ThemeJsonEditorModal() -> View {
                     }
                     div(class="theme-json-editor-actions") {
                         button(class="back-btn", on:click=close_modal) { "Закрыть" }
+                        button(
+                            class="submit-btn upload-submit",
+                            disabled=is_uploading.get(),
+                            on:click=on_publish_click,
+                            title="Опубликовать тему в каталоге на сервере",
+                        ) {
+                            UploadIcon()
+                            span { (if is_uploading.get() { "Загрузка..." } else { "Загрузить на сервер" }) }
+                        }
                         button(
                             class="submit-btn create-submit",
                             on:click=on_apply_click,
