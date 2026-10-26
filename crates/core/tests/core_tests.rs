@@ -147,7 +147,11 @@ fn test_ws_server_receive_variants() {
         author_id: Some(u_id),
         author_name: "author".to_string(),
         content: "test message".to_string(),
+        edited: false,
+        reply_to_id: None,
+        forwarded_from: None,
         created_at: now,
+        is_pending: false,
     };
 
     let msg_new = ServerRecieve::MessageNew(message_view.clone());
@@ -181,6 +185,8 @@ fn test_ws_server_send_variants() {
     let send_msg = ServerSend::MessageCreate {
         channel_id: c_id,
         content: "hey".to_string(),
+        reply_to_id: None,
+        forwarded_from: None,
     };
     let json = serde_json::to_string(&send_msg).unwrap();
     assert!(json.contains("MESSAGE_CREATE"));

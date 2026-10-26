@@ -9,7 +9,7 @@ use crate::{
         common::{
             ChannelContext, ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
             emoji_to_twemoji_url, insert_emoji_into_editor, insert_text_into_editor,
-            serialize_contenteditable, sync_editor_content,
+            serialize_contenteditable, sync_editor_content, focus_editor_at_end,
         },
         ui::icons::CloseSmallIcon,
     },
@@ -271,7 +271,13 @@ fn format_date_divider(date: time::Date) -> String {
     }
 }
 
-fn send_channel_message(channel_context: ChannelContext, draft_message: Signal<String>) {
+fn send_channel_message(
+    channel_context: ChannelContext,
+    modal_context: UiModalContext,
+    draft_message: Signal<String>,
+    _user_profile: UserProfileContext,
+    _container: Option<NodeRef>,
+) {
     let Some(channel_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)) else {
         return;
     };
@@ -285,13 +291,34 @@ fn send_channel_message(channel_context: ChannelContext, draft_message: Signal<S
         }
     };
 
-    spawn_local_scoped(async move {
-        web_sys::console::log_1(
-            &format!("[MESSAGES_AREA] invoking MessageCreate for {channel_id}").into(),
-        );
-        let res = WsService::message_create(channel_id, sanitized).await;
-        web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageCreate res: {res:?}").into());
-    });
+    let editing = modal_context.editing_message.get_clone();
+    let replying = modal_context.replying_to.get_clone();
+
+    if let Some(edit_msg) = editing {
+        spawn_local_scoped(async move {
+            web_sys::console::log_1(
+                &format!("[MESSAGES_AREA] invoking MessageUpdate for {}", edit_msg.id).into(),
+            );
+            let res = WsService::message_update(edit_msg.channel_id, edit_msg.id, sanitized).await;
+            web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageUpdate res: {res:?}").into());
+        });
+        modal_context.editing_message.set(None);
+    } else {
+        let reply_to = replying.as_ref().map(|r| r.id);
+        modal_context.replying_to.set(None);
+
+        spawn_local_scoped(async move {
+            web_sys::console::log_1(
+                &format!(
+                    "[MESSAGES_AREA] invoking MessageCreate for {channel_id} with reply_to={reply_to:?}"
+                )
+                .into(),
+            );
+            let res = WsService::message_create(channel_id, sanitized, reply_to, None).await;
+            web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageCreate res: {res:?}").into());
+        });
+    }
+
     draft_message.set(String::new());
 }
 
@@ -375,11 +402,30 @@ where
         }
     });
 
+    // Automatically focus the input when replying_to or editing_message is set
+    create_effect(move || {
+        let is_replying = modal_context.replying_to.with(|r| r.is_some());
+        let is_editing = modal_context.editing_message.with(|e| e.is_some());
+        if is_replying || is_editing {
+            if let Some(node) = editor_ref.try_get() {
+                if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                    focus_editor_at_end(&editor);
+                }
+            }
+        }
+    });
+
     let on_submit = move |event: SubmitEvent| {
         event.prevent_default();
         is_attach_menu_open.set(false);
         is_emoji_modal_open.set(false);
         is_emoji_expanded.set(false);
+        if let Some(node) = editor_ref.try_get() {
+            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                editor.set_inner_html("");
+                let _ = editor.set_attribute("data-empty", "true");
+            }
+        }
         on_send();
     };
 
@@ -433,6 +479,15 @@ where
                 is_attach_menu_open.set(false);
                 return;
             }
+            if modal_context.editing_message.with(|e| e.is_some()) {
+                modal_context.editing_message.set(None);
+                modal_context.draft_message.set(String::new());
+                return;
+            }
+            if modal_context.replying_to.with(|r| r.is_some()) {
+                modal_context.replying_to.set(None);
+                return;
+            }
         }
         if event.key() == "Enter" {
             if event.shift_key() {
@@ -445,6 +500,12 @@ where
                 is_attach_menu_open.set(false);
                 is_emoji_modal_open.set(false);
                 is_emoji_expanded.set(false);
+                if let Some(node) = editor_ref.try_get() {
+                    if let Ok(editor) = node.dyn_into::<HtmlElement>() {
+                        editor.set_inner_html("");
+                        let _ = editor.set_attribute("data-empty", "true");
+                    }
+                }
                 on_send();
             }
         }
@@ -489,6 +550,64 @@ where
 
     view! {
         form(class="input-area", on:submit=on_submit) {
+            (move || {
+                if let Some(reply_msg) = modal_context.replying_to.get_clone() {
+                    let author = reply_msg.author_name;
+                    let snippet = if reply_msg.content.chars().count() > 60 {
+                        let s: String = reply_msg.content.chars().take(60).collect();
+                        format!("{s}…")
+                    } else {
+                        reply_msg.content
+                    };
+                    view! {
+                        div(class="chat-action-banner chat-reply-banner") {
+                            div(class="banner-spine")
+                            div(class="banner-info") {
+                                span(class="banner-title") { (format!("Ответ пользователю @{author}")) }
+                                span(class="banner-snippet") { (snippet) }
+                            }
+                            button(
+                                r#type="button",
+                                class="banner-close-btn",
+                                title="Отменить ответ (Esc)",
+                                on:click=move |_| modal_context.replying_to.set(None),
+                            ) {
+                                CloseSmallIcon()
+                            }
+                        }
+                    }
+                } else if let Some(edit_msg) = modal_context.editing_message.get_clone() {
+                    let snippet = if edit_msg.content.chars().count() > 60 {
+                        let s: String = edit_msg.content.chars().take(60).collect();
+                        format!("{s}…")
+                    } else {
+                        edit_msg.content
+                    };
+                    view! {
+                        div(class="chat-action-banner chat-edit-banner") {
+                            div(class="banner-spine")
+                            div(class="banner-info") {
+                                span(class="banner-title") { "Редактирование сообщения" }
+                                span(class="banner-snippet") { (snippet) }
+                            }
+                            span(class="banner-esc-hint") { "Esc — отмена" }
+                            button(
+                                r#type="button",
+                                class="banner-close-btn",
+                                title="Отменить редактирование (Esc)",
+                                on:click=move |_| {
+                                    modal_context.editing_message.set(None);
+                                    modal_context.draft_message.set(String::new());
+                                },
+                            ) {
+                                CloseSmallIcon()
+                            }
+                        }
+                    }
+                } else {
+                    view! {}
+                }
+            })
             div(class="chat-input-wrapper") {
                 // Click-outside backdrop for attachment menu or emoji modal
                 (move || if is_attach_menu_open.get() || is_emoji_modal_open.get() {
@@ -841,7 +960,16 @@ where
                     }
                 }
             }
-            button(class="send-btn", r#type="submit", title="Отправить") {
+            button(
+                class="send-btn",
+                r#type="submit",
+                title="Отправить",
+                on:click=move |_| {
+                    is_attach_menu_open.set(false);
+                    is_emoji_modal_open.set(false);
+                    is_emoji_expanded.set(false);
+                },
+            ) {
                 svg(
                     xmlns="http://www.w3.org/2000/svg",
                     width="18",
@@ -882,7 +1010,7 @@ pub fn MessagesArea() -> View {
             None => return,
         };
 
-        const SCROLL_THRESHOLD: i32 = 1;
+        const SCROLL_THRESHOLD: i32 = 40;
 
         let top = el.scroll_top();
         let sh = el.scroll_height();
@@ -939,6 +1067,11 @@ pub fn MessagesArea() -> View {
                     web_sys::console::log_1(
                         &format!("[MESSAGES_AREA] received MessageNew: {:?}", msg).into(),
                     );
+                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    if cur_channel_id != Some(msg.channel_id) {
+                        continue;
+                    }
+
                     let Some(node) = container.try_get() else {
                         continue;
                     };
@@ -947,22 +1080,44 @@ pub fn MessagesArea() -> View {
                     let old_scroll_height = el.scroll_height();
                     let old_client_height = el.client_height();
 
-                    const SCROLL_THRESHOLD: i32 = 1;
+                    const SCROLL_THRESHOLD: i32 = 80;
                     let is_bottom = (old_scroll_height - old_client_height - old_scroll_top).abs()
                         <= SCROLL_THRESHOLD;
+                    let is_own = user_profile.username.with(|u| !u.is_empty() && u == &msg.author_name)
+                        || (msg.author_id.is_some() && msg.author_id == user_profile.user_id.get());
 
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
+                        // Prevent duplicate if already received
+                        if list.iter().any(|m| m.id == msg.id) {
+                            return;
+                        }
+
+                        // Remove any stray pending messages
+                        list.retain(|m| !m.is_pending);
                         list.push(msg);
                         if list.len() > MAX_LOADED_MESSAGES {
                             list.remove(0);
                         }
+                        list.sort_by_key(|m| m.created_at);
                     });
 
                     queue_microtask(move || {
-                        if is_bottom {
+                        if is_own || is_bottom {
+                            el.set_scroll_top(el.scroll_height());
+                            if let Some(window) = web_sys::window() {
+                                let el_clone = el.clone();
+                                let cb = wasm_bindgen::closure::Closure::<dyn Fn()>::new(move || {
+                                    el_clone.set_scroll_top(el_clone.scroll_height());
+                                });
+                                let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
+                                cb.forget();
+                            }
+                        } else {
                             let delta = el.scroll_height() - old_scroll_height;
-                            el.set_scroll_top(old_scroll_top + delta);
+                            if delta > 0 {
+                                el.set_scroll_top(old_scroll_top + delta);
+                            }
                         }
                     });
                 }
@@ -980,23 +1135,41 @@ pub fn MessagesArea() -> View {
                     let el = node.unchecked_into::<HtmlElement>();
                     let old_scroll_top = el.scroll_top();
                     let old_scroll_height = el.scroll_height();
+                    let was_empty = channel_context.messages.with(|m| m.is_empty());
 
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
-                        for msg in messages.into_iter() {
-                            list.insert(0, msg);
+                        list.retain(|m| !m.is_pending);
+                        for msg in messages {
+                            if !list.iter().any(|m| m.id == msg.id) {
+                                list.push(msg);
+                            }
                         }
+                        list.sort_by_key(|m| m.created_at);
                         if list.len() > MAX_LOADED_MESSAGES {
-                            list.truncate(MAX_LOADED_MESSAGES);
+                            let excess = list.len() - MAX_LOADED_MESSAGES;
+                            list.drain(0..excess);
                         }
                     });
 
                     queue_microtask(move || {
-                        let delta = el.scroll_height() - old_scroll_height;
-                        el.set_scroll_top(old_scroll_top + delta);
+                        if was_empty {
+                            el.set_scroll_top(el.scroll_height());
+                            if let Some(window) = web_sys::window() {
+                                let el_clone = el.clone();
+                                let cb = wasm_bindgen::closure::Closure::<dyn Fn()>::new(move || {
+                                    el_clone.set_scroll_top(el_clone.scroll_height());
+                                });
+                                let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
+                                cb.forget();
+                            }
+                        } else {
+                            let delta = el.scroll_height() - old_scroll_height;
+                            el.set_scroll_top(old_scroll_top + delta);
+                        }
                     });
                 }
-                GatewayEvent::ChannelHistoryAfter(mut messages) => {
+                GatewayEvent::ChannelHistoryAfter(messages) => {
                     web_sys::console::log_1(
                         &format!(
                             "[MESSAGES_AREA] received ChannelHistoryAfter with {} items",
@@ -1006,12 +1179,58 @@ pub fn MessagesArea() -> View {
                     );
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
-                        list.append(&mut messages);
+                        list.retain(|m| !m.is_pending);
+                        for msg in messages {
+                            if !list.iter().any(|m| m.id == msg.id) {
+                                list.push(msg);
+                            }
+                        }
+                        list.sort_by_key(|m| m.created_at);
                         if list.len() > MAX_LOADED_MESSAGES {
                             let excess = list.len() - MAX_LOADED_MESSAGES;
                             list.drain(0..excess);
                         }
                     });
+                }
+                GatewayEvent::MessageUpdate(updated) => {
+                    web_sys::console::log_1(
+                        &format!("[MESSAGES_AREA] received MessageUpdate: {:?}", updated).into(),
+                    );
+                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    if cur_channel_id != Some(updated.channel_id) {
+                        continue;
+                    }
+                    channel_context.messages.update(|list| {
+                        if let Some(target) = list.iter_mut().find(|m| m.id == updated.id) {
+                            target.content = updated.content;
+                            target.edited = true;
+                        }
+                    });
+                }
+                GatewayEvent::MessageDelete {
+                    channel_id,
+                    message_id,
+                } => {
+                    web_sys::console::log_1(
+                        &format!(
+                            "[MESSAGES_AREA] received MessageDelete: message_id={message_id}"
+                        )
+                        .into(),
+                    );
+                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    if cur_channel_id != Some(channel_id) {
+                        continue;
+                    }
+                    channel_context.messages.update(|list| {
+                        list.retain(|m| m.id != message_id);
+                    });
+                    if modal_context.replying_to.with(|r| r.as_ref().map(|m| m.id) == Some(message_id)) {
+                        modal_context.replying_to.set(None);
+                    }
+                    if modal_context.editing_message.with(|e| e.as_ref().map(|m| m.id) == Some(message_id)) {
+                        modal_context.editing_message.set(None);
+                        modal_context.draft_message.set(String::new());
+                    }
                 }
             }
         }
@@ -1147,7 +1366,7 @@ pub fn MessagesArea() -> View {
 
                 Keyed(
                     list=enriched_messages,
-                    key=|em| (em.message.id, em.is_first, em.is_last, em.date_divider.clone(), em.avatar_url.clone()),
+                    key=|em| (em.message.id, em.message.content.clone(), em.message.edited, em.message.is_pending, em.message.reply_to_id, em.is_first, em.is_last, em.date_divider.clone(), em.avatar_url.clone()),
                     view=|em| {
                         let date_view = if let Some(date_str) = em.date_divider {
                             view! {
@@ -1172,7 +1391,7 @@ pub fn MessagesArea() -> View {
                 )
             }
 
-            ChatInputArea(on_send=move || send_channel_message(channel_context, draft_message))
+            ChatInputArea(on_send=move || send_channel_message(channel_context, modal_context, draft_message, user_profile, Some(container)))
         }
     }
 }
@@ -1191,6 +1410,7 @@ pub fn ExpandedMessageEditorModal() -> View {
     let modal_context = use_context::<UiModalContext>();
     let channel_context = use_context::<ChannelContext>();
     let server_context = use_context::<ServerContext>();
+    let user_profile = use_context::<UserProfileContext>();
 
     let draft_message = modal_context.draft_message;
 
@@ -1248,7 +1468,7 @@ pub fn ExpandedMessageEditorModal() -> View {
             if !is_valid {
                 return;
             }
-            send_channel_message(channel_context, draft_message);
+            send_channel_message(channel_context, modal_context, draft_message, user_profile, None);
             modal_context.is_message_editor_open.set(false);
         } else if modal_context.selected_dm_name.with(|dm| dm.is_some()) {
             let has_text = draft_message.with(|msg| !msg.trim().is_empty());

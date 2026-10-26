@@ -1,11 +1,19 @@
 use futures_channel::mpsc::{UnboundedReceiver, UnboundedSender, unbounded};
 use std::sync::{Arc, LazyLock, Mutex};
 
-use gilvave_core::dto::{messages::MessageView, ws::ServerRecieve};
+use gilvave_core::{
+    dto::{messages::MessageView, ws::ServerRecieve},
+    ids::{ChannelId, MessageId},
+};
 
 #[derive(Clone, Debug)]
 pub enum GatewayEvent {
     MessageNew(MessageView),
+    MessageUpdate(MessageView),
+    MessageDelete {
+        channel_id: ChannelId,
+        message_id: MessageId,
+    },
     ChannelHistoryBefore(Vec<MessageView>),
     ChannelHistoryAfter(Vec<MessageView>),
 }
@@ -47,6 +55,27 @@ pub async fn handle(text: String) {
                     &format!("[WS] MessageNew received: {:?}", message_view).into(),
                 );
                 dispatch_gateway_event(GatewayEvent::MessageNew(message_view));
+            }
+            ServerRecieve::MessageUpdate(message_view) => {
+                web_sys::console::log_1(
+                    &format!("[WS] MessageUpdate received: {:?}", message_view).into(),
+                );
+                dispatch_gateway_event(GatewayEvent::MessageUpdate(message_view));
+            }
+            ServerRecieve::MessageDelete {
+                channel_id,
+                message_id,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] MessageDelete received: channel_id={channel_id}, message_id={message_id}"
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::MessageDelete {
+                    channel_id,
+                    message_id,
+                });
             }
             ServerRecieve::ChannelHistoryBefore(messages) => {
                 web_sys::console::log_1(

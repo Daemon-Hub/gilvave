@@ -86,8 +86,33 @@ async fn handle_command_web(args: Value) -> CommandResult {
         CommandArgs::OpenDevTools => {
             #[cfg(target_arch = "wasm32")]
             {
-                web_sys::console::warn_1(&"[Gilvave] Все сочетания клавиш разработчика (F12, Ctrl+Shift+I) заблокированы. В Tauri Desktop DevTools вызываются через данную кнопку.".into());
-                let _ = js_sys::eval("debugger;");
+                web_sys::console::log_1(&"[Gilvave] Открытие консоли разработчика...".into());
+                let script = r#"
+                    (function() {
+                        if (window.eruda) {
+                            if (window.eruda._isInit) {
+                                var el = document.getElementById('eruda');
+                                if (el && el.style.display !== 'none') {
+                                    window.eruda.hide();
+                                } else {
+                                    window.eruda.show();
+                                }
+                            } else {
+                                window.eruda.init();
+                                window.eruda.show();
+                            }
+                        } else {
+                            var s = document.createElement('script');
+                            s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+                            s.onload = function() {
+                                window.eruda.init();
+                                window.eruda.show();
+                            };
+                            document.body.appendChild(s);
+                        }
+                    })();
+                "#;
+                let _ = js_sys::eval(script);
             }
             CommandResult::Ok(CommandResponse::OpenDevTools)
         }
@@ -143,7 +168,11 @@ mod tests {
             author_id: Some(UserId::default()),
             author_name: "test_user".to_string(),
             content: "hello world".to_string(),
+            edited: false,
+            reply_to_id: None,
+            forwarded_from: None,
             created_at: OffsetDateTime::now_utc(),
+            is_pending: false,
         };
         let payload_json = serde_json::to_value(&view).unwrap();
         let event_json = serde_json::json!({

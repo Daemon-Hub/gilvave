@@ -6,7 +6,7 @@ use gilvave_core::{
         servers::channels::{ChannelType, ChannelView},
         servers::{MemberView, Server, ServerSmallPart},
     },
-    ids::ServerId,
+    ids::{ServerId, UserId},
 };
 
 #[derive(Clone, Copy)]
@@ -46,6 +46,7 @@ pub struct CreateServerContext {
 
 #[derive(Clone, Copy)]
 pub struct UserProfileContext {
+    pub user_id: Signal<Option<UserId>>,
     pub username: Signal<String>,
     pub avatar: Signal<String>,
     pub banner: Signal<String>,
@@ -79,4 +80,8 @@ pub struct UiModalContext {
     pub is_theme_catalog_open: Signal<bool>,
     pub is_theme_json_editor_open: Signal<bool>,
     pub theme_json_editor_content: Signal<String>,
+    pub replying_to: Signal<Option<MessageView>>,
+    pub editing_message: Signal<Option<MessageView>>,
+    pub forwarding_message: Signal<Option<MessageView>>,
+    pub is_forward_modal_open: Signal<bool>,
 }

@@ -3,7 +3,12 @@ use sycamore::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
-use crate::components::common::{ChannelContext, ServerContext, UiModalContext};
+use crate::components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext};
+#[cfg(target_arch = "wasm32")]
+use gilvave_core::{
+    dto::messages::MessageView,
+    ids::{ChannelId, MessageId, UserId},
+};
 
 #[derive(Clone)]
 pub struct ContextMenuItem {
@@ -76,8 +81,9 @@ pub fn handle_global_context_menu(
     event: &web_sys::MouseEvent,
     menu_ctx: &ContextMenuContext,
     modal_ctx: Option<&UiModalContext>,
-    _channel_ctx: Option<&ChannelContext>,
+    #[allow(unused_variables)] channel_ctx: Option<&ChannelContext>,
     _server_ctx: Option<&ServerContext>,
+    #[allow(unused_variables)] user_ctx: Option<&UserProfileContext>,
 ) {
     event.prevent_default();
     let x = event.client_x();
@@ -91,11 +97,134 @@ pub fn handle_global_context_menu(
         if let Ok(el) = target.dyn_into::<web_sys::Element>() {
             // 1. Check if clicked inside a message item
             if let Ok(Some(msg_el)) = el.closest("[data-message-id]") {
-                let msg_id = msg_el.get_attribute("data-message-id").unwrap_or_default();
+                let msg_id_str = msg_el.get_attribute("data-message-id").unwrap_or_default();
                 let msg_content = msg_el
                     .get_attribute("data-message-content")
                     .unwrap_or_default();
+                let author_name = msg_el
+                    .get_attribute("data-author-name")
+                    .unwrap_or_default();
+                let author_id_str = msg_el
+                    .get_attribute("data-author-id")
+                    .unwrap_or_default();
+                let channel_id_str = msg_el
+                    .get_attribute("data-channel-id")
+                    .unwrap_or_default();
 
+                let parsed_msg_id = MessageId::try_from(msg_id_str.as_str()).ok();
+                let parsed_author_id = UserId::try_from(author_id_str.as_str()).ok();
+                let parsed_channel_id = ChannelId::try_from(channel_id_str.as_str()).ok();
+
+                let is_author = if let (Some(u_ctx), Some(author_id)) = (user_ctx, parsed_author_id) {
+                    u_ctx.user_id.with(|uid| uid.as_ref() == Some(&author_id))
+                        || u_ctx.username.with(|uname| !uname.is_empty() && uname == &author_name)
+                } else if let Some(u_ctx) = user_ctx {
+                    u_ctx.username.with(|uname| !uname.is_empty() && uname == &author_name)
+                } else {
+                    false
+                };
+
+                let found_message = channel_ctx.and_then(|c_ctx| {
+                    parsed_msg_id.and_then(|m_id| {
+                        c_ctx.messages.with(|msgs| msgs.iter().find(|m| m.id == m_id).cloned())
+                    })
+                });
+
+                let target_msg_fallback = MessageView {
+                    id: parsed_msg_id.unwrap_or_default(),
+                    channel_id: parsed_channel_id.unwrap_or_default(),
+                    author_id: parsed_author_id,
+                    author_name: author_name.clone(),
+                    content: msg_content.clone(),
+                    edited: false,
+                    reply_to_id: None,
+                    forwarded_from: None,
+                    created_at: time::OffsetDateTime::now_utc(),
+                    is_pending: false,
+                };
+
+                // 1) Ответить (Reply)
+                if let Some(m_ctx) = modal_ctx {
+                    let replying_sig = m_ctx.replying_to;
+                    let editing_sig = m_ctx.editing_message;
+                    let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
+                    items.push(ContextMenuItem {
+                        label: "Ответить".to_string(),
+                        icon: "reply",
+                        shortcut: None,
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || {
+                            editing_sig.set(None);
+                            replying_sig.set(Some(target_msg.clone()));
+                            #[cfg(target_arch = "wasm32")]
+                            if let Some(window) = web_sys::window() {
+                                if let Some(doc) = window.document() {
+                                    if let Ok(Some(editor)) = doc.query_selector(".chat-input") {
+                                        if let Ok(html_el) = editor.dyn_into::<web_sys::HtmlElement>() {
+                                            crate::components::common::focus_editor_at_end(&html_el);
+                                        }
+                                    }
+                                }
+                            }
+                        }),
+                    });
+                }
+
+                // 2) Изменить (Edit) - only if author
+                if is_author {
+                    if let Some(m_ctx) = modal_ctx {
+                        let editing_sig = m_ctx.editing_message;
+                        let replying_sig = m_ctx.replying_to;
+                        let draft_sig = m_ctx.draft_message;
+                        let edit_content = msg_content.clone();
+                        let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
+                        items.push(ContextMenuItem {
+                            label: "Изменить".to_string(),
+                            icon: "edit",
+                            shortcut: Some("E"),
+                            danger: false,
+                            separator_above: false,
+                            on_click: Rc::new(move || {
+                                replying_sig.set(None);
+                                editing_sig.set(Some(target_msg.clone()));
+                                draft_sig.set(edit_content.clone());
+                                #[cfg(target_arch = "wasm32")]
+                                if let Some(window) = web_sys::window() {
+                                    if let Some(doc) = window.document() {
+                                        if let Ok(Some(editor)) = doc.query_selector(".chat-input") {
+                                            if let Ok(html_el) = editor.dyn_into::<web_sys::HtmlElement>() {
+                                                crate::components::common::sync_editor_content(&html_el, &edit_content);
+                                                let _ = html_el.remove_attribute("data-empty");
+                                                crate::components::common::focus_editor_at_end(&html_el);
+                                            }
+                                        }
+                                    }
+                                }
+                            }),
+                        });
+                    }
+                }
+
+                // 3) Переслать (Forward)
+                if let Some(m_ctx) = modal_ctx {
+                    let fwd_msg_sig = m_ctx.forwarding_message;
+                    let fwd_open_sig = m_ctx.is_forward_modal_open;
+                    let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
+                    items.push(ContextMenuItem {
+                        label: "Переслать".to_string(),
+                        icon: "forward",
+                        shortcut: None,
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || {
+                            fwd_msg_sig.set(Some(target_msg.clone()));
+                            fwd_open_sig.set(true);
+                        }),
+                    });
+                }
+
+                // 4) Копировать текст
                 let text_to_copy = if !selected_text.is_empty() {
                     selected_text.clone()
                 } else {
@@ -108,11 +237,12 @@ pub fn handle_global_context_menu(
                     icon: "copy",
                     shortcut: Some("Ctrl+C"),
                     danger: false,
-                    separator_above: false,
+                    separator_above: true,
                     on_click: Rc::new(move || copy_to_clipboard(&t_copy)),
                 });
 
-                let id_copy = msg_id.clone();
+                // 5) Копировать ID сообщения
+                let id_copy = msg_id_str.clone();
                 items.push(ContextMenuItem {
                     label: "Копировать ID сообщения".to_string(),
                     icon: "info",
@@ -122,28 +252,27 @@ pub fn handle_global_context_menu(
                     on_click: Rc::new(move || copy_to_clipboard(&id_copy)),
                 });
 
-                if let Some(m_ctx) = modal_ctx {
-                    let draft_sig = m_ctx.draft_message;
-                    let edit_content = msg_content.clone();
-                    items.push(ContextMenuItem {
-                        label: "Цитировать в сообщении".to_string(),
-                        icon: "edit",
-                        shortcut: None,
-                        danger: false,
-                        separator_above: true,
-                        on_click: Rc::new(move || {
-                            draft_sig.update(|msg| {
-                                if !msg.is_empty() && !msg.ends_with('\n') {
-                                    msg.push('\n');
+                // 7) Удалить (Delete) - only if author
+                if is_author {
+                    if let (Some(m_id), Some(ch_id)) = (parsed_msg_id, parsed_channel_id) {
+                        let c_ctx_opt = channel_ctx.copied();
+                        items.push(ContextMenuItem {
+                            label: "Удалить".to_string(),
+                            icon: "trash",
+                            shortcut: None,
+                            danger: true,
+                            separator_above: true,
+                            on_click: Rc::new(move || {
+                                if let Some(c_ctx) = c_ctx_opt {
+                                    c_ctx.messages.update(|list| list.retain(|m| m.id != m_id));
                                 }
-                                for line in edit_content.lines() {
-                                    msg.push_str("> ");
-                                    msg.push_str(line);
-                                    msg.push('\n');
-                                }
-                            });
-                        }),
-                    });
+                                #[cfg(target_arch = "wasm32")]
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    let _ = crate::gateway::service::WsService::message_delete(ch_id, m_id).await;
+                                });
+                            }),
+                        });
+                    }
                 }
 
                 menu_ctx.show(x, y, items);
@@ -274,7 +403,6 @@ pub fn handle_global_context_menu(
         });
     }
 
-    #[cfg(debug_assertions)]
     items.push(ContextMenuItem {
         label: "Инструменты разработчика".to_string(),
         icon: "devtools",
@@ -307,6 +435,24 @@ pub fn handle_global_context_menu(
 #[component(inline_props)]
 fn MenuIcon(name: &'static str) -> View {
     match name {
+        "reply" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                polyline(points="9 17 4 12 9 7")
+                path(d="M20 18v-2a4 4 0 0 0-4-4H4")
+            }
+        },
+        "forward" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                polyline(points="15 17 20 12 15 7")
+                path(d="M4 18v-2a4 4 0 0 1 4-4h12")
+            }
+        },
+        "quote" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                path(d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z")
+                path(d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z")
+            }
+        },
         "devtools" => view! {
             svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
                 polyline(points="16 18 22 12 16 6")
@@ -428,7 +574,7 @@ pub fn AppContextMenu() -> View {
             let items = ctx.items.get_clone();
             let item_count = items.len();
             let est_w = 224;
-            let est_h = (item_count as i32 * 36) + 16;
+            let est_h = (item_count as i32 * 38) + 24;
 
             #[cfg(target_arch = "wasm32")]
             let (win_w, win_h) = if let Some(w) = web_sys::window() {
@@ -441,19 +587,29 @@ pub fn AppContextMenu() -> View {
             #[cfg(not(target_arch = "wasm32"))]
             let (win_w, win_h) = (1024, 768);
 
-            let clamped_x = if raw_x + est_w > win_w {
-                (win_w - est_w - 8).max(8)
+            let opens_upwards = raw_y > (win_h / 2) || (raw_y + est_h > win_h - 16);
+            let opens_leftwards = raw_x + est_w > win_w - 12;
+
+            let (y_style, up_class) = if opens_upwards {
+                let bottom_px = (win_h - raw_y).max(8);
+                let max_h = (raw_y - 16).max(120);
+                (format!("bottom: {bottom_px}px; max-height: {max_h}px;"), "open-up")
             } else {
-                raw_x.max(8)
+                let top_px = raw_y.max(8);
+                let max_h = (win_h - raw_y - 16).max(120);
+                (format!("top: {top_px}px; max-height: {max_h}px;"), "open-down")
             };
 
-            let clamped_y = if raw_y + est_h > win_h {
-                (win_h - est_h - 8).max(8)
+            let (x_style, left_class) = if opens_leftwards {
+                let right_px = (win_w - raw_x).max(8);
+                (format!("right: {right_px}px;"), "open-left")
             } else {
-                raw_y.max(8)
+                let left_px = raw_x.max(8);
+                (format!("left: {left_px}px;"), "")
             };
 
-            let menu_style = format!("left: {clamped_x}px; top: {clamped_y}px;");
+            let menu_style = format!("{x_style} {y_style}");
+            let menu_class = format!("app-context-menu {up_class} {left_class}").trim().to_string();
 
             let on_menu_click = move |e: web_sys::MouseEvent| {
                 e.stop_propagation();
@@ -524,7 +680,7 @@ pub fn AppContextMenu() -> View {
                     },
                 )
                 div(
-                    class="app-context-menu",
+                    class=menu_class,
                     style=menu_style,
                     role="menu",
                     tabindex="-1",

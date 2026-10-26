@@ -6,7 +6,7 @@ use gilvave_core::{
         ws::ServerSend,
     },
     error::{ErrorCode, ErrorInfo},
-    ids::ChannelId,
+    ids::{ChannelId, MessageId},
     settings::BASE_WS_URL,
 };
 use std::sync::{
@@ -89,10 +89,15 @@ impl WsService {
     // Обмен сигнальными сообщениями WebRTC (SDP Offer, SDP Answer, ICE Candidates) через WebSocket
     // pub async fn send_voice_signal(channel_id: ChannelId, data: String) -> Result<(), ErrorInfo>
 
-    pub async fn message_create(channel_id: ChannelId, content: String) -> Result<(), ErrorInfo> {
+    pub async fn message_create(
+        channel_id: ChannelId,
+        content: String,
+        reply_to_id: Option<MessageId>,
+        forwarded_from: Option<serde_json::Value>,
+    ) -> Result<(), ErrorInfo> {
         web_sys::console::log_1(
             &format!(
-                "[WS SERVICE] message_create called: channel_id={channel_id}, content={content}"
+                "[WS SERVICE] message_create called: channel_id={channel_id}, content={content}, reply_to={reply_to_id:?}"
             )
             .into(),
         );
@@ -102,6 +107,8 @@ impl WsService {
                 match sender.unbounded_send(ServerSend::MessageCreate {
                     channel_id,
                     content,
+                    reply_to_id,
+                    forwarded_from,
                 }) {
                     Ok(_) => {
                         web_sys::console::log_1(
@@ -127,6 +134,58 @@ impl WsService {
                     "WebSocket sender not initialized".to_string(),
                 ))
             }
+        }
+    }
+
+    pub async fn message_update(
+        channel_id: ChannelId,
+        message_id: MessageId,
+        content: String,
+    ) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!(
+                "[WS SERVICE] message_update called: channel_id={channel_id}, message_id={message_id}, content={content}"
+            )
+            .into(),
+        );
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::MessageUpdate {
+                    channel_id,
+                    message_id,
+                    content,
+                })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
+
+    pub async fn message_delete(
+        channel_id: ChannelId,
+        message_id: MessageId,
+    ) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!(
+                "[WS SERVICE] message_delete called: channel_id={channel_id}, message_id={message_id}"
+            )
+            .into(),
+        );
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::MessageDelete {
+                    channel_id,
+                    message_id,
+                })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
         }
     }
 

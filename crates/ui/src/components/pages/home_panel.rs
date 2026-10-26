@@ -20,7 +20,10 @@ use crate::{
                 channel_panel::ChannelPanel, create_channel_modal::CreateChannelModal,
                 voice_channel_area::VoiceChannelArea,
             },
-            chat::messages_area::{ExpandedMessageEditorModal, MessagesArea},
+            chat::{
+                forward_modal::ForwardMessageModal,
+                messages_area::{ExpandedMessageEditorModal, MessagesArea},
+            },
             home::{home_dashboard::HomeDashboard, home_nav_panel::HomeNavPanel},
             members::members_panel::MembersPanel,
             profile::{ProfileSettingsModal, ThemeCatalogModal, ThemeJsonEditorModal},
@@ -41,6 +44,7 @@ pub fn HomePanel() -> View {
     let is_home_screen: MaybeDyn<bool> = (move || screen_wrapper.is_home()).into();
 
     let user_profile = UserProfileContext {
+        user_id: create_signal(None),
         username: create_signal(String::default()),
         avatar: create_signal(String::default()),
         banner: create_signal(String::default()),
@@ -68,6 +72,10 @@ pub fn HomePanel() -> View {
         is_theme_catalog_open: create_signal(false),
         is_theme_json_editor_open: create_signal(false),
         theme_json_editor_content: create_signal(String::new()),
+        replying_to: create_signal(None),
+        editing_message: create_signal(None),
+        forwarding_message: create_signal(None),
+        is_forward_modal_open: create_signal(false),
     };
     provide_context(ui_modal_context);
 
@@ -104,6 +112,7 @@ pub fn HomePanel() -> View {
                 if let Ok(user) = Api::get_profile().await {
                     let avatar = user.avatar().to_string();
                     let bio = user.bio().to_string();
+                    user_profile.user_id.set(Some(user.id));
                     user_profile.username.set(user.username);
                     user_profile.avatar.set(avatar);
                     user_profile.bio.set(bio);
@@ -171,6 +180,7 @@ pub fn HomePanel() -> View {
     let is_theme_catalog_open = ui_modal_context.is_theme_catalog_open;
     let is_theme_json_editor_open = ui_modal_context.is_theme_json_editor_open;
     let is_message_editor_open = ui_modal_context.is_message_editor_open;
+    let is_forward_modal_open = ui_modal_context.is_forward_modal_open;
     let is_fullbleed: MaybeDyn<bool> =
         (move || is_mobile_device() || !ui_modal_context.is_windowed_mode.get()).into();
 
@@ -188,6 +198,7 @@ pub fn HomePanel() -> View {
             Some(&ui_modal_context),
             Some(&channel_context),
             Some(&server_context),
+            Some(&user_profile),
         );
     };
 
@@ -320,6 +331,11 @@ pub fn HomePanel() -> View {
         })
         (if is_message_editor_open.get() {
             view! { ExpandedMessageEditorModal() }
+        } else {
+            view! {}
+        })
+        (if is_forward_modal_open.get() {
+            view! { ForwardMessageModal() }
         } else {
             view! {}
         })

@@ -25,10 +25,29 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    animation: contextMenuFadeIn 0.12s cubic-bezier(0.2, 0.9, 0.4, 1) forwards;
     outline: none;
     user-select: none;
     -webkit-user-select: none;
+    overflow-y: auto;
+    @include scrollbar(4px);
+
+    &.open-down {
+        transform-origin: top left;
+        animation: contextMenuFadeInDown 0.12s cubic-bezier(0.2, 0.9, 0.4, 1) forwards;
+
+        &.open-left {
+            transform-origin: top right;
+        }
+    }
+
+    &.open-up {
+        transform-origin: bottom left;
+        animation: contextMenuFadeInUp 0.12s cubic-bezier(0.2, 0.9, 0.4, 1) forwards;
+
+        &.open-left {
+            transform-origin: bottom right;
+        }
+    }
 
     .context-menu-item {
         display: flex;
@@ -119,13 +138,24 @@
     }
 }
 
-@keyframes contextMenuFadeIn {
+@keyframes contextMenuFadeInDown {
     from {
         opacity: 0;
-        transform: scale(0.95);
+        transform: scale(0.95) translateY(-4px);
     }
     to {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes contextMenuFadeInUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }

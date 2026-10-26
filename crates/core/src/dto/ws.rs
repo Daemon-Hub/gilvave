@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{dto::messages::MessageView, ids::ChannelId};
+use crate::{
+    dto::messages::MessageView,
+    ids::{ChannelId, MessageId},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "op", content = "d")]
@@ -8,9 +11,16 @@ use crate::{dto::messages::MessageView, ids::ChannelId};
 pub enum ServerRecieve {
     HeartbeatAck,
     Hello,
-    Error { message: String },
+    Error {
+        message: String,
+    },
     JoinSuccess,
     MessageNew(MessageView),
+    MessageUpdate(MessageView),
+    MessageDelete {
+        channel_id: ChannelId,
+        message_id: MessageId,
+    },
     ChannelHistoryBefore(Vec<MessageView>),
     ChannelHistoryAfter(Vec<MessageView>),
     // TODO [WS]: VoiceStateUpdate { channel_id: ChannelId, user_id: UserId, is_muted: bool, is_deafened: bool },
@@ -27,6 +37,20 @@ pub enum ServerSend {
     MessageCreate {
         channel_id: ChannelId,
         content: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reply_to_id: Option<MessageId>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        forwarded_from: Option<serde_json::Value>,
+    },
+    #[serde(alias = "MESSAGE_EDIT")]
+    MessageUpdate {
+        channel_id: ChannelId,
+        message_id: MessageId,
+        content: String,
+    },
+    MessageDelete {
+        channel_id: ChannelId,
+        message_id: MessageId,
     },
     JoinChannel {
         channel_id: ChannelId,

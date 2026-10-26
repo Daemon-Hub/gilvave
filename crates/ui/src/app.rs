@@ -24,7 +24,7 @@ pub fn App() -> View {
         if event.default_prevented() {
             return;
         }
-        handle_global_context_menu(&event, &context_menu_ctx, None, None, None);
+        handle_global_context_menu(&event, &context_menu_ctx, None, None, None, None);
     };
 
     // Block all keyboard shortcuts used to debug or inspect the app (F12, Ctrl+Shift+I/J/C/K/E, Ctrl+U)

@@ -218,6 +218,34 @@
             color: $color-text-muted;
             user-select: none;
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .message-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-muted;
+            vertical-align: middle;
+
+            svg {
+                width: 12px;
+                height: 12px;
+                stroke-width: 2.2;
+                flex-shrink: 0;
+            }
+
+            &.is-sending {
+                color: $color-text-muted;
+                animation: pulseSending 1.4s infinite ease-in-out;
+            }
+
+            &.is-delivered {
+                color: $color-icon-cyan;
+                opacity: 0.9;
+            }
         }
     }
 
@@ -236,7 +264,7 @@
         transition: border-color 0.15s ease, background 0.15s ease;
         position: relative;
 
-        .message:hover & {
+        .message-item:hover & {
             border-color: $color-border-bubble-hover;
         }
 
@@ -294,10 +322,45 @@
             opacity: 0;
             transition: opacity 0.15s ease;
             user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+
+            .message-status {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                svg {
+                    width: 10px;
+                    height: 10px;
+                    stroke-width: 2.2;
+                }
+
+                &.is-sending {
+                    color: $color-text-muted;
+                    animation: pulseSending 1.4s infinite ease-in-out;
+                }
+
+                &.is-delivered {
+                    color: $color-icon-cyan;
+                    opacity: 0.9;
+                }
+            }
         }
 
-        .message:hover & .chained-time {
-            opacity: 0.8;
+        .message-item:hover & .chained-time,
+        &:hover .chained-time {
+            opacity: 0.85;
+        }
+    }
+
+    &.is-pending {
+        opacity: 0.72;
+        transition: opacity 0.2s ease;
+
+        .message-bubble .chained-time {
+            opacity: 0.85;
         }
     }
 
@@ -1118,6 +1181,8 @@
     }
 
     .send-btn {
+        position: relative;
+        z-index: 35;
         width: 42px;
         height: 42px;
         border-radius: $radius-md;
@@ -1463,5 +1528,208 @@
     .message-editor-window {
         width: 100%;
         height: 90vh;
+    }
+}
+
+
+// ─── Баннер ответа / редактирования над вводом ──────────────────────────────
+.chat-action-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    margin-bottom: 6px;
+    background: $color-bg-panel-dark;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    animation: fadeIn 0.15s ease-out;
+
+    .banner-spine {
+        width: 3px;
+        height: 24px;
+        border-radius: 2px;
+        background: $color-primary;
+        flex-shrink: 0;
+    }
+
+    &.chat-edit-banner {
+        .banner-spine {
+            background: $color-icon-amber;
+        }
+    }
+
+    .banner-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        flex: 1;
+        min-width: 0;
+
+        .banner-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: $color-text-white;
+        }
+
+        .banner-snippet {
+            font-size: 11.5px;
+            color: $color-text-muted;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .banner-esc-hint {
+        font-size: 11px;
+        color: $color-text-muted;
+        margin-left: auto;
+        user-select: none;
+    }
+
+    .banner-close-btn {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        color: $color-text-muted;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.12s ease, color 0.12s ease;
+        flex-shrink: 0;
+
+        svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        &:hover {
+            background: $color-white-alpha-10;
+            color: $color-text-white;
+        }
+    }
+}
+
+// ─── Отображение цитаты ответа над сообщением ──────────────────────────────
+.message-reply-preview-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    margin-bottom: 2px;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 6px;
+    border-radius: $radius-xs;
+    transition: background 0.12s ease;
+
+    &:hover {
+        background: $color-white-alpha-05;
+
+        .reply-snippet {
+            color: $color-text-chat;
+        }
+    }
+
+    &.is-deleted {
+        cursor: default;
+        opacity: 0.65;
+
+        &:hover {
+            background: transparent;
+        }
+
+        .reply-spine {
+            border-color: $color-text-muted;
+        }
+
+        .reply-snippet.is-deleted {
+            font-style: italic;
+            color: $color-text-muted;
+        }
+    }
+
+    .reply-spine {
+        width: 14px;
+        height: 8px;
+        border-left: 2px solid $color-primary-light;
+        border-top: 2px solid $color-primary-light;
+        border-top-left-radius: 4px;
+        margin-right: 2px;
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    .reply-author-tag {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: $color-primary-light;
+        flex-shrink: 0;
+    }
+
+    .reply-snippet {
+        font-size: 11.5px;
+        color: $color-text-muted;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 420px;
+    }
+}
+
+// ─── Отображение пересылки над сообщением ──────────────────────────────────
+.message-forwarded-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: $color-text-muted;
+    margin-bottom: 2px;
+    user-select: none;
+
+    .forward-icon {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+        opacity: 0.8;
+    }
+
+    .forward-label {
+        font-style: italic;
+    }
+}
+
+// ─── Бейдж «(ред.)» ────────────────────────────────────────────────────────
+.message-edited-badge {
+    font-size: 10.5px;
+    color: $color-text-muted;
+    user-select: none;
+    flex-shrink: 0;
+    opacity: 0.8;
+    margin-left: 4px;
+}
+
+.chained-edited {
+    font-size: 10px;
+    color: $color-text-muted;
+    opacity: 0.8;
+}
+
+// ─── Анимация подсветки сообщения при переходе по цитате ───────────────────
+.message-highlight-pulse {
+    animation: messagePulseFlash 1.5s ease-out;
+}
+
+@keyframes messagePulseFlash {
+    0% {
+        background: $color-primary-alpha-30;
+    }
+    100% {
+        background: transparent;
     }
 }

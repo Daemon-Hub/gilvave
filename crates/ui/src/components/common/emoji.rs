@@ -312,6 +312,26 @@ pub fn sync_editor_content(editor: &web_sys::Element, text: &str) {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn sync_editor_content(_editor: &web_sys::Element, _text: &str) {}
 
+#[cfg(target_arch = "wasm32")]
+pub fn focus_editor_at_end(editor: &web_sys::HtmlElement) {
+    let _ = editor.focus();
+    if let Some(window) = web_sys::window() {
+        if let Ok(Some(selection)) = window.get_selection() {
+            if let Some(doc) = window.document() {
+                if let Ok(range) = doc.create_range() {
+                    let _ = range.select_node_contents(editor);
+                    let _ = range.collapse_with_to_start(false);
+                    let _ = selection.remove_all_ranges();
+                    let _ = selection.add_range(&range);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn focus_editor_at_end(_editor: &web_sys::HtmlElement) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -18,7 +18,8 @@
         "title": "Gilvave",
         "width": 800,
         "height": 600,
-        "decorations": false
+        "decorations": false,
+        "devtools": true
       }
     ],
     "security": {

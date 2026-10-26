@@ -2548,3 +2548,181 @@
         background: $color-white-alpha-06;
     }
 }
+
+
+// ─── Forward Message Modal ──────────────────────────────────────────────────
+.forward-modal {
+    max-width: 480px;
+    width: 90vw;
+
+    .forward-modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px 20px 20px;
+    }
+
+    .forward-preview-card {
+        display: flex;
+        gap: 10px;
+        padding: 10px 14px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-md;
+
+        .preview-accent-line {
+            width: 3px;
+            background: $color-primary;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .preview-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+
+            .preview-author {
+                font-size: 12px;
+                font-weight: 600;
+                color: $color-primary-light;
+            }
+
+            .preview-content {
+                font-size: 13px;
+                color: $color-text-chat;
+                line-height: 1.4;
+                margin: 0;
+                word-break: break-word;
+            }
+        }
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: $color-text-muted;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .forward-servers-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        @include scrollbar(4px);
+
+        .forward-server-pill {
+            padding: 6px 12px;
+            border-radius: $radius-full;
+            border: 1px solid $color-border-subtle;
+            background: $color-bg-panel-hover;
+            color: $color-text-chat;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            &:hover {
+                border-color: $color-border-input-focus;
+                color: $color-text-white;
+            }
+
+            &.active {
+                background: $color-primary-alpha-15;
+                border-color: $color-primary;
+                color: $color-primary-light;
+            }
+        }
+    }
+
+    .forward-channels-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 180px;
+        overflow-y: auto;
+        padding-right: 4px;
+        @include scrollbar(4px);
+
+        .forward-channels-empty {
+            font-size: 13px;
+            color: $color-text-muted;
+            padding: 12px 0;
+            text-align: center;
+        }
+
+        .forward-channel-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            background: transparent;
+            color: $color-text-chat;
+            border: 1px solid transparent;
+
+            .channel-icon {
+                color: $color-text-muted;
+                display: flex;
+                align-items: center;
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+
+            .channel-title {
+                font-size: 13.5px;
+                font-weight: 500;
+                flex: 1;
+            }
+
+            .selected-check {
+                font-size: 14px;
+                font-weight: 700;
+                color: $color-primary-light;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-white;
+
+                .channel-icon {
+                    color: $color-text-chat;
+                }
+            }
+
+            &.active {
+                background: $color-primary-alpha-15;
+                border-color: $color-primary-alpha-40;
+                color: $color-primary-light;
+
+                .channel-icon {
+                    color: $color-primary-light;
+                }
+            }
+        }
+    }
+
+    .forward-submit-btn {
+        background: $color-primary;
+        color: $color-text-white;
+
+        &:hover:not(:disabled) {
+            background: $color-primary-hover;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+}

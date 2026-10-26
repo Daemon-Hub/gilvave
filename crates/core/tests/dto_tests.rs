@@ -413,7 +413,11 @@ fn test_message_view_serialization() {
         author_id: Some(u_id),
         author_name: "author1".to_string(),
         content: "Hello from test".to_string(),
+        edited: false,
+        reply_to_id: None,
+        forwarded_from: None,
         created_at: now,
+        is_pending: false,
     };
 
     let json = serde_json::to_string(&msg).unwrap();
@@ -422,6 +426,104 @@ fn test_message_view_serialization() {
     assert_eq!(parsed.channel_id, msg.channel_id);
     assert_eq!(parsed.author_name, "author1");
     assert_eq!(parsed.content, "Hello from test");
+}
+
+#[test]
+fn test_message_view_reply_and_forward() {
+    use gilvave_core::dto::messages::ForwardedFrom;
+
+    let m_id = MessageId(test_uuid());
+    let c_id = ChannelId(test_uuid_2());
+    let reply_id = MessageId(test_uuid());
+    let now = OffsetDateTime::now_utc();
+
+    let fwd = ForwardedFrom {
+        author_name: Some("original_author".to_string()),
+        channel_name: Some("general".to_string()),
+        server_name: Some("My Server".to_string()),
+        channel_id: Some(c_id),
+        message_id: Some(reply_id),
+    };
+    let fwd_json = serde_json::to_value(&fwd).unwrap();
+
+    let msg = MessageView {
+        id: m_id,
+        channel_id: c_id,
+        author_id: None,
+        author_name: "forwarder".to_string(),
+        content: "forwarded content".to_string(),
+        edited: true,
+        reply_to_id: Some(reply_id),
+        forwarded_from: Some(fwd_json),
+        created_at: now,
+        is_pending: false,
+    };
+
+    let json = serde_json::to_string(&msg).unwrap();
+    let parsed: MessageView = serde_json::from_str(&json).unwrap();
+    assert!(parsed.edited);
+    assert_eq!(parsed.reply_to_id, Some(reply_id));
+    let parsed_fwd = parsed.parse_forwarded_from().unwrap();
+    assert_eq!(parsed_fwd.author_name.as_deref(), Some("original_author"));
+    assert_eq!(parsed_fwd.channel_name.as_deref(), Some("general"));
+}
+
+#[test]
+fn test_message_view_backward_compatibility() {
+    let raw = r#"{
+        "id": "018e6e58-39cb-72b1-912a-464a4d467c69",
+        "channel_id": "4693b482-626a-4b08-8e62-ef5a8eb85cb9",
+        "author_id": null,
+        "author_name": "legacy",
+        "content": "legacy msg",
+        "created_at": "2026-10-26T18:00:00Z"
+    }"#;
+    let parsed: MessageView = serde_json::from_str(raw).unwrap();
+    assert!(!parsed.edited);
+    assert!(!parsed.is_pending);
+    assert_eq!(parsed.reply_to_id, None);
+    assert_eq!(parsed.forwarded_from, None);
+    assert_eq!(parsed.parse_forwarded_from(), None);
+}
+
+#[test]
+fn test_ws_message_update_and_delete() {
+    use gilvave_core::dto::ws::{ServerRecieve, ServerSend};
+
+    let m_id = MessageId(test_uuid());
+    let c_id = ChannelId(test_uuid_2());
+
+    let send_update = ServerSend::MessageUpdate {
+        channel_id: c_id,
+        message_id: m_id,
+        content: "updated text".to_string(),
+    };
+    let json_up = serde_json::to_string(&send_update).unwrap();
+    assert!(json_up.contains("MESSAGE_UPDATE"));
+
+    let send_del = ServerSend::MessageDelete {
+        channel_id: c_id,
+        message_id: m_id,
+    };
+    let json_del = serde_json::to_string(&send_del).unwrap();
+    assert!(json_del.contains("MESSAGE_DELETE"));
+
+    let recv_del = ServerRecieve::MessageDelete {
+        channel_id: c_id,
+        message_id: m_id,
+    };
+    let json_recv_del = serde_json::to_string(&recv_del).unwrap();
+    let parsed_recv: ServerRecieve = serde_json::from_str(&json_recv_del).unwrap();
+    match parsed_recv {
+        ServerRecieve::MessageDelete {
+            channel_id,
+            message_id,
+        } => {
+            assert_eq!(channel_id, c_id);
+            assert_eq!(message_id, m_id);
+        }
+        _ => panic!("Expected MessageDelete"),
+    }
 }
 
 #[test]
