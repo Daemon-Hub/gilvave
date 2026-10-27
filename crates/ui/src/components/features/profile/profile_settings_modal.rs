@@ -263,32 +263,31 @@ pub fn ProfileSettingsModal() -> View {
                             };
 
                             let on_select_change = move |e: web_sys::Event| {
-                                if let Some(target) = e.target() {
-                                    if let Ok(select) = target.dyn_into::<web_sys::HtmlSelectElement>() {
-                                        current_theme.set(AppTheme::from_id(&select.value()));
-                                    }
+                                if let Some(target) = e.target()
+                                    && let Ok(select) = target.dyn_into::<web_sys::HtmlSelectElement>()
+                                {
+                                    current_theme.set(AppTheme::from_id(&select.value()));
                                 }
                             };
 
                             let on_file_upload = move |e: web_sys::Event| {
-                                if let Some(target) = e.target() {
-                                    if let Ok(input) = target.dyn_into::<web_sys::HtmlInputElement>() {
-                                        if let Some(files) = input.files() {
-                                            if let Some(file) = files.get(0) {
-                                                let promise = file.text();
-                                                wasm_bindgen_futures::spawn_local(async move {
-                                                    if let Ok(js_val) =
-                                                        wasm_bindgen_futures::JsFuture::from(promise).await
-                                                    {
-                                                        if let Some(content) = js_val.as_string() {
-                                                            install_custom_theme_from_json(content);
-                                                        }
-                                                    }
-                                                });
+                                if let Some(target) = e.target()
+                                    && let Ok(input) = target.dyn_into::<web_sys::HtmlInputElement>()
+                                {
+                                    if let Some(files) = input.files()
+                                        && let Some(file) = files.get(0)
+                                    {
+                                        let promise = file.text();
+                                        wasm_bindgen_futures::spawn_local(async move {
+                                            if let Ok(js_val) =
+                                                wasm_bindgen_futures::JsFuture::from(promise).await
+                                                && let Some(content) = js_val.as_string()
+                                            {
+                                                install_custom_theme_from_json(content);
                                             }
-                                        }
-                                        input.set_value("");
+                                        });
                                     }
+                                    input.set_value("");
                                 }
                             };
 

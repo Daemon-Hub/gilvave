@@ -32,7 +32,7 @@ pub fn VoiceChannelArea() -> View {
     let server_name = create_memo(move || {
         server_context.current.with(|s| {
             s.as_ref()
-                .map_or_else(|| String::new(), |srv| srv.name.clone())
+                .map_or_else(String::new, |srv| srv.name.clone())
         })
     });
 

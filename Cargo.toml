@@ -23,6 +23,7 @@ time = { version = "0.3.55", features = [
     "serde",
     "formatting",
     "parsing",
+    "macros",
     "wasm-bindgen",
 ] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }

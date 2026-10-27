@@ -281,30 +281,12 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
         poll_session_id.set(poll_session_id.get() + 1);
     });
 
-    let on_submit: Rc<dyn Fn(SubmitEvent)> = {
-        let name = name;
-        let email = email;
-        let password = password;
-        let confirm_password = confirm_password;
-        let name_error = name_error;
-        let email_error = email_error;
-        let password_error = password_error;
-        let confirm_error = confirm_error;
-        let loading = loading;
-        let server_error = server_error;
-        let is_waiting_confirmation = is_waiting_confirmation;
-        let waiting_email = waiting_email;
-        let saved_password = saved_password;
-        let poll_session_id = poll_session_id;
-        let manual_status_msg = manual_status_msg;
-        let screen_wrapper = screen_wrapper;
-
-        Rc::new(move |event: SubmitEvent| {
-            event.prevent_default();
-            if loading.get() {
-                return;
-            }
-            server_error.set(None);
+    let on_submit: Rc<dyn Fn(SubmitEvent)> = Rc::new(move |event: SubmitEvent| {
+        event.prevent_default();
+        if loading.get() {
+            return;
+        }
+        server_error.set(None);
 
             let data = RegisterData {
                 name: name.get_clone(),
@@ -429,26 +411,17 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
                     }
                 }
             }
-        })
-    };
+    });
 
-    let on_manual_check: Rc<dyn Fn()> = {
-        let manual_checking = manual_checking;
-        let manual_status_msg = manual_status_msg;
-        let waiting_email = waiting_email;
-        let saved_password = saved_password;
-        let is_waiting_confirmation = is_waiting_confirmation;
-        let screen_wrapper = screen_wrapper;
+    let on_manual_check: Rc<dyn Fn()> = Rc::new(move || {
+        if manual_checking.get() {
+            return;
+        }
+        manual_checking.set(true);
+        manual_status_msg.set(None);
 
-        Rc::new(move || {
-            if manual_checking.get() {
-                return;
-            }
-            manual_checking.set(true);
-            manual_status_msg.set(None);
-
-            let target_email = waiting_email.get_clone();
-            let target_password = saved_password.get_clone();
+        let target_email = waiting_email.get_clone();
+        let target_password = saved_password.get_clone();
 
             wasm_bindgen_futures::spawn_local(async move {
                 let device_info = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
@@ -478,25 +451,17 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
                     }
                 }
             });
-        })
-    };
+    });
 
-    let on_back: Rc<dyn Fn()> = {
-        let is_waiting_confirmation = is_waiting_confirmation;
-        let poll_session_id = poll_session_id;
-        let manual_status_msg = manual_status_msg;
-        let server_error = server_error;
-
-        Rc::new(move || {
-            is_waiting_confirmation.set(false);
-            poll_session_id.set(poll_session_id.get() + 1);
-            manual_status_msg.set(None);
-            server_error.set(None);
-            if screen_wrapper.is_register_confirm() {
-                screen_wrapper.set(ActiveScreen::Register);
-            }
-        })
-    };
+    let on_back: Rc<dyn Fn()> = Rc::new(move || {
+        is_waiting_confirmation.set(false);
+        poll_session_id.set(poll_session_id.get() + 1);
+        manual_status_msg.set(None);
+        server_error.set(None);
+        if screen_wrapper.is_register_confirm() {
+            screen_wrapper.set(ActiveScreen::Register);
+        }
+    });
 
     let on_submit_sig = create_signal(on_submit);
     let on_manual_check_sig = create_signal(on_manual_check);

@@ -4,7 +4,9 @@ use crate::{
 };
 use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHARS};
 use sycamore::prelude::*;
-use time::format_description::parse_borrowed;
+
+const TIME_FORMAT: &[time::format_description::FormatItem<'static>] =
+    time::macros::format_description!("[hour]:[minute]");
 
 #[component(inline_props)]
 pub fn MessageItem(
@@ -13,9 +15,8 @@ pub fn MessageItem(
     is_first_in_group: bool,
     is_last_in_group: bool,
 ) -> View {
-    let format = parse_borrowed::<3>("[hour]:[minute]").unwrap();
     let local_dt = to_local_datetime(message_view.created_at);
-    let formatted_timestamp = local_dt.format(&format).unwrap();
+    let formatted_timestamp = local_dt.format(TIME_FORMAT).unwrap_or_default();
 
     let mut class_list = String::from("message");
     if !is_first_in_group {
@@ -129,20 +130,18 @@ pub fn MessageItem(
 
     let full_content = message_view.content.clone();
     let full_content_attr = full_content.clone();
-    let full_content_for_memo = full_content.clone();
-    let char_count = full_content.chars().count();
-    let is_long = char_count > MESSAGE_COLLAPSE_CHARS;
+    let is_long = full_content.chars().count() > MESSAGE_COLLAPSE_CHARS;
     let truncated_content = if is_long {
         let prefix: String = full_content.chars().take(MESSAGE_COLLAPSE_CHARS).collect();
         format!("{prefix}…")
     } else {
-        full_content.clone()
+        String::new()
     };
 
     let is_expanded = create_signal(false);
     let displayed_text = create_memo(move || {
         if !is_long || is_expanded.get() {
-            full_content_for_memo.clone()
+            full_content.clone()
         } else {
             truncated_content.clone()
         }
@@ -250,8 +249,7 @@ pub fn MessageItem(
                 div(class="message-bubble") {
                     p {
                         (move || {
-                            let text = displayed_text.get_clone();
-                            let segments = parse_message_segments(&text);
+                            let segments = displayed_text.with(|text| parse_message_segments(text));
                             let views: Vec<View> = segments
                                 .into_iter()
                                 .map(|seg| match seg {

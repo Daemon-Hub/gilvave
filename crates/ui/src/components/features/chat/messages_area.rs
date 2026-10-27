@@ -198,24 +198,25 @@ fn matches_emoji_query(emoji: &emojis::Emoji, query: &str) -> bool {
     if emoji.as_str().contains(query) {
         return true;
     }
-    let name = emoji.name();
-    if name.to_lowercase().contains(query) {
+    let name_lower = emoji.name().to_lowercase();
+    if name_lower.contains(query) {
         return true;
     }
-    if let Some(sc) = emoji.shortcode() {
-        if sc.to_lowercase().contains(query) {
-            return true;
-        }
+    let sc_lower = emoji.shortcode().map(|sc| sc.to_lowercase());
+    if let Some(ref sc) = sc_lower
+        && sc.contains(query)
+    {
+        return true;
     }
     let en_keywords = map_ru_query_to_en(query);
     for kw in en_keywords {
-        if name.to_lowercase().contains(kw) {
+        if name_lower.contains(kw) {
             return true;
         }
-        if let Some(sc) = emoji.shortcode() {
-            if sc.to_lowercase().contains(kw) {
-                return true;
-            }
+        if let Some(ref sc) = sc_lower
+            && sc.contains(kw)
+        {
+            return true;
         }
     }
     false
@@ -228,6 +229,13 @@ struct EnrichedMessage {
     is_first: bool,
     is_last: bool,
     date_divider: Option<String>,
+}
+
+#[inline]
+fn hash_str(s: &str) -> u64 {
+    let mut hasher = std::hash::DefaultHasher::new();
+    std::hash::Hash::hash(s, &mut hasher);
+    std::hash::Hasher::finish(&hasher)
 }
 
 fn format_date_divider(date: time::Date) -> String {
@@ -378,26 +386,32 @@ where
                 );
                 let _ = window
                     .add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
-                on_key.forget();
+                let window_clone = window.clone();
+                on_cleanup(move || {
+                    let _ = window_clone.remove_event_listener_with_callback(
+                        "keydown",
+                        on_key.as_ref().unchecked_ref(),
+                    );
+                });
             }
         }
     });
 
     create_effect(move || {
         let msg = draft_message.get_clone();
-        if let Some(node) = editor_ref.try_get() {
-            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
-                let current = serialize_contenteditable(&editor);
-                if current != msg {
-                    sync_editor_content(&editor, &msg);
-                    if msg.trim().is_empty() {
-                        let _ = editor.set_attribute("data-empty", "true");
-                    } else {
-                        let _ = editor.remove_attribute("data-empty");
-                    }
-                    let overflowed = editor.scroll_height() > 142;
-                    has_scrollbar.set(overflowed);
+        if let Some(node) = editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            let current = serialize_contenteditable(&editor);
+            if current != msg {
+                sync_editor_content(&editor, &msg);
+                if msg.trim().is_empty() {
+                    let _ = editor.set_attribute("data-empty", "true");
+                } else {
+                    let _ = editor.remove_attribute("data-empty");
                 }
+                let overflowed = editor.scroll_height() > 142;
+                has_scrollbar.set(overflowed);
             }
         }
     });
@@ -406,12 +420,11 @@ where
     create_effect(move || {
         let is_replying = modal_context.replying_to.with(|r| r.is_some());
         let is_editing = modal_context.editing_message.with(|e| e.is_some());
-        if is_replying || is_editing {
-            if let Some(node) = editor_ref.try_get() {
-                if let Ok(editor) = node.dyn_into::<HtmlElement>() {
-                    focus_editor_at_end(&editor);
-                }
-            }
+        if (is_replying || is_editing)
+            && let Some(node) = editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            focus_editor_at_end(&editor);
         }
     });
 
@@ -420,11 +433,11 @@ where
         is_attach_menu_open.set(false);
         is_emoji_modal_open.set(false);
         is_emoji_expanded.set(false);
-        if let Some(node) = editor_ref.try_get() {
-            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
-                editor.set_inner_html("");
-                let _ = editor.set_attribute("data-empty", "true");
-            }
+        if let Some(node) = editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            editor.set_inner_html("");
+            let _ = editor.set_attribute("data-empty", "true");
         }
         on_send();
     };
@@ -448,22 +461,21 @@ where
         use wasm_bindgen::JsCast;
         if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>() {
             paste_event.prevent_default();
-            if let Some(cd) = paste_event.clipboard_data() {
-                if let Ok(text) = cd.get_data("text/plain") {
-                    if let Some(target) = paste_event.current_target() {
-                        let el: HtmlElement = target.unchecked_into();
-                        insert_text_into_editor(&el, &text);
-                        let serialized = serialize_contenteditable(&el);
-                        if serialized.trim().is_empty() {
-                            let _ = el.set_attribute("data-empty", "true");
-                        } else {
-                            let _ = el.remove_attribute("data-empty");
-                        }
-                        let overflowed = el.scroll_height() > 142;
-                        has_scrollbar.set(overflowed);
-                        draft_message.set(serialized);
-                    }
+            if let Some(cd) = paste_event.clipboard_data()
+                && let Ok(text) = cd.get_data("text/plain")
+                && let Some(target) = paste_event.current_target()
+            {
+                let el: HtmlElement = target.unchecked_into();
+                insert_text_into_editor(&el, &text);
+                let serialized = serialize_contenteditable(&el);
+                if serialized.trim().is_empty() {
+                    let _ = el.set_attribute("data-empty", "true");
+                } else {
+                    let _ = el.remove_attribute("data-empty");
                 }
+                let overflowed = el.scroll_height() > 142;
+                has_scrollbar.set(overflowed);
+                draft_message.set(serialized);
             }
         }
     };
@@ -500,11 +512,11 @@ where
                 is_attach_menu_open.set(false);
                 is_emoji_modal_open.set(false);
                 is_emoji_expanded.set(false);
-                if let Some(node) = editor_ref.try_get() {
-                    if let Ok(editor) = node.dyn_into::<HtmlElement>() {
-                        editor.set_inner_html("");
-                        let _ = editor.set_attribute("data-empty", "true");
-                    }
+                if let Some(node) = editor_ref.try_get()
+                    && let Ok(editor) = node.dyn_into::<HtmlElement>()
+                {
+                    editor.set_inner_html("");
+                    let _ = editor.set_attribute("data-empty", "true");
                 }
                 on_send();
             }
@@ -540,10 +552,10 @@ where
     };
 
     let on_file_selected = move |e: Event| {
-        if let Some(target) = e.target() {
-            if let Ok(input) = target.dyn_into::<web_sys::HtmlInputElement>() {
-                input.set_value("");
-            }
+        if let Some(target) = e.target()
+            && let Ok(input) = target.dyn_into::<web_sys::HtmlInputElement>()
+        {
+            input.set_value("");
         }
         is_attach_menu_open.set(false);
     };
@@ -1107,11 +1119,10 @@ pub fn MessagesArea() -> View {
                             el.set_scroll_top(el.scroll_height());
                             if let Some(window) = web_sys::window() {
                                 let el_clone = el.clone();
-                                let cb = wasm_bindgen::closure::Closure::<dyn Fn()>::new(move || {
+                                let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
                                     el_clone.set_scroll_top(el_clone.scroll_height());
                                 });
-                                let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
-                                cb.forget();
+                                let _ = window.request_animation_frame(cb.unchecked_ref());
                             }
                         } else {
                             let delta = el.scroll_height() - old_scroll_height;
@@ -1157,11 +1168,10 @@ pub fn MessagesArea() -> View {
                             el.set_scroll_top(el.scroll_height());
                             if let Some(window) = web_sys::window() {
                                 let el_clone = el.clone();
-                                let cb = wasm_bindgen::closure::Closure::<dyn Fn()>::new(move || {
+                                let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
                                     el_clone.set_scroll_top(el_clone.scroll_height());
                                 });
-                                let _ = window.request_animation_frame(cb.as_ref().unchecked_ref());
-                                cb.forget();
+                                let _ = window.request_animation_frame(cb.unchecked_ref());
                             }
                         } else {
                             let delta = el.scroll_height() - old_scroll_height;
@@ -1247,10 +1257,10 @@ pub fn MessagesArea() -> View {
                     user_profile.avatar.with(|my_avatar| {
                         let len = msgs.len();
                         let local_offset = get_local_offset();
-                        let local_dts: Vec<time::OffsetDateTime> = msgs
-                            .iter()
-                            .map(|m| m.created_at.to_offset(local_offset))
-                            .collect();
+                        let mut local_dts: Vec<time::OffsetDateTime> = Vec::with_capacity(len);
+                        for m in msgs.iter() {
+                            local_dts.push(m.created_at.to_offset(local_offset));
+                        }
 
                         let mut avatar_by_username =
                             std::collections::HashMap::with_capacity(members.len());
@@ -1366,7 +1376,17 @@ pub fn MessagesArea() -> View {
 
                 Keyed(
                     list=enriched_messages,
-                    key=|em| (em.message.id, em.message.content.clone(), em.message.edited, em.message.is_pending, em.message.reply_to_id, em.is_first, em.is_last, em.date_divider.clone(), em.avatar_url.clone()),
+                    key=|em| (
+                        em.message.id,
+                        hash_str(&em.message.content),
+                        em.message.edited,
+                        em.message.is_pending,
+                        em.message.reply_to_id,
+                        em.is_first,
+                        em.is_last,
+                        em.date_divider.as_deref().map(hash_str),
+                        hash_str(&em.avatar_url),
+                    ),
                     view=|em| {
                         let date_view = if let Some(date_str) = em.date_divider {
                             view! {
@@ -1488,16 +1508,16 @@ pub fn ExpandedMessageEditorModal() -> View {
 
     create_effect(move || {
         let msg = draft_message.get_clone();
-        if let Some(node) = expanded_editor_ref.try_get() {
-            if let Ok(editor) = node.dyn_into::<HtmlElement>() {
-                let current = serialize_contenteditable(&editor);
-                if current != msg {
-                    sync_editor_content(&editor, &msg);
-                    if msg.trim().is_empty() {
-                        let _ = editor.set_attribute("data-empty", "true");
-                    } else {
-                        let _ = editor.remove_attribute("data-empty");
-                    }
+        if let Some(node) = expanded_editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            let current = serialize_contenteditable(&editor);
+            if current != msg {
+                sync_editor_content(&editor, &msg);
+                if msg.trim().is_empty() {
+                    let _ = editor.set_attribute("data-empty", "true");
+                } else {
+                    let _ = editor.remove_attribute("data-empty");
                 }
             }
         }
@@ -1520,20 +1540,19 @@ pub fn ExpandedMessageEditorModal() -> View {
         use wasm_bindgen::JsCast;
         if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>() {
             paste_event.prevent_default();
-            if let Some(cd) = paste_event.clipboard_data() {
-                if let Ok(text) = cd.get_data("text/plain") {
-                    if let Some(target) = paste_event.current_target() {
-                        let el: HtmlElement = target.unchecked_into();
-                        insert_text_into_editor(&el, &text);
-                        let serialized = serialize_contenteditable(&el);
-                        if serialized.trim().is_empty() {
-                            let _ = el.set_attribute("data-empty", "true");
-                        } else {
-                            let _ = el.remove_attribute("data-empty");
-                        }
-                        draft_message.set(serialized);
-                    }
+            if let Some(cd) = paste_event.clipboard_data()
+                && let Ok(text) = cd.get_data("text/plain")
+                && let Some(target) = paste_event.current_target()
+            {
+                let el: HtmlElement = target.unchecked_into();
+                insert_text_into_editor(&el, &text);
+                let serialized = serialize_contenteditable(&el);
+                if serialized.trim().is_empty() {
+                    let _ = el.set_attribute("data-empty", "true");
+                } else {
+                    let _ = el.remove_attribute("data-empty");
                 }
+                draft_message.set(serialized);
             }
         }
     };

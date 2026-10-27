@@ -86,7 +86,7 @@ pub fn ChannelPanel() -> View {
             .with_untracked(|c| c.as_ref().map(|ch| ch.id))
         {
             context.current.set(None);
-            spawn_local_scoped(async move {
+            wasm_bindgen_futures::spawn_local(async move {
                 let _ = WsService::left_channel(channel_id).await;
             });
         }
@@ -96,8 +96,8 @@ pub fn ChannelPanel() -> View {
             context.voice.set(vec![]);
             spawn_local_scoped(async move {
                 if let Ok(channels) = Api::get_server_channels(server_id).await {
-                    let mut text_channels = Vec::new();
-                    let mut voice_channels = Vec::new();
+                    let mut text_channels = Vec::with_capacity(channels.len());
+                    let mut voice_channels = Vec::with_capacity(channels.len());
                     for channel in channels {
                         match channel.r#type {
                             ChannelType::TEXT => text_channels.push(channel),

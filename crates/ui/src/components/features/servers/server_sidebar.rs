@@ -15,16 +15,14 @@ use super::{
     server_actions::{create_server, select_server},
 };
 
-pub fn open_join_modal(context: CreateServerContext) {
-    context.modal_view.set(ModalView::Join);
-    context.is_modal_open.set(true);
-    context.expanded_id.set(None);
-    let epoch = time::OffsetDateTime::from_unix_timestamp(0).unwrap();
-    let hardcoded = vec![
+fn fallback_hardcoded_servers() -> Vec<Server> {
+    use gilvave_core::uuid::Uuid;
+    let epoch = time::OffsetDateTime::UNIX_EPOCH;
+    vec![
         Server {
-            id: ServerId::try_from("550e8400-e29b-41d4-a716-446655440001").unwrap(),
+            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440001)),
             name: "Rust Developers".to_string(),
-            icon_url: "".to_string(),
+            icon_url: String::new(),
             created_at: epoch,
             description: "Сообщество разработчиков на Rust. Обсуждаем код, делимся проектами и помогаем новичкам.".to_string(),
             members_count: 1247,
@@ -33,9 +31,9 @@ pub fn open_join_modal(context: CreateServerContext) {
             owner_id: UserId::default(),
         },
         Server {
-            id: ServerId::try_from("550e8400-e29b-41d4-a716-446655440002").unwrap(),
+            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440002)),
             name: "Гейм-дев".to_string(),
-            icon_url: "".to_string(),
+            icon_url: String::new(),
             created_at: epoch,
             description: "Разработка игр на всех движках. Unity, Unreal, Godot — всё обсуждаем здесь.".to_string(),
             members_count: 834,
@@ -44,9 +42,9 @@ pub fn open_join_modal(context: CreateServerContext) {
             owner_id: UserId::default(),
         },
         Server {
-            id: ServerId::try_from("550e8400-e29b-41d4-a716-446655440003").unwrap(),
+            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440003)),
             name: "Музыка".to_string(),
-            icon_url: "".to_string(),
+            icon_url: String::new(),
             created_at: epoch,
             description: "Делимся музыкой, обсуждаем альбомы и находим единомышленников по вкусам.".to_string(),
             members_count: 2103,
@@ -55,9 +53,9 @@ pub fn open_join_modal(context: CreateServerContext) {
             owner_id: UserId::default(),
         },
         Server {
-            id: ServerId::try_from("550e8400-e29b-41d4-a716-446655440004").unwrap(),
+            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440004)),
             name: "Аниме клуб".to_string(),
-            icon_url: "".to_string(),
+            icon_url: String::new(),
             created_at: epoch,
             description: "Обсуждаем аниме, мангу и всё связанное с японской культурой. Новости, обзоры, рекомендации.".to_string(),
             members_count: 3562,
@@ -66,9 +64,9 @@ pub fn open_join_modal(context: CreateServerContext) {
             owner_id: UserId::default(),
         },
         Server {
-            id: ServerId::try_from("550e8400-e29b-41d4-a716-446655440005").unwrap(),
+            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440005)),
             name: "Memes & Chill".to_string(),
-            icon_url: "".to_string(),
+            icon_url: String::new(),
             created_at: epoch,
             description: "Лучшие мемы, тёплая атмосфера и хорошее настроение каждый день.".to_string(),
             members_count: 5891,
@@ -76,7 +74,13 @@ pub fn open_join_modal(context: CreateServerContext) {
             is_public: true,
             owner_id: UserId::default(),
         },
-    ];
+    ]
+}
+
+pub fn open_join_modal(context: CreateServerContext) {
+    context.modal_view.set(ModalView::Join);
+    context.is_modal_open.set(true);
+    context.expanded_id.set(None);
     context.public_servers_page.set(1);
     context.has_more_public_servers.set(false);
     spawn_local_scoped(async move {
@@ -86,8 +90,8 @@ pub fn open_join_modal(context: CreateServerContext) {
                 context.has_more_public_servers.set(has_more);
             }
             Err(_) => {
-                if context.public_servers.get_clone().is_empty() {
-                    context.public_servers.set(hardcoded);
+                if context.public_servers.with(|s| s.is_empty()) {
+                    context.public_servers.set(fallback_hardcoded_servers());
                 }
             }
         }
@@ -196,7 +200,7 @@ pub fn ServerSidebar() -> View {
                 ]);
 
                 let s_id_str = id.to_string();
-                let s_name_str = name.get_clone();
+                let s_name_str = tip.clone();
                 view! {
                     div(
                         class="server-icon-wrapper",

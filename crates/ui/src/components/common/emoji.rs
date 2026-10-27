@@ -17,18 +17,24 @@ pub enum MessageSegment {
 /// - If the emoji contains `\u{200D}`, keep Variation Selector 16.
 /// - Convert each code point to lowercase hex and join with `-`.
 pub fn emoji_to_twemoji_url(emoji: &str) -> String {
+    use std::fmt::Write;
+
     let has_zwj = emoji.contains('\u{200D}');
-    let mut parts = Vec::new();
+    let mut url = String::with_capacity(75 + emoji.len() * 4);
+    url.push_str("https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/");
+    let mut first = true;
     for ch in emoji.chars() {
         if !has_zwj && ch == '\u{FE0F}' {
             continue;
         }
-        parts.push(format!("{:x}", ch as u32));
+        if !first {
+            url.push('-');
+        }
+        first = false;
+        let _ = write!(url, "{:x}", ch as u32);
     }
-    format!(
-        "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/{}.svg",
-        parts.join("-")
-    )
+    url.push_str(".svg");
+    url
 }
 
 /// Parses message text into plain text chunks and recognized emoji segments.
@@ -39,7 +45,9 @@ pub fn parse_message_segments(text: &str) -> Vec<MessageSegment> {
     let mut remaining = text;
 
     while !remaining.is_empty() {
-        let first_char = remaining.chars().next().unwrap();
+        let Some(first_char) = remaining.chars().next() else {
+            break;
+        };
 
         // Fast-path filter: skip characters that cannot start any valid emoji
         let is_candidate = matches!(

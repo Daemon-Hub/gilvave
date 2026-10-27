@@ -280,7 +280,7 @@ impl WsService {
                                         web_sys::console::log_1(
                                             &format!("[WS SERVICE RECV TEXT] {text}").into(),
                                         );
-                                        handle(text).await;
+                                        handle(&text).await;
                                     }
                                     WsMessage::Binary(bin) => {
                                         web_sys::console::log_1(

@@ -20,13 +20,13 @@ pub fn load_windowed_mode() -> bool {
 }
 
 pub fn save_windowed_mode(is_windowed: bool) {
-    if let Some(window) = web_sys::window() {
-        if let Ok(Some(storage)) = window.local_storage() {
-            let _ = storage.set_item(
-                STORAGE_KEY_WINDOWED_MODE,
-                if is_windowed { "true" } else { "false" },
-            );
-        }
+    if let Some(window) = web_sys::window()
+        && let Ok(Some(storage)) = window.local_storage()
+    {
+        let _ = storage.set_item(
+            STORAGE_KEY_WINDOWED_MODE,
+            if is_windowed { "true" } else { "false" },
+        );
     }
 }
 
@@ -256,12 +256,11 @@ impl CustomTheme {
     }
 
     pub fn save_all(themes: &[Self]) {
-        if let Some(window) = web_sys::window() {
-            if let Ok(Some(storage)) = window.local_storage() {
-                if let Ok(json) = serde_json::to_string(themes) {
-                    let _ = storage.set_item(STORAGE_KEY_CUSTOM_THEMES, &json);
-                }
-            }
+        if let Some(window) = web_sys::window()
+            && let Ok(Some(storage)) = window.local_storage()
+            && let Ok(json) = serde_json::to_string(themes)
+        {
+            let _ = storage.set_item(STORAGE_KEY_CUSTOM_THEMES, &json);
         }
         Self::sync_preview_styles(themes);
     }

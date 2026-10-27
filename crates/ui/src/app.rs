@@ -35,20 +35,14 @@ pub fn App() -> View {
                 let is_ctrl = e.ctrl_key() || e.meta_key();
                 let is_shift = e.shift_key();
 
-                let is_debug_shortcut = if key == "F12" {
-                    true
-                } else if is_ctrl
-                    && is_shift
-                    && (key.eq_ignore_ascii_case("I")
-                        || key.eq_ignore_ascii_case("J")
-                        || key.eq_ignore_ascii_case("C")
-                        || key.eq_ignore_ascii_case("K")
-                        || key.eq_ignore_ascii_case("E"))
-                {
-                    true
-                } else {
-                    is_ctrl && !is_shift && !e.alt_key() && key.eq_ignore_ascii_case("U")
-                };
+                let is_debug_shortcut = key == "F12"
+                    || (is_ctrl
+                        && is_shift
+                        && matches!(
+                            key.as_str(),
+                            "I" | "i" | "J" | "j" | "C" | "c" | "K" | "k" | "E" | "e"
+                        ))
+                    || (is_ctrl && !is_shift && !e.alt_key() && key.eq_ignore_ascii_case("U"));
 
                 if is_debug_shortcut {
                     e.prevent_default();
@@ -64,24 +58,24 @@ pub fn App() -> View {
     }
 
     // Pause background aurora animations when window/tab is hidden (0% GPU)
-    if let Some(window) = web_sys::window() {
-        if let Some(doc) = window.document() {
-            let doc_clone = doc.clone();
-            let on_visibility = Closure::<dyn Fn()>::new(move || {
-                if let Some(root) = doc_clone.document_element() {
-                    if doc_clone.hidden() {
-                        let _ = root.set_attribute("data-window-hidden", "true");
-                    } else {
-                        let _ = root.remove_attribute("data-window-hidden");
-                    }
+    if let Some(window) = web_sys::window()
+        && let Some(doc) = window.document()
+    {
+        let doc_clone = doc.clone();
+        let on_visibility = Closure::<dyn Fn()>::new(move || {
+            if let Some(root) = doc_clone.document_element() {
+                if doc_clone.hidden() {
+                    let _ = root.set_attribute("data-window-hidden", "true");
+                } else {
+                    let _ = root.remove_attribute("data-window-hidden");
                 }
-            });
-            let _ = doc.add_event_listener_with_callback(
-                "visibilitychange",
-                on_visibility.as_ref().unchecked_ref(),
-            );
-            on_visibility.forget();
-        }
+            }
+        });
+        let _ = doc.add_event_listener_with_callback(
+            "visibilitychange",
+            on_visibility.as_ref().unchecked_ref(),
+        );
+        on_visibility.forget();
     }
 
     spawn_local_scoped(async move {

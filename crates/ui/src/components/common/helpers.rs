@@ -56,8 +56,13 @@ pub fn classes(rules: Vec<ClassRule>) -> impl Fn() -> String {
                 }
             })
             .filter(|s| !s.is_empty())
-            .collect::<Vec<_>>()
-            .join(" ")
+            .fold(String::new(), |mut acc, s| {
+                if !acc.is_empty() {
+                    acc.push(' ');
+                }
+                acc.push_str(s);
+                acc
+            })
     }
 }
 
@@ -66,12 +71,11 @@ pub fn is_mobile_device() -> bool {
     let Some(window) = web_sys::window() else {
         return false;
     };
-    if let Ok(width_val) = window.inner_width() {
-        if let Some(w) = width_val.as_f64() {
-            if w <= 768.0 {
-                return true;
-            }
-        }
+    if let Ok(width_val) = window.inner_width()
+        && let Some(w) = width_val.as_f64()
+        && w <= 768.0
+    {
+        return true;
     }
     if let Ok(ua) = window.navigator().user_agent() {
         let ua_lower = ua.to_lowercase();

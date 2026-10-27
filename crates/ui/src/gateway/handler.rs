@@ -35,8 +35,8 @@ pub fn dispatch_gateway_event(event: GatewayEvent) {
     }
 }
 
-pub async fn handle(text: String) {
-    match serde_json::from_str::<ServerRecieve>(&text) {
+pub async fn handle(text: &str) {
+    match serde_json::from_str::<ServerRecieve>(text) {
         Ok(msg) => match msg {
             ServerRecieve::HeartbeatAck => {
                 web_sys::console::log_1(&"[WS] HeartbeatAck".into());

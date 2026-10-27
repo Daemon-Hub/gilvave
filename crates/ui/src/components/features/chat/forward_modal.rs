@@ -52,7 +52,13 @@ pub fn ForwardMessageModal() -> View {
                 },
             );
             let _ = window.add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
-            on_key.forget();
+            let window_clone = window.clone();
+            on_cleanup(move || {
+                let _ = window_clone.remove_event_listener_with_callback(
+                    "keydown",
+                    on_key.as_ref().unchecked_ref(),
+                );
+            });
         }
     }
 
