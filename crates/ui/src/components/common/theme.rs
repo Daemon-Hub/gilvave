@@ -667,15 +667,22 @@ impl CustomTheme {
 
         if let (Some(acc), Some(pr)) = (&accent, &primary) {
             let warm = accent_warm.as_ref().unwrap_or(pr);
+            let sep_1 = with_alpha(acc, 0.75);
+            let sep_2 = with_alpha(pr, 0.85);
+            let sep_3 = with_alpha(warm, 0.75);
+            vars.insert("--color-server-separator-stop-1".into(), sep_1.clone());
+            vars.insert("--color-server-separator-stop-2".into(), sep_2.clone());
+            vars.insert("--color-server-separator-stop-3".into(), sep_3.clone());
             vars.insert(
                 "--gradient-server-separator".into(),
-                format!(
-                    "linear-gradient(90deg, {}, {}, {})",
-                    with_alpha(acc, 0.45),
-                    with_alpha(pr, 0.55),
-                    with_alpha(warm, 0.45)
-                ),
+                format!("linear-gradient(90deg, {sep_1}, {sep_2}, {sep_3})"),
             );
+            vars.insert("--color-server-flap-stop-1".into(), darken_color(acc, 0.45));
+            vars.insert("--color-server-flap-stop-2".into(), darken_color(pr, 0.45));
+            vars.insert("--color-server-flap-stop-3".into(), darken_color(warm, 0.45));
+            vars.insert("--color-server-flap-stroke".into(), darken_color(pr, 0.65));
+            vars.insert("--color-server-peel-glow".into(), with_alpha(warm, 0.8));
+            vars.insert("--color-server-peel-glow-ambient".into(), with_alpha(pr, 0.45));
             vars.insert(
                 "--gradient-footer-top-line".into(),
                 format!(
@@ -992,6 +999,18 @@ fn with_alpha(color: &str, alpha: f32) -> String {
     } else {
         let pct = (alpha * 100.0).round() as u32;
         format!("color-mix(in srgb, {color} {pct}%, transparent)")
+    }
+}
+
+fn darken_color(color: &str, factor: f32) -> String {
+    if let Some((r, g, b)) = parse_hex_rgb(color) {
+        let dr = (r as f32 * factor).round() as u8;
+        let dg = (g as f32 * factor).round() as u8;
+        let db = (b as f32 * factor).round() as u8;
+        format!("#{dr:02x}{dg:02x}{db:02x}")
+    } else {
+        let pct = (factor * 100.0).round() as u32;
+        format!("color-mix(in srgb, {color} {pct}%, black)")
     }
 }
 

@@ -2,7 +2,7 @@ use sycamore::prelude::*;
 
 use crate::{
     components::{
-        common::{CreateServerContext, HomeTab, ModalView, UiModalContext, UserProfileContext},
+        common::{CreateServerContext, CreateServerOrigin, HomeTab, ModalView, UiModalContext, UserProfileContext},
         features::{chat::messages_area::ChatInputArea, servers::open_join_modal},
         ui::icons::{ArrowLeftIcon, ArrowRightIcon, ChatBubbleIcon, GearIcon, GlobeIcon, PlusIcon},
     },
@@ -37,10 +37,13 @@ fn dashboard_main_view(
 ) -> View {
     let open_join = move |_| {
         server_modal_context.from_dashboard.set(true);
+        server_modal_context.origin.set(CreateServerOrigin::Dashboard);
         open_join_modal(server_modal_context);
     };
 
     let open_create = move |_| {
+        server_modal_context.from_dashboard.set(true);
+        server_modal_context.origin.set(CreateServerOrigin::Dashboard);
         server_modal_context.modal_view.set(ModalView::Create);
         server_modal_context.is_modal_open.set(true);
     };

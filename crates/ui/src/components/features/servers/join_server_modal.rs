@@ -6,13 +6,13 @@ use crate::{
         common::CreateServerContext,
         ui::{
             ShowMoreBanner,
-            icons::{ArrowLeftIcon, CloseSmallIcon},
+            icons::{ArrowLeftIcon, CloseSmallIcon, GlobeIcon},
         },
     },
     http::api::Api,
 };
 
-use super::server_card::server_card;
+use super::{server_card::server_card, server_sidebar::fallback_hardcoded_servers};
 
 #[component(inline_props)]
 pub(super) fn JoinServerModal(
@@ -21,8 +21,49 @@ pub(super) fn JoinServerModal(
 ) -> View {
     let context = use_context::<CreateServerContext>();
     let is_at_bottom = create_signal(false);
-    let is_loading = create_signal(false);
+    let is_loading = create_signal(context.public_servers.with(|s| s.is_empty()));
+    let search_query = create_signal(String::new());
     let body_ref = create_node_ref();
+
+    // Fetch initial page 1 on mount if list is empty
+    if context.public_servers.with(|s| s.is_empty()) {
+        spawn_local_scoped(async move {
+            match Api::get_public_servers(1).await {
+                Ok((servers, has_more)) => {
+                    if servers.is_empty() {
+                        context.public_servers.set(fallback_hardcoded_servers());
+                        context.has_more_public_servers.set(false);
+                    } else {
+                        context.public_servers.set(servers);
+                        context.has_more_public_servers.set(has_more);
+                    }
+                }
+                Err(_) => {
+                    if context.public_servers.with(|s| s.is_empty()) {
+                        context.public_servers.set(fallback_hardcoded_servers());
+                        context.has_more_public_servers.set(false);
+                    }
+                }
+            }
+            is_loading.set(false);
+        });
+    }
+
+    let filtered_servers = create_memo(move || {
+        let q = search_query.get_clone().trim().to_lowercase();
+        let servers = context.public_servers.get_clone();
+        if q.is_empty() {
+            servers
+        } else {
+            servers
+                .into_iter()
+                .filter(|s| {
+                    s.name.to_lowercase().contains(&q)
+                        || s.description.to_lowercase().contains(&q)
+                })
+                .collect()
+        }
+    });
 
     let is_banner_visible = create_signal(false);
     create_effect(move || {
@@ -31,9 +72,28 @@ pub(super) fn JoinServerModal(
         is_banner_visible.set(visible);
     });
 
-    let on_close_click = {
-        let on_c = on_close;
+    let on_close = std::rc::Rc::new(on_close);
+    let on_back = std::rc::Rc::new(on_back);
+
+    let on_overlay_close = {
+        let on_c = std::rc::Rc::clone(&on_close);
         move |e: web_sys::MouseEvent| on_c(e)
+    };
+
+    let on_icon_close = {
+        let on_c = std::rc::Rc::clone(&on_close);
+        move |e: web_sys::MouseEvent| {
+            e.stop_propagation();
+            on_c(e);
+        }
+    };
+
+    let on_back_click = {
+        let on_b = std::rc::Rc::clone(&on_back);
+        move |e: web_sys::MouseEvent| {
+            e.stop_propagation();
+            on_b(e);
+        }
     };
 
     let check_bottom = move || {
@@ -73,17 +133,22 @@ pub(super) fn JoinServerModal(
     view! {
         div(
             class="server-modal-overlay large",
-            on:click=on_close_click,
+            on:click=on_overlay_close,
         ) {
             div(class="server-modal join-modal", on:click=move |event: web_sys::MouseEvent| event.stop_propagation()) {
                 div(class="server-modal-header") {
                     span { "Присоединиться к серверу" }
-                    button(class="modal-close-icon-btn", on:click=move |_| {
-                        let ctx = use_context::<CreateServerContext>();
-                        ctx.is_modal_open.set(false);
-                    }, title="Закрыть") { CloseSmallIcon() }
+                    button(
+                        class="modal-close-icon-btn",
+                        on:click=on_icon_close,
+                        title="Закрыть",
+                    ) { CloseSmallIcon() }
                     div(class="join-modal-search") {
-                        input(r#type="text", placeholder="Поиск серверов...")
+                        input(
+                            r#type="text",
+                            placeholder="Поиск серверов...",
+                            bind:value=search_query,
+                        )
                     }
                 }
                 div(
@@ -91,12 +156,31 @@ pub(super) fn JoinServerModal(
                     r#ref=body_ref,
                     on:scroll=on_scroll,
                 ) {
-                    div(class="join-modal-grid") {
-                        Indexed(
-                            list=context.public_servers,
-                            view=move |server| server_card(server, context.expanded_id),
-                        )
-                    }
+                    (if filtered_servers.with(|l| l.is_empty()) {
+                        if is_loading.get() {
+                            view! {
+                                div(class="join-modal-empty") {
+                                    span { "Загрузка серверов..." }
+                                }
+                            }
+                        } else {
+                            view! {
+                                div(class="join-modal-empty") {
+                                    GlobeIcon()
+                                    span { "Серверы не найдены" }
+                                }
+                            }
+                        }
+                    } else {
+                        view! {
+                            div(class="join-modal-grid") {
+                                Indexed(
+                                    list=filtered_servers,
+                                    view=move |server| server_card(server, context.expanded_id),
+                                )
+                            }
+                        }
+                    })
                 }
 
                 ShowMoreBanner(
@@ -106,7 +190,7 @@ pub(super) fn JoinServerModal(
                 )
 
                 div(class="join-modal-footer") {
-                    button(class="back-btn", on:click=on_back) {
+                    button(class="back-btn", on:click=on_back_click) {
                         ArrowLeftIcon()
                         span { "Назад" }
                     }

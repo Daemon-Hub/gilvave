@@ -2,20 +2,20 @@ use gilvave_core::{
     dto::servers::{Server, ServerCreateInfo},
     ids::{ServerId, UserId},
 };
-use sycamore::{futures::spawn_local_scoped, prelude::*};
+use sycamore::prelude::*;
 
 use crate::components::{
-    common::{CreateServerContext, ModalView, ServerContext},
-    ui::icons::{GlobeIcon, LockIcon, ServerIcon},
+    common::{CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext},
+    ui::icons::{ArrowLeftIcon, GlobeIcon, LockIcon, ServerIcon},
 };
-use crate::{components::common::classes, http::api::Api};
+use crate::components::common::classes;
 
 use super::{
     join_server_modal::JoinServerModal,
     server_actions::{create_server, select_server},
 };
 
-fn fallback_hardcoded_servers() -> Vec<Server> {
+pub fn fallback_hardcoded_servers() -> Vec<Server> {
     use gilvave_core::uuid::Uuid;
     let epoch = time::OffsetDateTime::UNIX_EPOCH;
     vec![
@@ -83,65 +83,53 @@ pub fn open_join_modal(context: CreateServerContext) {
     context.expanded_id.set(None);
     context.public_servers_page.set(1);
     context.has_more_public_servers.set(false);
-    spawn_local_scoped(async move {
-        match Api::get_public_servers(1).await {
-            Ok((servers, has_more)) => {
-                context.public_servers.set(servers);
-                context.has_more_public_servers.set(has_more);
-            }
-            Err(_) => {
-                if context.public_servers.with(|s| s.is_empty()) {
-                    context.public_servers.set(fallback_hardcoded_servers());
-                }
-            }
-        }
-    });
+    context.public_servers.set(vec![]);
 }
 
 #[component(inline_props)]
 pub fn ServerSidebar() -> View {
-    let context = CreateServerContext {
-        is_modal_open: create_signal(false),
-        modal_view: create_signal(ModalView::Home),
-        server_name: create_signal(String::new()),
-        is_public: create_signal(true),
-        public_servers: create_signal::<Vec<Server>>(vec![]),
-        expanded_id: create_signal::<Option<ServerId>>(None),
-        from_dashboard: create_signal(false),
-        public_servers_page: create_signal(1),
-        has_more_public_servers: create_signal(false),
-    };
-    provide_context(context);
-
+    let context = use_context::<CreateServerContext>();
     let server_context = use_context::<ServerContext>();
 
-    let on_plus_click = move |_| {
+    let on_plus_click = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
         context.from_dashboard.set(false);
+        context.origin.set(CreateServerOrigin::Sidebar);
         context.modal_view.set(ModalView::Home);
         context.is_modal_open.set(true);
     };
 
-    let close = move |_| {
+    let close = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
+        let origin = context.origin.get();
         context.is_modal_open.set(false);
         context.modal_view.set(ModalView::Home);
         context.server_name.set(String::new());
         context.public_servers.set(vec![]);
+        if origin == CreateServerOrigin::OverviewHome
+            && let Some(m_ctx) = try_use_context::<UiModalContext>()
+        {
+            m_ctx.is_server_overview_open.set(true);
+        }
     };
 
-    let open_create = move |_| {
+    let open_create = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
         context.modal_view.set(ModalView::Create);
     };
 
-    let open_join = move |_| {
+    let open_join = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
         context.from_dashboard.set(false);
         open_join_modal(context);
     };
 
-    let handle_create = move |_| {
+    let handle_create = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
         if context.server_name.with(|v| v.trim().is_empty()) {
             return;
@@ -156,14 +144,26 @@ pub fn ServerSidebar() -> View {
         context.server_name.set(String::new());
     };
 
-    let handle_join_back = move |_| {
+    let handle_back = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
         let context = use_context::<CreateServerContext>();
-        if context.from_dashboard.get() {
-            context.is_modal_open.set(false);
-            context.modal_view.set(ModalView::Home);
-            context.public_servers.set(vec![]);
-        } else {
-            context.modal_view.set(ModalView::Home);
+        match context.origin.get() {
+            CreateServerOrigin::Sidebar | CreateServerOrigin::OverviewHome => {
+                context.modal_view.set(ModalView::Home);
+            }
+            CreateServerOrigin::Dashboard => {
+                context.is_modal_open.set(false);
+                context.modal_view.set(ModalView::Home);
+                context.public_servers.set(vec![]);
+            }
+            CreateServerOrigin::OverviewTab => {
+                context.is_modal_open.set(false);
+                context.modal_view.set(ModalView::Home);
+                context.public_servers.set(vec![]);
+                if let Some(m_ctx) = try_use_context::<UiModalContext>() {
+                    m_ctx.is_server_overview_open.set(true);
+                }
+            }
         }
     };
 
@@ -357,6 +357,14 @@ pub fn ServerSidebar() -> View {
                             }
                             div(class="create-form-actions") {
                                 button(
+                                    class="back-btn create-back-btn",
+                                    on:click=handle_back,
+                                    title="Назад",
+                                ) {
+                                    ArrowLeftIcon()
+                                    span { "Назад" }
+                                }
+                                button(
                                     class="submit-btn create-submit",
                                     on:click=handle_create,
                                 ) { "Создать" }
@@ -372,7 +380,7 @@ pub fn ServerSidebar() -> View {
         (if is_join_visible.get() {
             view! {
                 JoinServerModal(
-                    on_back=handle_join_back,
+                    on_back=handle_back,
                     on_close=close,
                 )
             }

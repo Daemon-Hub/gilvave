@@ -70,6 +70,13 @@
     }
 }
 
+img.avatar,
+.avatar img,
+svg.avatar,
+.member-avatar-img {
+    background: transparent !important;
+}
+
 // ─── Avatar with status indicator ────────────────────────────────────────────
 .avatar-wrapper {
     position: relative;

@@ -292,11 +292,13 @@ fn test_server_view_different_names() {
         id: ServerId(test_uuid()),
         name: "Server A".to_string(),
         icon_url: "".to_string(),
+        is_owner: false,
     };
     let s2 = ServerSmallPart {
         id: ServerId(test_uuid()),
         name: "Server B".to_string(),
         icon_url: "".to_string(),
+        is_owner: false,
     };
     assert_ne!(s1, s2);
 }

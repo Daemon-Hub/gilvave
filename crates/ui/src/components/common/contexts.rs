@@ -24,6 +24,22 @@ pub struct ServerContext {
     pub members: Signal<Vec<MemberView>>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
+pub enum CreateServerOrigin {
+    #[default]
+    Sidebar,
+    Dashboard,
+    OverviewTab,
+    OverviewHome,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
+pub enum OverviewTab {
+    #[default]
+    Saved,
+    My,
+}
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum ModalView {
     Home,
@@ -40,6 +56,7 @@ pub struct CreateServerContext {
     pub public_servers: Signal<Vec<Server>>,
     pub expanded_id: Signal<Option<ServerId>>,
     pub from_dashboard: Signal<bool>,
+    pub origin: Signal<CreateServerOrigin>,
     pub public_servers_page: Signal<u32>,
     pub has_more_public_servers: Signal<bool>,
 }
@@ -84,4 +101,6 @@ pub struct UiModalContext {
     pub editing_message: Signal<Option<MessageView>>,
     pub forwarding_message: Signal<Option<MessageView>>,
     pub is_forward_modal_open: Signal<bool>,
+    pub is_server_overview_open: Signal<bool>,
+    pub server_overview_tab: Signal<OverviewTab>,
 }

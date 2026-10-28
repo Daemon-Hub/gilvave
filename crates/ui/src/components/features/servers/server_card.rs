@@ -52,6 +52,7 @@ pub(super) fn server_card(server: Server, expanded_id: Signal<Option<ServerId>>)
                         id: server_cc.id,
                         name: server_cc.name.clone(),
                         icon_url: server_cc.icon_url.clone(),
+                        is_owner: false,
                     })
                 });
                 context.current.set(Some(server_cc));
@@ -64,6 +65,7 @@ pub(super) fn server_card(server: Server, expanded_id: Signal<Option<ServerId>>)
         });
     };
 
+    let cover_url = server.cover.clone();
     let center_icon = card_icon(server.icon_url.clone(), first_char.clone());
     let bottom_icon = card_icon(server.icon_url, first_char);
 
@@ -76,7 +78,12 @@ pub(super) fn server_card(server: Server, expanded_id: Signal<Option<ServerId>>)
             on:click=toggle_expand,
         ) {
             div(class="card-cover") {
-                img(src=server.cover, alt="")
+                (if !cover_url.is_empty() {
+                    let cover = cover_url.clone();
+                    view! { img(src=cover, alt="") }
+                } else {
+                    view! {}
+                })
             }
             div(
                 class=classes(vec![

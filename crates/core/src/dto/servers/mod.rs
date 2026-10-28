@@ -12,6 +12,8 @@ pub struct ServerSmallPart {
     pub id: ServerId,
     pub name: String,
     pub icon_url: String,
+    #[serde(default)]
+    pub is_owner: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]

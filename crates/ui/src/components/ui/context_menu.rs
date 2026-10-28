@@ -349,6 +349,24 @@ pub fn handle_global_context_menu(
                     });
                 }
 
+                if let Ok(s_id_typed) = gilvave_core::ids::ServerId::try_from(s_id.as_str()) {
+                    let is_owned = crate::components::features::servers::server_overview_modal::get_owned_server_ids().contains(&s_id_typed);
+                    items.push(ContextMenuItem {
+                        label: if is_owned {
+                            "Переместить в Сохранённые".to_string()
+                        } else {
+                            "Сделать моим сервером".to_string()
+                        },
+                        icon: if is_owned { "channel" } else { "user" },
+                        shortcut: None,
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || {
+                            crate::components::features::servers::server_overview_modal::toggle_owned_server_id(s_id_typed);
+                        }),
+                    });
+                }
+
                 let id_copy = s_id.clone();
                 items.push(ContextMenuItem {
                     label: "Скопировать ID сервера".to_string(),

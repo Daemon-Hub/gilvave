@@ -697,9 +697,51 @@ $pill-triangle-polygon: polygon(
 
 .create-form-actions {
     margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .create-back-btn {
+        flex-shrink: 0;
+        height: 48px;
+        padding: 0 16px;
+        background: $color-bg-panel-dark;
+        color: $color-text-label;
+        border: 1px solid $color-border;
+        border-radius: $radius-btn;
+        font-size: 14px;
+        font-weight: $font-weight-medium;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+        @include focus-visible-ring($color-primary);
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            flex-shrink: 0;
+        }
+
+        &:hover {
+            background: $color-white-alpha-06;
+            color: $color-primary;
+            border-color: $color-primary-alpha-40;
+        }
+
+        &:active {
+            transform: scale(0.97);
+        }
+    }
 
     .create-submit {
-        width: 100%;
+        flex: 1;
+        width: auto;
         padding: 14px;
         background: $color-primary;
         color: $color-text-on-accent;
@@ -808,6 +850,7 @@ $pill-triangle-polygon: polygon(
     height: 110px;
     overflow: hidden;
     position: relative;
+    background: linear-gradient(135deg, $color-bg-panel-dark 0%, $color-bg-panel-hover 100%);
 
     .expanded & {
         height: 130px;

@@ -683,3 +683,41 @@ pub fn MailIcon() -> View {
         }
     }
 }
+
+#[component]
+pub fn GridIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-grid",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            rect(x="3", y="3", width="7", height="7", rx="1.5")
+            rect(x="14", y="3", width="7", height="7", rx="1.5")
+            rect(x="14", y="14", width="7", height="7", rx="1.5")
+            rect(x="3", y="14", width="7", height="7", rx="1.5")
+        }
+    }
+}
+
+#[component]
+pub fn SearchIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-search",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            circle(cx="11", cy="11", r="7")
+            line(x1="20", y1="20", x2="16.35", y2="16.35")
+        }
+    }
+}
