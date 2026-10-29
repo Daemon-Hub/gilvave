@@ -17,17 +17,43 @@ pub async fn handle_command(
     let _ = &window;
     Ok(match command {
         CommandArgs::GetAccessToken => {
-            CommandResult::Ok(CommandResponse::GetAccessToken(get_access_token()))
+            let db_lock = db.lock().await;
+            let token = if let Some(ref conn) = *db_lock {
+                match crate::database::get_token(conn, "access_token") {
+                    Ok(Some(t)) if !t.is_empty() => t,
+                    _ => get_access_token(),
+                }
+            } else {
+                get_access_token()
+            };
+            CommandResult::Ok(CommandResponse::GetAccessToken(token))
         }
         CommandArgs::GetRefreshToken => {
-            CommandResult::Ok(CommandResponse::GetRefreshToken(get_refresh_token()))
+            let db_lock = db.lock().await;
+            let token = if let Some(ref conn) = *db_lock {
+                match crate::database::get_token(conn, "refresh_token") {
+                    Ok(Some(t)) if !t.is_empty() => t,
+                    _ => get_refresh_token(),
+                }
+            } else {
+                get_refresh_token()
+            };
+            CommandResult::Ok(CommandResponse::GetRefreshToken(token))
         }
         CommandArgs::SetAccessToken { token } => {
             set_access_token(&token);
+            let db_lock = db.lock().await;
+            if let Some(ref conn) = *db_lock {
+                let _ = crate::database::set_token(conn, "access_token", &token);
+            }
             CommandResult::Ok(CommandResponse::SetAccessToken)
         }
         CommandArgs::SetRefreshToken { token } => {
             set_refresh_token(&token);
+            let db_lock = db.lock().await;
+            if let Some(ref conn) = *db_lock {
+                let _ = crate::database::set_token(conn, "refresh_token", &token);
+            }
             CommandResult::Ok(CommandResponse::SetRefreshToken)
         }
         CommandArgs::GetDeviceInfo => {

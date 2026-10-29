@@ -10,6 +10,7 @@ use crate::{
         ui::{AppContextMenu, ContextMenuContext, context_menu::handle_global_context_menu},
     },
     http::api::Api,
+    utils::is_tauri,
 };
 
 #[component]
@@ -79,14 +80,30 @@ pub fn App() -> View {
     }
 
     spawn_local_scoped(async move {
-        // Check if saved authentication tokens are valid
+        // Check if saved authentication tokens exist
+        let token = Api::fetch_access_token().await;
+        if token.is_empty() {
+            screen_wrapper.set(ActiveScreen::Login);
+            return;
+        }
+
         match Api::get_profile().await {
             Ok(_) => {
                 screen_wrapper.set(ActiveScreen::Home);
             }
             Err(e) => {
                 web_sys::console::warn_1(&format!("[APP] Session check failed: {:?}", e).into());
-                screen_wrapper.set(ActiveScreen::Login);
+                // If unauthorized (401 / 403), credentials are invalid or revoked
+                if e.0 == 401 || e.0 == 403 {
+                    screen_wrapper.set(ActiveScreen::Login);
+                } else if is_tauri() {
+                    // Offline mode on Desktop/Mobile: saved token exists and network failed,
+                    // allow entering Home screen to view cached SQLite data
+                    web_sys::console::log_1(&"[APP] Offline mode active: loading cached workspace".into());
+                    screen_wrapper.set(ActiveScreen::Home);
+                } else {
+                    screen_wrapper.set(ActiveScreen::Login);
+                }
             }
         }
     });

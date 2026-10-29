@@ -17,7 +17,7 @@ pub mod users;
 pub struct Api;
 
 impl Api {
-    pub(super) async fn fetch_access_token() -> String {
+    pub async fn fetch_access_token() -> String {
         match invoke_command(CommandArgs::GetAccessToken.to_json()).await {
             CommandResult::Ok(CommandResponse::GetAccessToken(t)) => t,
             _ => String::new(),

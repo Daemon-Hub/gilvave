@@ -48,7 +48,39 @@ pub fn initialize_database(app_handle: &AppHandle) -> BoxResult<Connection> {
         .to_latest(&mut conn)
         .map_err(|e| format!("migrations: {e}"))?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS auth_tokens (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| format!("auth_tokens table: {e}"))?;
+
     Ok(conn)
+}
+
+pub fn get_token(conn: &Connection, key: &str) -> BoxResult<Option<String>> {
+    let mut stmt = conn.prepare("SELECT value FROM auth_tokens WHERE key = ?1")?;
+    let mut rows = stmt.query(params![key])?;
+    if let Some(row) = rows.next()? {
+        Ok(Some(row.get(0)?))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn set_token(conn: &Connection, key: &str, value: &str) -> BoxResult<()> {
+    if value.is_empty() {
+        conn.execute("DELETE FROM auth_tokens WHERE key = ?1", params![key])?;
+    } else {
+        conn.execute(
+            "INSERT INTO auth_tokens (key, value) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![key, value],
+        )?;
+    }
+    Ok(())
 }
 
 fn row_to_message_view(row: &rusqlite::Row<'_>) -> rusqlite::Result<MessageView> {
@@ -556,5 +588,47 @@ mod tests {
         assert_eq!(cached_channels[0].r#type, ChannelType::TEXT);
         assert_eq!(cached_channels[1].name, "voice-lounge");
         assert_eq!(cached_channels[1].r#type, ChannelType::VOICE);
+    }
+
+    #[test]
+    fn test_auth_tokens_caching() {
+        let conn = setup_test_db();
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS auth_tokens (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )",
+            [],
+        )
+        .unwrap();
+
+        assert_eq!(get_token(&conn, "access_token").unwrap(), None);
+
+        set_token(&conn, "access_token", "sample_access_jwt").unwrap();
+        assert_eq!(
+            get_token(&conn, "access_token").unwrap(),
+            Some("sample_access_jwt".to_string())
+        );
+
+        set_token(&conn, "refresh_token", "sample_refresh_jwt").unwrap();
+        assert_eq!(
+            get_token(&conn, "refresh_token").unwrap(),
+            Some("sample_refresh_jwt".to_string())
+        );
+
+        // Update token
+        set_token(&conn, "access_token", "updated_jwt").unwrap();
+        assert_eq!(
+            get_token(&conn, "access_token").unwrap(),
+            Some("updated_jwt".to_string())
+        );
+
+        // Delete token with empty string
+        set_token(&conn, "access_token", "").unwrap();
+        assert_eq!(get_token(&conn, "access_token").unwrap(), None);
+        assert_eq!(
+            get_token(&conn, "refresh_token").unwrap(),
+            Some("sample_refresh_jwt".to_string())
+        );
     }
 }

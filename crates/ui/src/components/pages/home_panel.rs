@@ -127,9 +127,31 @@ pub fn HomePanel() -> View {
                     let avatar = user.avatar().to_string();
                     let bio = user.bio().to_string();
                     user_profile.user_id.set(Some(user.id));
-                    user_profile.username.set(user.username);
-                    user_profile.avatar.set(avatar);
-                    user_profile.bio.set(bio);
+                    user_profile.username.set(user.username.clone());
+                    user_profile.avatar.set(avatar.clone());
+                    user_profile.bio.set(bio.clone());
+
+                    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+                        let _ = storage.set_item("gilvave_cached_user_id", &user.id.to_string());
+                        let _ = storage.set_item("gilvave_cached_username", &user.username);
+                        let _ = storage.set_item("gilvave_cached_avatar", &avatar);
+                        let _ = storage.set_item("gilvave_cached_bio", &bio);
+                    }
+                } else if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+                    if let Ok(Some(name)) = storage.get_item("gilvave_cached_username") {
+                        user_profile.username.set(name);
+                    }
+                    if let Ok(Some(avatar)) = storage.get_item("gilvave_cached_avatar") {
+                        user_profile.avatar.set(avatar);
+                    }
+                    if let Ok(Some(bio)) = storage.get_item("gilvave_cached_bio") {
+                        user_profile.bio.set(bio);
+                    }
+                    if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id") {
+                        if let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str) {
+                            user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
+                        }
+                    }
                 }
             });
 
