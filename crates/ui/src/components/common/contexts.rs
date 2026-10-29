@@ -9,6 +9,20 @@ use gilvave_core::{
     ids::{ServerId, UserId},
 };
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum NetworkStatus {
+    #[default]
+    Online,
+    Offline,
+    Reconnecting,
+    Connected,
+}
+
+#[derive(Clone, Copy)]
+pub struct ConnectivityContext {
+    pub status: Signal<NetworkStatus>,
+}
+
 #[derive(Clone, Copy)]
 pub struct ChannelContext {
     pub current: Signal<Option<ChannelView>>,

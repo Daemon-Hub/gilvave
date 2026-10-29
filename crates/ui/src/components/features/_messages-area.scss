@@ -121,6 +121,50 @@
     }
 }
 
+// ─── Разделитель новых непрочитанных сообщений ──────────────────────────────────
+.chat-unread-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 20px 0 12px;
+    height: 1px;
+    min-height: 1px;
+    flex-shrink: 0;
+    background: $gradient-unread-badge;
+    opacity: 0.65;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+    width: 100%;
+    box-sizing: border-box;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, var(--gradient-unread-badge) 50%, transparent 100%);
+        box-shadow: $shadow-unread-badge;
+        opacity: 0.85;
+    }
+
+    .unread-badge {
+        position: relative;
+        background: $gradient-unread-badge;
+        padding: 3px 16px;
+        border-radius: $radius-full;
+        font-size: 11px;
+        font-weight: 700;
+        color: $color-text-on-accent;
+        border: 1px solid $color-white-alpha-18;
+        box-shadow: $shadow-unread-badge, 0 2px 8px $color-black-alpha-35;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        z-index: 1;
+    }
+}
+
 // ─── Отдельное сообщение в стиле мессенджера ──────────────────────────────────
 .message {
     content-visibility: auto;

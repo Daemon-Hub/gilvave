@@ -147,10 +147,10 @@ pub fn HomePanel() -> View {
                     if let Ok(Some(bio)) = storage.get_item("gilvave_cached_bio") {
                         user_profile.bio.set(bio);
                     }
-                    if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id") {
-                        if let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str) {
-                            user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
-                        }
+                    if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id")
+                        && let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str)
+                    {
+                        user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
                     }
                 }
             });

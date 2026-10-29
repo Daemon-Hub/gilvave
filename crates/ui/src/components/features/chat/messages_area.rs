@@ -20,7 +20,10 @@ use crate::{
     },
     utils::{get_local_offset, to_local_datetime},
 };
-use gilvave_core::dto::messages::MessageView;
+use gilvave_core::{
+    dto::messages::MessageView,
+    ids::{ChannelId, MessageId},
+};
 
 const EMOJI_GROUPS: &[(&str, &str, &str, emojis::Group)] = &[
     (
@@ -230,6 +233,7 @@ struct EnrichedMessage {
     is_first: bool,
     is_last: bool,
     date_divider: Option<String>,
+    is_unread_divider: bool,
 }
 
 #[inline]
@@ -280,12 +284,116 @@ fn format_date_divider(date: time::Date) -> String {
     }
 }
 
+fn get_channel_last_read(channel_id: ChannelId) -> Option<(Option<MessageId>, Option<i64>)> {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        if let Ok(Some(storage)) = window.local_storage() {
+            let id_key = format!("gilvave_last_read_id_{channel_id}");
+            let ts_key = format!("gilvave_last_read_ts_{channel_id}");
+            let msg_id = storage
+                .get_item(&id_key)
+                .ok()
+                .flatten()
+                .and_then(|s| MessageId::try_from(s.as_str()).ok());
+            let ts = storage
+                .get_item(&ts_key)
+                .ok()
+                .flatten()
+                .and_then(|s| s.parse::<i64>().ok());
+            if msg_id.is_some() || ts.is_some() {
+                return Some((msg_id, ts));
+            }
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = channel_id;
+    None
+}
+
+pub fn save_channel_last_read(channel_id: ChannelId, message_id: MessageId, ts: i64) {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        if let Ok(Some(storage)) = window.local_storage() {
+            let id_key = format!("gilvave_last_read_id_{channel_id}");
+            let ts_key = format!("gilvave_last_read_ts_{channel_id}");
+            let _ = storage.set_item(&id_key, &message_id.to_string());
+            let _ = storage.set_item(&ts_key, &ts.to_string());
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (channel_id, message_id, ts);
+    }
+}
+
+fn determine_unread_marker_fn(
+    saved: Option<(Option<MessageId>, Option<i64>)>,
+    msgs: &[MessageView],
+) -> Option<MessageId> {
+    let (saved_id, saved_ts) = saved?;
+    if msgs.is_empty() {
+        return None;
+    }
+    // 1. Try finding message by ID
+    if let Some(s_id) = saved_id
+        && let Some(idx) = msgs.iter().position(|m| m.id == s_id)
+    {
+        if idx + 1 < msgs.len() {
+            return Some(msgs[idx + 1].id);
+        } else {
+            return None; // Caught up to the end!
+        }
+    }
+    // 2. Try by timestamp if message ID was older or not found
+    if let Some(ts) = saved_ts {
+        let first_after = msgs.iter().find(|m| m.created_at.unix_timestamp() > ts)?;
+        return Some(first_after.id);
+    }
+    None
+}
+
+pub fn scroll_to_initial_chat_position(
+    container: &web_sys::HtmlElement,
+    unread_id: Option<MessageId>,
+) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(target_id) = unread_id {
+            let selector = format!("[data-unread-marker='{target_id}']");
+            if let Ok(Some(marker_el)) = container.query_selector(&selector) {
+                if let Ok(html_marker) = marker_el.dyn_into::<web_sys::HtmlElement>() {
+                    let marker_top = html_marker.offset_top();
+                    container.set_scroll_top((marker_top - 60).max(0));
+                    return;
+                }
+            }
+            // Retry on next animation frame if Sycamore DOM node is mounting
+            let container_clone = container.clone();
+            if let Some(window) = web_sys::window() {
+                let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
+                    if let Ok(Some(marker_el)) = container_clone.query_selector(&selector) {
+                        if let Ok(html_marker) = marker_el.dyn_into::<web_sys::HtmlElement>() {
+                            let marker_top = html_marker.offset_top();
+                            container_clone.set_scroll_top((marker_top - 60).max(0));
+                        }
+                    }
+                });
+                let _ = window.request_animation_frame(cb.unchecked_ref());
+            }
+            return;
+        }
+        container.set_scroll_top(container.scroll_height());
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = (container, unread_id);
+}
+
 fn send_channel_message(
     channel_context: ChannelContext,
     modal_context: UiModalContext,
     draft_message: Signal<String>,
     _user_profile: UserProfileContext,
-    _container: Option<NodeRef>,
+    container: Option<NodeRef>,
 ) {
     let Some(channel_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)) else {
         return;
@@ -316,6 +424,12 @@ fn send_channel_message(
         let reply_to = replying.as_ref().map(|r| r.id);
         modal_context.replying_to.set(None);
 
+        save_channel_last_read(
+            channel_id,
+            MessageId::default(),
+            time::OffsetDateTime::now_utc().unix_timestamp(),
+        );
+
         spawn_local_scoped(async move {
             web_sys::console::log_1(
                 &format!(
@@ -326,6 +440,11 @@ fn send_channel_message(
             let res = WsService::message_create(channel_id, sanitized, reply_to, None).await;
             web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageCreate res: {res:?}").into());
         });
+
+        if let Some(node) = container.as_ref().and_then(|c| c.try_get()) {
+            let el = node.unchecked_into::<HtmlElement>();
+            el.set_scroll_top(el.scroll_height());
+        }
     }
 
     draft_message.set(String::new());
@@ -1017,6 +1136,12 @@ pub fn MessagesArea() -> View {
 
     let draft_message = modal_context.draft_message;
     let container = create_node_ref();
+
+    let unread_marker_id = create_signal::<Option<MessageId>>(None);
+    let initial_scroll_performed = create_signal::<bool>(false);
+    let saved_read_marker = create_signal::<Option<(Option<MessageId>, Option<i64>)>>(None);
+    let prev_channel_id = create_signal::<Option<ChannelId>>(None);
+
     let on_scroll = move |event: Event| {
         let el: HtmlElement = match event.current_target() {
             Some(t) => t.unchecked_into(),
@@ -1031,6 +1156,17 @@ pub fn MessagesArea() -> View {
 
         let is_top = top <= 0;
         let is_bottom = (sh - ch - top).abs() <= SCROLL_THRESHOLD;
+
+        if is_bottom
+            && let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id))
+            && let Some(last_msg) = channel_context.messages.with(|m| m.last().cloned())
+        {
+            save_channel_last_read(
+                ch_id,
+                last_msg.id,
+                last_msg.created_at.unix_timestamp(),
+            );
+        }
 
         if is_top {
             console_log!("top message");
@@ -1068,23 +1204,66 @@ pub fn MessagesArea() -> View {
 
     create_effect(move || {
         let cur = channel_context.current.get_clone();
+
+        // 1. If we were viewing a previous channel at bottom or fit on screen, record last read
+        if let Some(prev_id) = prev_channel_id.get_untracked()
+            && cur.as_ref().map(|c| c.id) != Some(prev_id)
+            && let Some(node) = container.try_get()
+        {
+            let el: HtmlElement = node.unchecked_into();
+            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs() <= 80;
+            let fits_screen = el.scroll_height() <= el.client_height() + 20;
+            if (is_bottom || fits_screen)
+                && unread_marker_id.get_untracked().is_none()
+                && let Some(last_msg) = channel_context.messages.with_untracked(|m| m.last().cloned())
+            {
+                save_channel_last_read(prev_id, last_msg.id, last_msg.created_at.unix_timestamp());
+            }
+        }
+        prev_channel_id.set(cur.as_ref().map(|c| c.id));
+
         channel_context.messages.set(vec![]);
+        initial_scroll_performed.set(false);
+        unread_marker_id.set(None);
+        let saved = cur.as_ref().and_then(|ch| get_channel_last_read(ch.id));
+        saved_read_marker.set(saved);
+
         if let Some(ch) = cur {
             spawn_local_scoped(async move {
                 let cached = CacheService::get_cached_messages(ch.id, 100, None).await;
                 if !cached.is_empty() {
                     channel_context.messages.update(|list| {
                         if list.is_empty() {
-                            *list = cached;
+                            *list = cached.clone();
                         } else {
-                            for msg in cached {
+                            for msg in &cached {
                                 if !list.iter().any(|m| m.id == msg.id) {
-                                    list.push(msg);
+                                    list.push(msg.clone());
                                 }
                             }
                             list.sort_by_key(|m| m.created_at);
                         }
                     });
+
+                    if !initial_scroll_performed.get() {
+                        let (marker, effective_saved) = if saved.is_none() {
+                            // Baseline for new channel with no prior watermark
+                            if let Some(last_msg) = cached.last() {
+                                save_channel_last_read(ch.id, last_msg.id, last_msg.created_at.unix_timestamp());
+                            }
+                            (None, cached.last().map(|m| (Some(m.id), Some(m.created_at.unix_timestamp()))))
+                        } else {
+                            (determine_unread_marker_fn(saved, &cached), saved)
+                        };
+                        saved_read_marker.set(effective_saved);
+                        unread_marker_id.set(marker);
+
+                        if let Some(node) = container.try_get() {
+                            let el: HtmlElement = node.unchecked_into();
+                            scroll_to_initial_chat_position(&el, marker);
+                            initial_scroll_performed.set(true);
+                        }
+                    }
                 }
             });
         }
@@ -1122,6 +1301,9 @@ pub fn MessagesArea() -> View {
                         || (msg.author_id.is_some() && msg.author_id == user_profile.user_id.get());
 
                     const MAX_LOADED_MESSAGES: usize = 300;
+                    let msg_id = msg.id;
+                    let msg_ch_id = msg.channel_id;
+                    let msg_ts = msg.created_at.unix_timestamp();
                     let msg_to_cache = msg.clone();
                     spawn_local_scoped(async move {
                         CacheService::save_cached_message(msg_to_cache).await;
@@ -1129,7 +1311,7 @@ pub fn MessagesArea() -> View {
 
                     channel_context.messages.update(|list| {
                         // Prevent duplicate if already received
-                        if list.iter().any(|m| m.id == msg.id) {
+                        if list.iter().any(|m| m.id == msg_id) {
                             return;
                         }
 
@@ -1143,7 +1325,7 @@ pub fn MessagesArea() -> View {
                     });
 
                     queue_microtask(move || {
-                        if is_own || is_bottom {
+                        if is_own || (is_bottom && unread_marker_id.get().is_none()) {
                             el.set_scroll_top(el.scroll_height());
                             if let Some(window) = web_sys::window() {
                                 let el_clone = el.clone();
@@ -1152,7 +1334,11 @@ pub fn MessagesArea() -> View {
                                 });
                                 let _ = window.request_animation_frame(cb.unchecked_ref());
                             }
+                            save_channel_last_read(msg_ch_id, msg_id, msg_ts);
                         } else {
+                            if unread_marker_id.get().is_none() {
+                                unread_marker_id.set(Some(msg_id));
+                            }
                             let delta = el.scroll_height() - old_scroll_height;
                             if delta > 0 {
                                 el.set_scroll_top(old_scroll_top + delta);
@@ -1174,7 +1360,11 @@ pub fn MessagesArea() -> View {
                     let el = node.unchecked_into::<HtmlElement>();
                     let old_scroll_top = el.scroll_top();
                     let old_scroll_height = el.scroll_height();
+                    let old_client_height = el.client_height();
                     let was_empty = channel_context.messages.with(|m| m.is_empty());
+                    let was_at_bottom =
+                        (old_scroll_height - old_client_height - old_scroll_top).abs() <= 80;
+                    let has_initial_scroll = initial_scroll_performed.get();
 
                     let cur_ch_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
                     if let Some(ch_id) = cur_ch_id {
@@ -1231,21 +1421,51 @@ pub fn MessagesArea() -> View {
                         }
                     });
 
-                    queue_microtask(move || {
-                        if was_empty {
-                            el.set_scroll_top(el.scroll_height());
-                            if let Some(window) = web_sys::window() {
-                                let el_clone = el.clone();
-                                let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
-                                    el_clone.set_scroll_top(el_clone.scroll_height());
-                                });
-                                let _ = window.request_animation_frame(cb.unchecked_ref());
-                            }
-                        } else {
-                            let delta = el.scroll_height() - old_scroll_height;
-                            el.set_scroll_top(old_scroll_top + delta);
+                    let all_msgs = channel_context.messages.get_clone();
+                    let current_marker = unread_marker_id.get();
+
+                    let marker = if current_marker.is_some() {
+                        current_marker
+                    } else {
+                        let m = determine_unread_marker_fn(saved_read_marker.get(), &all_msgs);
+                        if m.is_some() {
+                            unread_marker_id.set(m);
+                        } else if saved_read_marker.get().is_none()
+                            && let Some(last_msg) = all_msgs.last()
+                            && let Some(ch_id) = cur_ch_id
+                        {
+                            save_channel_last_read(ch_id, last_msg.id, last_msg.created_at.unix_timestamp());
+                            saved_read_marker.set(Some((Some(last_msg.id), Some(last_msg.created_at.unix_timestamp()))));
                         }
-                    });
+                        m
+                    };
+
+                    if !has_initial_scroll {
+                        let el_clone = el.clone();
+                        scroll_to_initial_chat_position(&el_clone, marker);
+                        initial_scroll_performed.set(true);
+                    } else if marker.is_some() && current_marker.is_none() {
+                        let el_clone = el.clone();
+                        scroll_to_initial_chat_position(&el_clone, marker);
+                    } else {
+                        queue_microtask(move || {
+                            if was_empty || (was_at_bottom && marker.is_none()) {
+                                el.set_scroll_top(el.scroll_height());
+                                if let Some(window) = web_sys::window() {
+                                    let el_clone = el.clone();
+                                    let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
+                                        el_clone.set_scroll_top(el_clone.scroll_height());
+                                    });
+                                    let _ = window.request_animation_frame(cb.unchecked_ref());
+                                }
+                            } else {
+                                let delta = el.scroll_height() - old_scroll_height;
+                                if delta > 0 {
+                                    el.set_scroll_top(old_scroll_top + delta);
+                                }
+                            }
+                        });
+                    }
                 }
                 GatewayEvent::ChannelHistoryAfter(messages) => {
                     web_sys::console::log_1(
@@ -1368,15 +1588,30 @@ pub fn MessagesArea() -> View {
                         modal_context.draft_message.set(String::new());
                     }
                 }
+                _ => {}
             }
         }
     });
 
     let on_back = move |_| {
+        if let Some(ch) = channel_context.current.get_clone()
+            && let Some(node) = container.try_get()
+        {
+            let el: HtmlElement = node.unchecked_into();
+            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs() <= 80;
+            let fits_screen = el.scroll_height() <= el.client_height() + 20;
+            if (is_bottom || fits_screen)
+                && unread_marker_id.get_untracked().is_none()
+                && let Some(last_msg) = channel_context.messages.with_untracked(|m| m.last().cloned())
+            {
+                save_channel_last_read(ch.id, last_msg.id, last_msg.created_at.unix_timestamp());
+            }
+        }
         channel_context.current.set(None);
     };
 
     let enriched_messages = create_memo(move || {
+        let cur_unread_marker = unread_marker_id.get();
         channel_context.messages.with(|msgs| {
             server_context.members.with(|members| {
                 user_profile.username.with(|my_username| {
@@ -1457,12 +1692,19 @@ pub fn MessagesArea() -> View {
                                         String::new()
                                     };
 
+                                let is_unread_divider = if let Some(marker_id) = cur_unread_marker {
+                                    m.id == marker_id
+                                } else {
+                                    false
+                                };
+
                                 EnrichedMessage {
                                     message: m.clone(),
                                     avatar_url: avatar,
                                     is_first,
                                     is_last,
                                     date_divider,
+                                    is_unread_divider,
                                 }
                             })
                             .collect::<Vec<_>>()
@@ -1511,6 +1753,7 @@ pub fn MessagesArea() -> View {
                         em.is_first,
                         em.is_last,
                         em.date_divider.as_deref().map(hash_str),
+                        em.is_unread_divider,
                         hash_str(&em.avatar_url),
                     ),
                     view=|em| {
@@ -1524,8 +1767,22 @@ pub fn MessagesArea() -> View {
                             view! {}
                         };
 
+                        let unread_view = if em.is_unread_divider {
+                            view! {
+                                div(
+                                    class="chat-unread-divider",
+                                    data-unread-marker=em.message.id.to_string(),
+                                ) {
+                                    span(class="unread-badge") { "Непрочитанные сообщения" }
+                                }
+                            }
+                        } else {
+                            view! {}
+                        };
+
                         view! {
                             (date_view)
+                            (unread_view)
                             MessageItem(
                                 message_view=em.message,
                                 avatar_url=em.avatar_url,

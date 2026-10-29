@@ -79,12 +79,170 @@ pub fn get_window_selection_text() -> String {
     String::new()
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn paste_into_target_element(
+    el: &web_sys::Element,
+    text: &str,
+    modal_ctx: Option<&UiModalContext>,
+) {
+    use wasm_bindgen::JsCast;
+    if let Ok(input) = el.clone().dyn_into::<web_sys::HtmlInputElement>() {
+        let val = input.value();
+        let start = input.selection_start().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let end = input.selection_end().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let mut new_val = String::with_capacity(val.len() + text.len());
+        let start_clamped = start.min(val.len());
+        let end_clamped = end.min(val.len()).max(start_clamped);
+        new_val.push_str(&val[..start_clamped]);
+        new_val.push_str(text);
+        new_val.push_str(&val[end_clamped..]);
+        input.set_value(&new_val);
+        let new_pos = (start_clamped + text.len()) as u32;
+        let _ = input.set_selection_range(new_pos, new_pos);
+        let _ = input.dispatch_event(&web_sys::Event::new("input").unwrap());
+    } else if let Ok(textarea) = el.clone().dyn_into::<web_sys::HtmlTextAreaElement>() {
+        let val = textarea.value();
+        let start = textarea.selection_start().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let end = textarea.selection_end().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let mut new_val = String::with_capacity(val.len() + text.len());
+        let start_clamped = start.min(val.len());
+        let end_clamped = end.min(val.len()).max(start_clamped);
+        new_val.push_str(&val[..start_clamped]);
+        new_val.push_str(text);
+        new_val.push_str(&val[end_clamped..]);
+        textarea.set_value(&new_val);
+        let new_pos = (start_clamped + text.len()) as u32;
+        let _ = textarea.set_selection_range(new_pos, new_pos);
+        let _ = textarea.dispatch_event(&web_sys::Event::new("input").unwrap());
+    } else {
+        let target_editor = el
+            .closest("[contenteditable='true']")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| el.clone());
+        crate::components::common::insert_text_into_editor(&target_editor, text);
+        let serialized =
+            crate::components::common::serialize_contenteditable(target_editor.as_ref());
+        if serialized.trim().is_empty() {
+            let _ = target_editor.set_attribute("data-empty", "true");
+        } else {
+            let _ = target_editor.remove_attribute("data-empty");
+        }
+        if let Some(m_ctx) = modal_ctx {
+            m_ctx.draft_message.set(serialized);
+        }
+        let _ = target_editor.dispatch_event(&web_sys::Event::new("input").unwrap());
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+pub fn paste_into_target_element(
+    _el: &web_sys::Element,
+    _text: &str,
+    _modal_ctx: Option<&UiModalContext>,
+) {
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn cut_from_target_element(el: &web_sys::Element, modal_ctx: Option<&UiModalContext>) {
+    use wasm_bindgen::JsCast;
+    if let Ok(input) = el.clone().dyn_into::<web_sys::HtmlInputElement>() {
+        let val = input.value();
+        let start = input.selection_start().ok().flatten().unwrap_or(0) as usize;
+        let end = input.selection_end().ok().flatten().unwrap_or(0) as usize;
+        if start < end {
+            let sel_text = &val[start..end.min(val.len())];
+            copy_to_clipboard(sel_text);
+            let mut new_val = String::new();
+            new_val.push_str(&val[..start]);
+            if end < val.len() {
+                new_val.push_str(&val[end..]);
+            }
+            input.set_value(&new_val);
+            let _ = input.set_selection_range(start as u32, start as u32);
+            let _ = input.dispatch_event(&web_sys::Event::new("input").unwrap());
+        }
+    } else if let Ok(textarea) = el.clone().dyn_into::<web_sys::HtmlTextAreaElement>() {
+        let val = textarea.value();
+        let start = textarea.selection_start().ok().flatten().unwrap_or(0) as usize;
+        let end = textarea.selection_end().ok().flatten().unwrap_or(0) as usize;
+        if start < end {
+            let sel_text = &val[start..end.min(val.len())];
+            copy_to_clipboard(sel_text);
+            let mut new_val = String::new();
+            new_val.push_str(&val[..start]);
+            if end < val.len() {
+                new_val.push_str(&val[end..]);
+            }
+            textarea.set_value(&new_val);
+            let _ = textarea.set_selection_range(start as u32, start as u32);
+            let _ = textarea.dispatch_event(&web_sys::Event::new("input").unwrap());
+        }
+    } else {
+        let sel_text = get_window_selection_text();
+        if !sel_text.is_empty() {
+            copy_to_clipboard(&sel_text);
+            if let Some(window) = web_sys::window() {
+                if let Ok(Some(selection)) = window.get_selection() {
+                    let _ = selection.delete_from_document();
+                }
+            }
+            let target_editor = el
+                .closest("[contenteditable='true']")
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| el.clone());
+            let serialized =
+                crate::components::common::serialize_contenteditable(target_editor.as_ref());
+            if serialized.trim().is_empty() {
+                let _ = target_editor.set_attribute("data-empty", "true");
+            } else {
+                let _ = target_editor.remove_attribute("data-empty");
+            }
+            if let Some(m_ctx) = modal_ctx {
+                m_ctx.draft_message.set(serialized);
+            }
+            let _ = target_editor.dispatch_event(&web_sys::Event::new("input").unwrap());
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+pub fn cut_from_target_element(_el: &web_sys::Element, _modal_ctx: Option<&UiModalContext>) {}
+
+#[cfg(target_arch = "wasm32")]
+pub fn select_all_in_target_element(el: &web_sys::Element) {
+    use wasm_bindgen::JsCast;
+    if let Ok(input) = el.clone().dyn_into::<web_sys::HtmlInputElement>() {
+        let _ = input.select();
+    } else if let Ok(textarea) = el.clone().dyn_into::<web_sys::HtmlTextAreaElement>() {
+        let _ = textarea.select();
+    } else {
+        let target_editor = el
+            .closest("[contenteditable='true']")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| el.clone());
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(selection)) = window.get_selection() {
+                let _ = selection.select_all_children(&target_editor);
+            }
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+pub fn select_all_in_target_element(_el: &web_sys::Element) {}
+
 pub fn handle_global_context_menu(
     event: &web_sys::MouseEvent,
     menu_ctx: &ContextMenuContext,
     modal_ctx: Option<&UiModalContext>,
     #[allow(unused_variables)] channel_ctx: Option<&ChannelContext>,
-    _server_ctx: Option<&ServerContext>,
+    #[allow(unused_variables)] server_ctx: Option<&ServerContext>,
     #[allow(unused_variables)] user_ctx: Option<&UserProfileContext>,
 ) {
     event.prevent_default();
@@ -308,15 +466,75 @@ pub fn handle_global_context_menu(
                     .flatten()
                     .is_some();
 
-            if is_editable && !selected_text.is_empty() {
-                let sel = selected_text.clone();
+            if is_editable {
+                let target_clone = el.clone();
+                let modal_ctx_owned = modal_ctx.cloned();
+
+                if !selected_text.is_empty() {
+                    let target_for_cut = el.clone();
+                    let modal_for_cut = modal_ctx.cloned();
+                    items.push(ContextMenuItem {
+                        label: "Вырезать".to_string(),
+                        icon: "cut",
+                        shortcut: Some("Ctrl+X"),
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || {
+                            cut_from_target_element(&target_for_cut, modal_for_cut.as_ref());
+                        }),
+                    });
+
+                    let sel = selected_text.clone();
+                    items.push(ContextMenuItem {
+                        label: "Копировать".to_string(),
+                        icon: "copy",
+                        shortcut: Some("Ctrl+C"),
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || copy_to_clipboard(&sel)),
+                    });
+                }
+
+                // Вставить (Paste) — всегда доступно для полей ввода
                 items.push(ContextMenuItem {
-                    label: "Копировать".to_string(),
-                    icon: "copy",
-                    shortcut: Some("Ctrl+C"),
+                    label: "Вставить".to_string(),
+                    icon: "paste",
+                    shortcut: Some("Ctrl+V"),
                     danger: false,
                     separator_above: false,
-                    on_click: Rc::new(move || copy_to_clipboard(&sel)),
+                    on_click: Rc::new(move || {
+                        let el_to_paste = target_clone.clone();
+                        let m_ctx = modal_ctx_owned.clone();
+                        #[cfg(target_arch = "wasm32")]
+                        wasm_bindgen_futures::spawn_local(async move {
+                            if let Some(window) = web_sys::window() {
+                                let clipboard = window.navigator().clipboard();
+                                let promise = clipboard.read_text();
+                                match wasm_bindgen_futures::JsFuture::from(promise).await {
+                                    Ok(js_val) => {
+                                        if let Some(text) = js_val.as_string() {
+                                            paste_into_target_element(&el_to_paste, &text, m_ctx.as_ref());
+                                        }
+                                    }
+                                    Err(err) => {
+                                        web_sys::console::warn_1(&format!("[CONTEXT_MENU] clipboard readText failed: {:?}", err).into());
+                                    }
+                                }
+                            }
+                        });
+                    }),
+                });
+
+                let target_for_sel = el.clone();
+                items.push(ContextMenuItem {
+                    label: "Выделить всё".to_string(),
+                    icon: "select_all",
+                    shortcut: Some("Ctrl+A"),
+                    danger: false,
+                    separator_above: true,
+                    on_click: Rc::new(move || {
+                        select_all_in_target_element(&target_for_sel);
+                    }),
                 });
 
                 menu_ctx.show(x, y, items);
@@ -356,34 +574,37 @@ pub fn handle_global_context_menu(
             if let Ok(Some(s_el)) = el.closest("[data-server-id]") {
                 let s_id = s_el.get_attribute("data-server-id").unwrap_or_default();
 
-                if let Some(m_ctx) = modal_ctx {
-                    let open_settings = m_ctx.is_server_settings_open;
-                    items.push(ContextMenuItem {
-                        label: "Настройки сервера".to_string(),
-                        icon: "settings",
-                        shortcut: None,
-                        danger: false,
-                        separator_above: false,
-                        on_click: Rc::new(move || open_settings.set(true)),
+                let is_server_owner = if let Ok(s_id_typed) = gilvave_core::ids::ServerId::try_from(s_id.as_str()) {
+                    let from_list = server_ctx.map_or(false, |sc| {
+                        sc.list.with(|list| list.iter().any(|s| s.id == s_id_typed && s.is_owner))
                     });
-                }
+                    let from_curr = server_ctx.map_or(false, |sc| {
+                        sc.current.with(|curr| {
+                            curr.as_ref().map_or(false, |curr| {
+                                curr.id == s_id_typed
+                                    && user_ctx
+                                        .and_then(|u| u.user_id.get())
+                                        .map_or(false, |uid| curr.owner_id == uid)
+                            })
+                        })
+                    });
+                    from_list || from_curr
+                } else {
+                    false
+                };
 
-                if let Ok(s_id_typed) = gilvave_core::ids::ServerId::try_from(s_id.as_str()) {
-                    let is_owned = crate::components::features::servers::server_overview_modal::get_owned_server_ids().contains(&s_id_typed);
-                    items.push(ContextMenuItem {
-                        label: if is_owned {
-                            "Переместить в Сохранённые".to_string()
-                        } else {
-                            "Сделать моим сервером".to_string()
-                        },
-                        icon: if is_owned { "channel" } else { "user" },
-                        shortcut: None,
-                        danger: false,
-                        separator_above: false,
-                        on_click: Rc::new(move || {
-                            crate::components::features::servers::server_overview_modal::toggle_owned_server_id(s_id_typed);
-                        }),
-                    });
+                if is_server_owner {
+                    if let Some(m_ctx) = modal_ctx {
+                        let open_settings = m_ctx.is_server_settings_open;
+                        items.push(ContextMenuItem {
+                            label: "Настройки сервера".to_string(),
+                            icon: "settings",
+                            shortcut: None,
+                            danger: false,
+                            separator_above: false,
+                            on_click: Rc::new(move || open_settings.set(true)),
+                        });
+                    }
                 }
 
                 let id_copy = s_id.clone();

@@ -112,16 +112,17 @@ crates/ui/src/
                               appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal,
                               active sessions management tab SessionsTab)
       auth/                 — Social buttons, auth form cards
-    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons, show_more_banner.rs)
+    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons, show_more_banner.rs, network_status.rs)
 ```
 
 ### Reactive Contexts (`components/common/contexts.rs`)
 
 1. **`ScreenWrapper`**: Controls active screen state (`ActiveScreen::Login`, `ActiveScreen::Register`, `ActiveScreen::Home`).
-2. **`UserProfileContext`**: Active user's profile (`username`, `avatar`, `banner`, `bio`, `is_muted`, `is_deafened`).
-3. **`ServerContext`**: Currently selected server (`current: Option<Server>`), joined servers list (`list: Vec<ServerSmallPart>`), and server members (`members: Vec<MemberView>`).
-4. **`ChannelContext`**: Text channels (`text`), voice channels (`voice`), currently selected channel (`current: Option<ChannelView>`), and loaded message stream (`messages: Vec<MessageView>`).
-5. **`UiModalContext`**: UI modal visibility and workspace preferences:
+2. **`ConnectivityContext`**: Real-time network and gateway connection status (`status: Signal<NetworkStatus>`), where `NetworkStatus` is `Online`, `Offline`, `Reconnecting`, or `Connected`. Powers the floating `NetworkStatusBadge`.
+3. **`UserProfileContext`**: Active user's profile (`username`, `avatar`, `banner`, `bio`, `is_muted`, `is_deafened`).
+4. **`ServerContext`**: Currently selected server (`current: Option<Server>`), joined servers list (`list: Vec<ServerSmallPart>`), and server members (`members: Vec<MemberView>`).
+5. **`ChannelContext`**: Text channels (`text`), voice channels (`voice`), currently selected channel (`current: Option<ChannelView>`), and loaded message stream (`messages: Vec<MessageView>`).
+6. **`UiModalContext`**: UI modal visibility and workspace preferences:
    - `is_server_settings_open: Signal<bool>`
    - `is_create_channel_open: Signal<bool>` & `create_channel_type: Signal<ChannelType>`
    - `is_profile_settings_open: Signal<bool>`
@@ -131,7 +132,7 @@ crates/ui/src/
    - `app_theme: Signal<AppTheme>` & `custom_themes: Signal<Vec<CustomTheme>>` (active theme & user-installed custom JSON themes)
    - `is_windowed_mode: Signal<bool>` (toggles `.fullbleed` edge-to-edge layout vs floating windowed container)
    - `is_theme_catalog_open: Signal<bool>` (controls the standalone `ThemeCatalogModal`)
-6. **`CreateServerContext`**: Add/join server flow state (`modal_view: Home | Create | Join`, `is_modal_open: bool`, `from_dashboard: bool`).
+7. **`CreateServerContext`**: Add/join server flow state (`modal_view: Home | Create | Join`, `is_modal_open: bool`, `from_dashboard: bool`).
 
 ---
 
@@ -195,6 +196,16 @@ crates/ui/src/
     - Previous day: `"Вчера, 20 сентября"`
     - Current year: `"18 сентября, четверг"`
     - Older years: `"15 мая 2024 г."`
+- **Scroll Position Retention & Unread Messages Divider (`messages_area.rs`, `_messages-area.scss`)**:
+  - Automatically tracks the user's last read message ID and timestamp (`gilvave_last_read_id_{channel_id}`, `gilvave_last_read_ts_{channel_id}`) in `localStorage` when reaching the bottom or sending a message.
+  - Automatically initializes a baseline watermark when a channel is opened for the first time without prior history, and synchronizes the watermark when switching channels or tapping the `< Каналы` back button on mobile/tablet.
+  - When opening a channel (on desktop or mobile):
+    - If unread messages exist since the last visit, an unread divider (`.chat-unread-divider` with `.unread-badge` `"Непрочитанные сообщения"`) is inserted between the last read and first unread message.
+    - Fully theme-reactive: styled using `--gradient-unread-badge`, `--shadow-unread-badge`, `--color-text-on-accent`, and `--color-white-alpha-18` across Advanced, Standard, Light, and Custom themes with zero hardcoded colors.
+    - The chat automatically scrolls via `request_animation_frame` (with a single-frame layout retry) to anchor at the unread divider (`marker_top - 60px`), allowing the user to view previously read messages above and catch up on unread messages below.
+    - If all messages have been read (or initial open with no unreads), the chat scrolls to the very bottom (eliminating the bug where mobile clients opened at the very top).
+    - When new messages arrive via `ChannelHistoryBefore` (e.g. after reconnecting from offline or fetching from server), the unread marker is dynamically resolved and anchored instead of forcibly throwing the user to the bottom.
+    - Global message caching: incoming `ServerRecieve::MessageNew` is immediately persisted to SQLite cache even if the user is in another channel or browsing the channel list.
 - **Avatar Fallback**:
   - For the current user's messages, avatars are retrieved directly from `UserProfileContext.avatar` (with fallback to `ServerContext.members`).
   - For other members, avatars are retrieved from `ServerContext.members`. If unavailable, a circular initial placeholder is rendered with an author-based color.
@@ -223,8 +234,8 @@ crates/ui/src/
   - Automatically identifies target under right-click:
     - Messages: copy text, copy message ID, quote in chat.
     - Text selection: copy selected text.
-    - Editable fields: copy selected text.
-    - Channels & Servers: copy name, copy ID, open settings.
+    - Editable fields (`<input>`, `<textarea>`, `contenteditable`): Cut ("Вырезать"), Copy ("Копировать"), Paste ("Вставить" via `navigator.clipboard.readText()`), Select All ("Выделить всё").
+    - Channels & Servers: copy name, copy ID; "Настройки сервера" is displayed conditionally only when the user is the owner of the server.
     - General canvas: profile settings, theme catalog, DevTools toggle (`#[cfg(debug_assertions)]`), reload app.
   - **Inspection Key Blocker**: All developer keyboard shortcuts (`F12`, `Ctrl+Shift+I/J/C/K/E`, `Ctrl+U`) are globally intercepted and cancelled in the capture phase on `window`, preventing unauthorized inspection in release and keeping debugging exclusively controlled via the context menu button in debug mode.
   - **DevTools Toggle**: Controlled via `CommandArgs::OpenDevTools` invoking Tauri `window.open_devtools()` / `close_devtools()` backed by `tauri = { workspace = true, features = ["devtools"] }`.

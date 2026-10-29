@@ -1,0 +1,127 @@
+@use '../common/variables' as *;
+@use '../common/mixins' as *;
+
+.floating-network-badge {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 10000;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: $radius-full;
+    background: $color-bg-panel-darkest;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 18px $color-black-alpha-50;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                color 0.3s ease;
+
+    @media (min-width: 769px) {
+        top: 36px;
+        right: 16px;
+    }
+
+    .badge-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+
+        .spin-icon {
+            animation: badgeSpin 1s linear infinite;
+        }
+    }
+
+    .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: $color-danger;
+        box-shadow: 0 0 8px $color-danger;
+        animation: badgePulse 2s infinite ease-in-out;
+        flex-shrink: 0;
+    }
+
+    .badge-text {
+        white-space: nowrap;
+        line-height: 1;
+    }
+
+    &.status-online {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-8px) scale(0.92);
+        visibility: hidden;
+    }
+
+    &.status-offline {
+        opacity: 0.95;
+        transform: translateY(0) scale(1);
+        border: 1px solid $color-danger-alpha-40;
+        color: $color-danger-light;
+        cursor: pointer;
+        box-shadow: 0 4px 18px $color-black-alpha-50, 0 0 12px $color-danger-alpha-18;
+
+        &:hover {
+            opacity: 1;
+            transform: scale(1.03);
+        }
+
+        &:active {
+            transform: scale(0.97);
+        }
+    }
+
+    &.status-reconnecting {
+        opacity: 0.95;
+        transform: translateY(0) scale(1);
+        border: 1px solid $color-border-subtle;
+        color: $color-status-idle;
+        pointer-events: none;
+        box-shadow: 0 4px 18px $color-black-alpha-50;
+    }
+
+    &.status-connected {
+        opacity: 0.95;
+        transform: translateY(0) scale(1);
+        border: 1px solid $color-status-online;
+        color: $color-status-online;
+        pointer-events: none;
+        box-shadow: 0 4px 18px $color-black-alpha-50;
+    }
+}
+
+@keyframes badgePulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
+@keyframes badgeSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

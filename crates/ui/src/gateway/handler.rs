@@ -8,6 +8,8 @@ use gilvave_core::{
 
 #[derive(Clone, Debug)]
 pub enum GatewayEvent {
+    Connected,
+    Disconnected,
     MessageNew(MessageView),
     MessageUpdate(MessageView),
     MessageDelete {
@@ -54,6 +56,13 @@ pub async fn handle(text: &str) {
                 web_sys::console::log_1(
                     &format!("[WS] MessageNew received: {:?}", message_view).into(),
                 );
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let mv_clone = message_view.clone();
+                    wasm_bindgen_futures::spawn_local(async move {
+                        crate::cache::CacheService::save_cached_message(mv_clone).await;
+                    });
+                }
                 dispatch_gateway_event(GatewayEvent::MessageNew(message_view));
             }
             ServerRecieve::MessageUpdate(message_view) => {

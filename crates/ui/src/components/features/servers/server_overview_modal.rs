@@ -55,6 +55,7 @@ pub fn add_owned_server_id(id: ServerId) {
 pub fn add_owned_server_id(_id: ServerId) {}
 
 #[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
 pub fn toggle_owned_server_id(id: ServerId) -> bool {
     let mut ids = get_owned_server_ids();
     let is_owned = if ids.contains(&id) {

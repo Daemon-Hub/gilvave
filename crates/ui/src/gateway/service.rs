@@ -15,7 +15,10 @@ use std::sync::{
 };
 use ws_stream_wasm::{WsMessage, WsMeta};
 
-use crate::{gateway::handler::handle, utils::invoke_command};
+use crate::{
+    gateway::handler::{dispatch_gateway_event, GatewayEvent, handle},
+    utils::invoke_command,
+};
 
 static IS_LISTENING: AtomicBool = AtomicBool::new(false);
 static SENDER: LazyLock<Arc<Mutex<Option<UnboundedSender<ServerSend>>>>> =
@@ -270,6 +273,7 @@ impl WsService {
                 match WsMeta::connect(&ws_url, None).await {
                     Ok((_meta, ws_stream)) => {
                         web_sys::console::log_1(&"[WS SERVICE] connected successfully!".into());
+                        dispatch_gateway_event(GatewayEvent::Connected);
                         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
                         let receive_task = async {
@@ -330,6 +334,7 @@ impl WsService {
 
                         futures_util::future::select(Box::pin(receive_task), Box::pin(send_task))
                             .await;
+                        dispatch_gateway_event(GatewayEvent::Disconnected);
                         web_sys::console::warn_1(
                             &"[WS SERVICE] one of ws tasks finished, closing and reconnecting..."
                                 .into(),
@@ -338,6 +343,7 @@ impl WsService {
                         gloo_timers::future::sleep(core::time::Duration::from_millis(1000)).await;
                     }
                     Err(e) => {
+                        dispatch_gateway_event(GatewayEvent::Disconnected);
                         web_sys::console::error_1(
                             &format!("[WS SERVICE] WebSocket connection error: {e:?}").into(),
                         );
