@@ -4,11 +4,11 @@ use gilvave_core::{
 };
 use sycamore::prelude::*;
 
+use crate::components::common::classes;
 use crate::components::{
     common::{CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext},
     ui::icons::{ArrowLeftIcon, GlobeIcon, LockIcon, ServerIcon},
 };
-use crate::components::common::classes;
 
 use super::{
     join_server_modal::JoinServerModal,

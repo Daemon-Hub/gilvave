@@ -288,63 +288,62 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
         }
         server_error.set(None);
 
-            let data = RegisterData {
-                name: name.get_clone(),
-                email: email.get_clone(),
-                password: password.get_clone(),
-                confirm_password: confirm_password.get_clone(),
-            };
+        let data = RegisterData {
+            name: name.get_clone(),
+            email: email.get_clone(),
+            password: password.get_clone(),
+            confirm_password: confirm_password.get_clone(),
+        };
 
-            match data.validate() {
-                Ok(_) => {
-                    if gilvave_core::validation::validate_username(&data.name).is_err() {
-                        reset_errors();
-                        name_error.set(true);
-                        return;
-                    }
+        match data.validate() {
+            Ok(_) => {
+                if gilvave_core::validation::validate_username(&data.name).is_err() {
                     reset_errors();
+                    name_error.set(true);
+                    return;
+                }
+                reset_errors();
 
-                    let email_for_waiting = data.email.clone();
-                    let password_for_waiting = data.password.clone();
+                let email_for_waiting = data.email.clone();
+                let password_for_waiting = data.password.clone();
 
-                    wasm_bindgen_futures::spawn_local(async move {
-                        loading.set(true);
-                        let res = Api::register_validate(RegisterRequest {
-                            username: data.name,
-                            email: data.email,
-                            password: data.password,
-                        })
-                        .await;
-                        loading.set(false);
-                        match res {
-                            Ok(_) => {
-                                waiting_email.set(email_for_waiting.clone());
-                                saved_password.set(password_for_waiting.clone());
-                                is_waiting_confirmation.set(true);
-                                manual_status_msg.set(None);
+                wasm_bindgen_futures::spawn_local(async move {
+                    loading.set(true);
+                    let res = Api::register_validate(RegisterRequest {
+                        username: data.name,
+                        email: data.email,
+                        password: data.password,
+                    })
+                    .await;
+                    loading.set(false);
+                    match res {
+                        Ok(_) => {
+                            waiting_email.set(email_for_waiting.clone());
+                            saved_password.set(password_for_waiting.clone());
+                            is_waiting_confirmation.set(true);
+                            manual_status_msg.set(None);
 
-                                let current_session_id = poll_session_id.get() + 1;
-                                poll_session_id.set(current_session_id);
+                            let current_session_id = poll_session_id.get() + 1;
+                            poll_session_id.set(current_session_id);
 
-                                // Background autologin polling every 5 seconds
-                                wasm_bindgen_futures::spawn_local(async move {
-                                    loop {
-                                        gloo_timers::future::sleep(
-                                            core::time::Duration::from_millis(5000),
-                                        )
-                                        .await;
+                            // Background autologin polling every 5 seconds
+                            wasm_bindgen_futures::spawn_local(async move {
+                                loop {
+                                    gloo_timers::future::sleep(core::time::Duration::from_millis(
+                                        5000,
+                                    ))
+                                    .await;
 
-                                        if !is_waiting_confirmation.get()
-                                            || poll_session_id.get() != current_session_id
-                                            || !screen_wrapper.is_register()
-                                        {
-                                            break;
-                                        }
+                                    if !is_waiting_confirmation.get()
+                                        || poll_session_id.get() != current_session_id
+                                        || !screen_wrapper.is_register()
+                                    {
+                                        break;
+                                    }
 
-                                        let device_info = match invoke_command(
-                                            CommandArgs::GetDeviceInfo.to_json(),
-                                        )
-                                        .await
+                                    let device_info =
+                                        match invoke_command(CommandArgs::GetDeviceInfo.to_json())
+                                            .await
                                         {
                                             CommandResult::Ok(CommandResponse::GetDeviceInfo(
                                                 info,
@@ -353,64 +352,61 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
                                                 .to_json(),
                                         };
 
-                                        if !is_waiting_confirmation.get()
-                                            || poll_session_id.get() != current_session_id
-                                            || !screen_wrapper.is_register()
-                                        {
-                                            break;
-                                        }
-
-                                        let login_res = Api::login(LoginRequest {
-                                            email: email_for_waiting.clone(),
-                                            password: password_for_waiting.clone(),
-                                            device_info,
-                                        })
-                                        .await;
-
-                                        if !is_waiting_confirmation.get()
-                                            || poll_session_id.get() != current_session_id
-                                            || !screen_wrapper.is_register()
-                                        {
-                                            break;
-                                        }
-
-                                        if login_res.is_ok() {
-                                            console_log!(
-                                                "Email confirmed and autologin succeeded!"
-                                            );
-                                            is_waiting_confirmation.set(false);
-                                            screen_wrapper.set(ActiveScreen::Home);
-                                            break;
-                                        }
+                                    if !is_waiting_confirmation.get()
+                                        || poll_session_id.get() != current_session_id
+                                        || !screen_wrapper.is_register()
+                                    {
+                                        break;
                                     }
-                                });
-                            }
-                            Err(err) => {
-                                console_error!("{err:#?}");
-                                let msg = if !err.1.trim().is_empty() {
-                                    err.1
-                                } else {
-                                    "Ошибка при регистрации. Пожалуйста, попробуйте снова."
-                                        .to_string()
-                                };
-                                server_error.set(Some(msg));
-                            }
+
+                                    let login_res = Api::login(LoginRequest {
+                                        email: email_for_waiting.clone(),
+                                        password: password_for_waiting.clone(),
+                                        device_info,
+                                    })
+                                    .await;
+
+                                    if !is_waiting_confirmation.get()
+                                        || poll_session_id.get() != current_session_id
+                                        || !screen_wrapper.is_register()
+                                    {
+                                        break;
+                                    }
+
+                                    if login_res.is_ok() {
+                                        console_log!("Email confirmed and autologin succeeded!");
+                                        is_waiting_confirmation.set(false);
+                                        screen_wrapper.set(ActiveScreen::Home);
+                                        break;
+                                    }
+                                }
+                            });
                         }
-                    });
-                }
-                Err(errors) => {
-                    reset_errors();
-                    for (field, _) in errors.field_errors() {
-                        match field.as_ref() {
-                            "name" => name_error.set(true),
-                            "email" => email_error.set(true),
-                            "password" => password_error.set(true),
-                            "confirm_password" => confirm_error.set(true),
-                            _ => {}
+                        Err(err) => {
+                            console_error!("{err:#?}");
+                            let msg = if !err.1.trim().is_empty() {
+                                err.1
+                            } else {
+                                "Ошибка при регистрации. Пожалуйста, попробуйте снова.".to_string()
+                            };
+                            server_error.set(Some(msg));
                         }
+                    }
+                });
+            }
+            Err(errors) => {
+                reset_errors();
+                for (field, _) in errors.field_errors() {
+                    match field.as_ref() {
+                        "name" => name_error.set(true),
+                        "email" => email_error.set(true),
+                        "password" => password_error.set(true),
+                        "confirm_password" => confirm_error.set(true),
+                        _ => {}
                     }
                 }
             }
+        }
     });
 
     let on_manual_check: Rc<dyn Fn()> = Rc::new(move || {
@@ -423,34 +419,34 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
         let target_email = waiting_email.get_clone();
         let target_password = saved_password.get_clone();
 
-            wasm_bindgen_futures::spawn_local(async move {
-                let device_info = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
-                    CommandResult::Ok(CommandResponse::GetDeviceInfo(info)) => info.to_json(),
-                    _ => gilvave_core::settings::collect_device_info().to_json(),
-                };
+        wasm_bindgen_futures::spawn_local(async move {
+            let device_info = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
+                CommandResult::Ok(CommandResponse::GetDeviceInfo(info)) => info.to_json(),
+                _ => gilvave_core::settings::collect_device_info().to_json(),
+            };
 
-                let res = Api::login(LoginRequest {
-                    email: target_email,
-                    password: target_password,
-                    device_info,
-                })
-                .await;
+            let res = Api::login(LoginRequest {
+                email: target_email,
+                password: target_password,
+                device_info,
+            })
+            .await;
 
-                manual_checking.set(false);
+            manual_checking.set(false);
 
-                match res {
-                    Ok(_) => {
-                        console_log!("Manual login verification succeeded!");
-                        is_waiting_confirmation.set(false);
-                        screen_wrapper.set(ActiveScreen::Home);
-                    }
-                    Err(_) => {
-                        manual_status_msg.set(Some(
+            match res {
+                Ok(_) => {
+                    console_log!("Manual login verification succeeded!");
+                    is_waiting_confirmation.set(false);
+                    screen_wrapper.set(ActiveScreen::Home);
+                }
+                Err(_) => {
+                    manual_status_msg.set(Some(
                             "Подтверждение пока не получено. Пожалуйста, откройте ссылку из письма в браузере.".to_string(),
                         ));
-                    }
                 }
-            });
+            }
+        });
     });
 
     let on_back: Rc<dyn Fn()> = Rc::new(move || {

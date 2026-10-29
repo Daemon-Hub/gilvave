@@ -157,6 +157,19 @@ pub fn collect_web() -> DeviceInfo {
         browser_version: Some(parsed.version.to_string()),
     }
 }
+#[cfg(target_os = "android")]
+fn collect_android() -> DeviceInfo {
+    DeviceInfo {
+        platform: Some("Android".into()),
+        os_version: None,
+        client: "mobile".into(),
+        client_version: DeviceInfo::client_version(),
+        device_name: None,
+        browser: None,
+        browser_version: None,
+    }
+}
+
 pub fn collect_device_info() -> DeviceInfo {
     #[cfg(target_arch = "wasm32")]
     {

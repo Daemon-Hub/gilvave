@@ -679,10 +679,16 @@ impl CustomTheme {
             );
             vars.insert("--color-server-flap-stop-1".into(), darken_color(acc, 0.45));
             vars.insert("--color-server-flap-stop-2".into(), darken_color(pr, 0.45));
-            vars.insert("--color-server-flap-stop-3".into(), darken_color(warm, 0.45));
+            vars.insert(
+                "--color-server-flap-stop-3".into(),
+                darken_color(warm, 0.45),
+            );
             vars.insert("--color-server-flap-stroke".into(), darken_color(pr, 0.65));
             vars.insert("--color-server-peel-glow".into(), with_alpha(warm, 0.8));
-            vars.insert("--color-server-peel-glow-ambient".into(), with_alpha(pr, 0.45));
+            vars.insert(
+                "--color-server-peel-glow-ambient".into(),
+                with_alpha(pr, 0.45),
+            );
             vars.insert(
                 "--gradient-footer-top-line".into(),
                 format!(

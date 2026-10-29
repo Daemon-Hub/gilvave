@@ -108,6 +108,46 @@ fn test_all_command_args_variants_to_json() {
         CommandArgs::WindowClose,
         CommandArgs::WindowStartDragging,
         CommandArgs::OpenDevTools,
+        CommandArgs::GetCachedMessages {
+            channel_id: ChannelId::default(),
+            limit: 50,
+            before: None,
+        },
+        CommandArgs::SyncCachedMessages {
+            channel_id: ChannelId::default(),
+            messages: vec![],
+        },
+        CommandArgs::SaveCachedMessage {
+            message: MessageView {
+                id: MessageId::default(),
+                channel_id: ChannelId::default(),
+                author_id: None,
+                author_name: "test".into(),
+                content: "hi".into(),
+                edited: false,
+                reply_to_id: None,
+                forwarded_from: None,
+                created_at: OffsetDateTime::now_utc(),
+                is_pending: false,
+            },
+        },
+        CommandArgs::UpdateCachedMessage {
+            id: MessageId::default(),
+            content: "updated".into(),
+            edited: true,
+        },
+        CommandArgs::DeleteCachedMessage {
+            id: MessageId::default(),
+        },
+        CommandArgs::GetCachedServers,
+        CommandArgs::SyncCachedServers { servers: vec![] },
+        CommandArgs::GetCachedChannels {
+            server_id: ServerId::default(),
+        },
+        CommandArgs::SyncCachedChannels {
+            server_id: ServerId::default(),
+            channels: vec![],
+        },
     ];
 
     for cmd in commands {

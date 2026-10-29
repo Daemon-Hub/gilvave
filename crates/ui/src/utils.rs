@@ -116,6 +116,35 @@ async fn handle_command_web(args: Value) -> CommandResult {
             }
             CommandResult::Ok(CommandResponse::OpenDevTools)
         }
+        // Offline Cache variants: on Web, cache operations are no-op / pass-through
+        // because the Web client operates strictly online without local database storage.
+        CommandArgs::GetCachedMessages { .. } => {
+            CommandResult::Ok(CommandResponse::GetCachedMessages(Vec::new()))
+        }
+        CommandArgs::SyncCachedMessages { .. } => {
+            CommandResult::Ok(CommandResponse::SyncCachedMessages)
+        }
+        CommandArgs::SaveCachedMessage { .. } => {
+            CommandResult::Ok(CommandResponse::SaveCachedMessage)
+        }
+        CommandArgs::UpdateCachedMessage { .. } => {
+            CommandResult::Ok(CommandResponse::UpdateCachedMessage)
+        }
+        CommandArgs::DeleteCachedMessage { .. } => {
+            CommandResult::Ok(CommandResponse::DeleteCachedMessage)
+        }
+        CommandArgs::GetCachedServers => {
+            CommandResult::Ok(CommandResponse::GetCachedServers(Vec::new()))
+        }
+        CommandArgs::SyncCachedServers { .. } => {
+            CommandResult::Ok(CommandResponse::SyncCachedServers)
+        }
+        CommandArgs::GetCachedChannels { .. } => {
+            CommandResult::Ok(CommandResponse::GetCachedChannels(Vec::new()))
+        }
+        CommandArgs::SyncCachedChannels { .. } => {
+            CommandResult::Ok(CommandResponse::SyncCachedChannels)
+        }
     }
 }
 

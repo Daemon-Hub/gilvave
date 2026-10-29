@@ -1,3 +1,21 @@
 */**/dist
 /target/
 /Cargo.lock
+
+# Android & Gradle
+.gradle/
+**/build/
+crates/src-tauri/gen/android/.gradle/
+crates/src-tauri/gen/android/build/
+crates/src-tauri/gen/android/app/build/
+crates/src-tauri/gen/android/buildSrc/.gradle/
+crates/src-tauri/gen/android/buildSrc/build/
+crates/src-tauri/gen/android/**/local.properties
+crates/src-tauri/gen/android/**/tauri.properties
+crates/src-tauri/gen/android/**/tauri.settings.gradle
+crates/src-tauri/gen/android/**/*.iml
+crates/src-tauri/gen/android/.idea/
+crates/src-tauri/gen/android/**/generated/
+crates/src-tauri/gen/android/**/jniLibs/**/*.so
+*.apk
+*.aab

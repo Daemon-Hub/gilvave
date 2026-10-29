@@ -6,7 +6,10 @@ use wasm_bindgen::JsCast;
 use gilvave_core::ids::ServerId;
 
 use crate::components::{
-    common::{CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext, UserProfileContext},
+    common::{
+        CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext,
+        UserProfileContext,
+    },
     ui::icons::{CloseSmallIcon, GlobeIcon, GridIcon, PlusIcon, SearchIcon, UserIcon},
 };
 

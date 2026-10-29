@@ -5,11 +5,12 @@ use web_sys::{Event, HtmlElement, SubmitEvent};
 
 use super::message_item::MessageItem;
 use crate::{
+    cache::CacheService,
     components::{
         common::{
             ChannelContext, ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
-            emoji_to_twemoji_url, insert_emoji_into_editor, insert_text_into_editor,
-            serialize_contenteditable, sync_editor_content, focus_editor_at_end,
+            emoji_to_twemoji_url, focus_editor_at_end, insert_emoji_into_editor,
+            insert_text_into_editor, serialize_contenteditable, sync_editor_content,
         },
         ui::icons::CloseSmallIcon,
     },
@@ -1066,8 +1067,27 @@ pub fn MessagesArea() -> View {
     };
 
     create_effect(move || {
-        channel_context.current.track();
+        let cur = channel_context.current.get_clone();
         channel_context.messages.set(vec![]);
+        if let Some(ch) = cur {
+            spawn_local_scoped(async move {
+                let cached = CacheService::get_cached_messages(ch.id, 100, None).await;
+                if !cached.is_empty() {
+                    channel_context.messages.update(|list| {
+                        if list.is_empty() {
+                            *list = cached;
+                        } else {
+                            for msg in cached {
+                                if !list.iter().any(|m| m.id == msg.id) {
+                                    list.push(msg);
+                                }
+                            }
+                            list.sort_by_key(|m| m.created_at);
+                        }
+                    });
+                }
+            });
+        }
     });
 
     spawn_local_scoped(async move {
@@ -1079,7 +1099,8 @@ pub fn MessagesArea() -> View {
                     web_sys::console::log_1(
                         &format!("[MESSAGES_AREA] received MessageNew: {:?}", msg).into(),
                     );
-                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    let cur_channel_id =
+                        channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
                     if cur_channel_id != Some(msg.channel_id) {
                         continue;
                     }
@@ -1095,10 +1116,17 @@ pub fn MessagesArea() -> View {
                     const SCROLL_THRESHOLD: i32 = 80;
                     let is_bottom = (old_scroll_height - old_client_height - old_scroll_top).abs()
                         <= SCROLL_THRESHOLD;
-                    let is_own = user_profile.username.with(|u| !u.is_empty() && u == &msg.author_name)
+                    let is_own = user_profile
+                        .username
+                        .with(|u| !u.is_empty() && u == &msg.author_name)
                         || (msg.author_id.is_some() && msg.author_id == user_profile.user_id.get());
 
                     const MAX_LOADED_MESSAGES: usize = 300;
+                    let msg_to_cache = msg.clone();
+                    spawn_local_scoped(async move {
+                        CacheService::save_cached_message(msg_to_cache).await;
+                    });
+
                     channel_context.messages.update(|list| {
                         // Prevent duplicate if already received
                         if list.iter().any(|m| m.id == msg.id) {
@@ -1148,14 +1176,54 @@ pub fn MessagesArea() -> View {
                     let old_scroll_height = el.scroll_height();
                     let was_empty = channel_context.messages.with(|m| m.is_empty());
 
+                    let cur_ch_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    if let Some(ch_id) = cur_ch_id {
+                        let msgs_clone = messages.clone();
+                        spawn_local_scoped(async move {
+                            CacheService::sync_cached_messages(ch_id, msgs_clone).await;
+                        });
+                    }
+
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
                         list.retain(|m| !m.is_pending);
-                        for msg in messages {
-                            if !list.iter().any(|m| m.id == msg.id) {
-                                list.push(msg);
+
+                        if !messages.is_empty() {
+                            let min_time = messages
+                                .iter()
+                                .map(|m| m.created_at)
+                                .min()
+                                .expect("non-empty");
+                            let max_time = messages
+                                .iter()
+                                .map(|m| m.created_at)
+                                .max()
+                                .expect("non-empty");
+                            let server_set: std::collections::HashSet<_> =
+                                messages.iter().map(|m| m.id).collect();
+
+                            // Reconcile: delete messages absent from server in this time window
+                            list.retain(|m| {
+                                if m.created_at >= min_time && m.created_at <= max_time {
+                                    server_set.contains(&m.id)
+                                } else {
+                                    true
+                                }
+                            });
+
+                            // Reconcile: update edited messages and insert new ones
+                            for msg in messages {
+                                if let Some(existing) = list.iter_mut().find(|m| m.id == msg.id) {
+                                    existing.content = msg.content;
+                                    existing.edited = msg.edited;
+                                    existing.forwarded_from = msg.forwarded_from;
+                                    existing.reply_to_id = msg.reply_to_id;
+                                } else {
+                                    list.push(msg);
+                                }
                             }
                         }
+
                         list.sort_by_key(|m| m.created_at);
                         if list.len() > MAX_LOADED_MESSAGES {
                             let excess = list.len() - MAX_LOADED_MESSAGES;
@@ -1187,14 +1255,52 @@ pub fn MessagesArea() -> View {
                         )
                         .into(),
                     );
+                    let cur_ch_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    if let Some(ch_id) = cur_ch_id {
+                        let msgs_clone = messages.clone();
+                        spawn_local_scoped(async move {
+                            CacheService::sync_cached_messages(ch_id, msgs_clone).await;
+                        });
+                    }
+
                     const MAX_LOADED_MESSAGES: usize = 300;
                     channel_context.messages.update(|list| {
                         list.retain(|m| !m.is_pending);
-                        for msg in messages {
-                            if !list.iter().any(|m| m.id == msg.id) {
-                                list.push(msg);
+
+                        if !messages.is_empty() {
+                            let min_time = messages
+                                .iter()
+                                .map(|m| m.created_at)
+                                .min()
+                                .expect("non-empty");
+                            let max_time = messages
+                                .iter()
+                                .map(|m| m.created_at)
+                                .max()
+                                .expect("non-empty");
+                            let server_set: std::collections::HashSet<_> =
+                                messages.iter().map(|m| m.id).collect();
+
+                            list.retain(|m| {
+                                if m.created_at >= min_time && m.created_at <= max_time {
+                                    server_set.contains(&m.id)
+                                } else {
+                                    true
+                                }
+                            });
+
+                            for msg in messages {
+                                if let Some(existing) = list.iter_mut().find(|m| m.id == msg.id) {
+                                    existing.content = msg.content;
+                                    existing.edited = msg.edited;
+                                    existing.forwarded_from = msg.forwarded_from;
+                                    existing.reply_to_id = msg.reply_to_id;
+                                } else {
+                                    list.push(msg);
+                                }
                             }
                         }
+
                         list.sort_by_key(|m| m.created_at);
                         if list.len() > MAX_LOADED_MESSAGES {
                             let excess = list.len() - MAX_LOADED_MESSAGES;
@@ -1206,10 +1312,19 @@ pub fn MessagesArea() -> View {
                     web_sys::console::log_1(
                         &format!("[MESSAGES_AREA] received MessageUpdate: {:?}", updated).into(),
                     );
-                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    let cur_channel_id =
+                        channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
                     if cur_channel_id != Some(updated.channel_id) {
                         continue;
                     }
+
+                    let upd_id = updated.id;
+                    let upd_content = updated.content.clone();
+                    let upd_edited = updated.edited;
+                    spawn_local_scoped(async move {
+                        CacheService::update_cached_message(upd_id, upd_content, upd_edited).await;
+                    });
+
                     channel_context.messages.update(|list| {
                         if let Some(target) = list.iter_mut().find(|m| m.id == updated.id) {
                             target.content = updated.content;
@@ -1222,22 +1337,33 @@ pub fn MessagesArea() -> View {
                     message_id,
                 } => {
                     web_sys::console::log_1(
-                        &format!(
-                            "[MESSAGES_AREA] received MessageDelete: message_id={message_id}"
-                        )
-                        .into(),
+                        &format!("[MESSAGES_AREA] received MessageDelete: message_id={message_id}")
+                            .into(),
                     );
-                    let cur_channel_id = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+                    let cur_channel_id =
+                        channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
                     if cur_channel_id != Some(channel_id) {
                         continue;
                     }
+
+                    let del_id = message_id;
+                    spawn_local_scoped(async move {
+                        CacheService::delete_cached_message(del_id).await;
+                    });
+
                     channel_context.messages.update(|list| {
                         list.retain(|m| m.id != message_id);
                     });
-                    if modal_context.replying_to.with(|r| r.as_ref().map(|m| m.id) == Some(message_id)) {
+                    if modal_context
+                        .replying_to
+                        .with(|r| r.as_ref().map(|m| m.id) == Some(message_id))
+                    {
                         modal_context.replying_to.set(None);
                     }
-                    if modal_context.editing_message.with(|e| e.as_ref().map(|m| m.id) == Some(message_id)) {
+                    if modal_context
+                        .editing_message
+                        .with(|e| e.as_ref().map(|m| m.id) == Some(message_id))
+                    {
                         modal_context.editing_message.set(None);
                         modal_context.draft_message.set(String::new());
                     }
@@ -1488,7 +1614,13 @@ pub fn ExpandedMessageEditorModal() -> View {
             if !is_valid {
                 return;
             }
-            send_channel_message(channel_context, modal_context, draft_message, user_profile, None);
+            send_channel_message(
+                channel_context,
+                modal_context,
+                draft_message,
+                user_profile,
+                None,
+            );
             modal_context.is_message_editor_open.set(false);
         } else if modal_context.selected_dm_name.with(|dm| dm.is_some()) {
             let has_text = draft_message.with(|msg| !msg.trim().is_empty());

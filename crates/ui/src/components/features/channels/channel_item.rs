@@ -47,14 +47,12 @@ pub fn ChannelItem(channel_view: ChannelView) -> View {
                 web_sys::console::log_1(
                     &format!("[CHANNEL_ITEM] clicked text channel: {channel_item_id}").into(),
                 );
+                // Immediately switch to the channel view so cached history displays right away (even offline)
+                context.current.set(Some(channel_item));
+
                 let res = WsService::join_channel(channel_item_id).await;
-                match res {
-                    Ok(()) => {
-                        context.current.set(Some(channel_item));
-                    }
-                    Err(err) => {
-                        console_error!("join channel error: {err:#?}");
-                    }
+                if let Err(err) = res {
+                    console_error!("join channel error: {err:#?}");
                 }
 
                 let _ = WsService::channel_history_before(

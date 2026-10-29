@@ -3,7 +3,9 @@ use sycamore::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
-use crate::components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext};
+use crate::components::common::{
+    ChannelContext, ServerContext, UiModalContext, UserProfileContext,
+};
 #[cfg(target_arch = "wasm32")]
 use gilvave_core::{
     dto::messages::MessageView,
@@ -101,32 +103,33 @@ pub fn handle_global_context_menu(
                 let msg_content = msg_el
                     .get_attribute("data-message-content")
                     .unwrap_or_default();
-                let author_name = msg_el
-                    .get_attribute("data-author-name")
-                    .unwrap_or_default();
-                let author_id_str = msg_el
-                    .get_attribute("data-author-id")
-                    .unwrap_or_default();
-                let channel_id_str = msg_el
-                    .get_attribute("data-channel-id")
-                    .unwrap_or_default();
+                let author_name = msg_el.get_attribute("data-author-name").unwrap_or_default();
+                let author_id_str = msg_el.get_attribute("data-author-id").unwrap_or_default();
+                let channel_id_str = msg_el.get_attribute("data-channel-id").unwrap_or_default();
 
                 let parsed_msg_id = MessageId::try_from(msg_id_str.as_str()).ok();
                 let parsed_author_id = UserId::try_from(author_id_str.as_str()).ok();
                 let parsed_channel_id = ChannelId::try_from(channel_id_str.as_str()).ok();
 
-                let is_author = if let (Some(u_ctx), Some(author_id)) = (user_ctx, parsed_author_id) {
+                let is_author = if let (Some(u_ctx), Some(author_id)) = (user_ctx, parsed_author_id)
+                {
                     u_ctx.user_id.with(|uid| uid.as_ref() == Some(&author_id))
-                        || u_ctx.username.with(|uname| !uname.is_empty() && uname == &author_name)
+                        || u_ctx
+                            .username
+                            .with(|uname| !uname.is_empty() && uname == &author_name)
                 } else if let Some(u_ctx) = user_ctx {
-                    u_ctx.username.with(|uname| !uname.is_empty() && uname == &author_name)
+                    u_ctx
+                        .username
+                        .with(|uname| !uname.is_empty() && uname == &author_name)
                 } else {
                     false
                 };
 
                 let found_message = channel_ctx.and_then(|c_ctx| {
                     parsed_msg_id.and_then(|m_id| {
-                        c_ctx.messages.with(|msgs| msgs.iter().find(|m| m.id == m_id).cloned())
+                        c_ctx
+                            .messages
+                            .with(|msgs| msgs.iter().find(|m| m.id == m_id).cloned())
                     })
                 });
 
@@ -161,8 +164,12 @@ pub fn handle_global_context_menu(
                             if let Some(window) = web_sys::window() {
                                 if let Some(doc) = window.document() {
                                     if let Ok(Some(editor)) = doc.query_selector(".chat-input") {
-                                        if let Ok(html_el) = editor.dyn_into::<web_sys::HtmlElement>() {
-                                            crate::components::common::focus_editor_at_end(&html_el);
+                                        if let Ok(html_el) =
+                                            editor.dyn_into::<web_sys::HtmlElement>()
+                                        {
+                                            crate::components::common::focus_editor_at_end(
+                                                &html_el,
+                                            );
                                         }
                                     }
                                 }
@@ -178,7 +185,8 @@ pub fn handle_global_context_menu(
                         let replying_sig = m_ctx.replying_to;
                         let draft_sig = m_ctx.draft_message;
                         let edit_content = msg_content.clone();
-                        let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
+                        let target_msg =
+                            found_message.clone().unwrap_or(target_msg_fallback.clone());
                         items.push(ContextMenuItem {
                             label: "Изменить".to_string(),
                             icon: "edit",
@@ -192,11 +200,19 @@ pub fn handle_global_context_menu(
                                 #[cfg(target_arch = "wasm32")]
                                 if let Some(window) = web_sys::window() {
                                     if let Some(doc) = window.document() {
-                                        if let Ok(Some(editor)) = doc.query_selector(".chat-input") {
-                                            if let Ok(html_el) = editor.dyn_into::<web_sys::HtmlElement>() {
-                                                crate::components::common::sync_editor_content(&html_el, &edit_content);
+                                        if let Ok(Some(editor)) = doc.query_selector(".chat-input")
+                                        {
+                                            if let Ok(html_el) =
+                                                editor.dyn_into::<web_sys::HtmlElement>()
+                                            {
+                                                crate::components::common::sync_editor_content(
+                                                    &html_el,
+                                                    &edit_content,
+                                                );
                                                 let _ = html_el.remove_attribute("data-empty");
-                                                crate::components::common::focus_editor_at_end(&html_el);
+                                                crate::components::common::focus_editor_at_end(
+                                                    &html_el,
+                                                );
                                             }
                                         }
                                     }
@@ -268,7 +284,10 @@ pub fn handle_global_context_menu(
                                 }
                                 #[cfg(target_arch = "wasm32")]
                                 wasm_bindgen_futures::spawn_local(async move {
-                                    let _ = crate::gateway::service::WsService::message_delete(ch_id, m_id).await;
+                                    let _ = crate::gateway::service::WsService::message_delete(
+                                        ch_id, m_id,
+                                    )
+                                    .await;
                                 });
                             }),
                         });

@@ -30,10 +30,9 @@ pub fn VoiceChannelArea() -> View {
     });
 
     let server_name = create_memo(move || {
-        server_context.current.with(|s| {
-            s.as_ref()
-                .map_or_else(String::new, |srv| srv.name.clone())
-        })
+        server_context
+            .current
+            .with(|s| s.as_ref().map_or_else(String::new, |srv| srv.name.clone()))
     });
 
     // TODO [HTTP]: GET /channels/{channel_id}/voice/participants — первоначальный запрос списка активных участников голосового канала

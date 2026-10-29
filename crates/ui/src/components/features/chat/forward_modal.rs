@@ -51,7 +51,8 @@ pub fn ForwardMessageModal() -> View {
                     }
                 },
             );
-            let _ = window.add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
+            let _ =
+                window.add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
             let window_clone = window.clone();
             on_cleanup(move || {
                 let _ = window_clone.remove_event_listener_with_callback(
@@ -64,8 +65,9 @@ pub fn ForwardMessageModal() -> View {
 
     create_effect(move || {
         if let Some(srv_id) = selected_server_id.get() {
-            let is_curr =
-                server_context.current.with(|c| c.as_ref().map(|s| s.id) == Some(srv_id));
+            let is_curr = server_context
+                .current
+                .with(|c| c.as_ref().map(|s| s.id) == Some(srv_id));
             if is_curr {
                 let current_text = channel_context.text.get_clone();
                 channels_list.set(current_text);

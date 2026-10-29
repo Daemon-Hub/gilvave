@@ -1,5 +1,7 @@
 use crate::{
-    components::common::{ChannelContext, MessageSegment, UserProfileContext, parse_message_segments},
+    components::common::{
+        ChannelContext, MessageSegment, UserProfileContext, parse_message_segments,
+    },
     utils::to_local_datetime,
 };
 use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHARS};
@@ -33,8 +35,11 @@ pub fn MessageItem(
     }
 
     let user_profile = use_context::<UserProfileContext>();
-    let is_own_message = user_profile.username.with(|u| !u.is_empty() && u == &message_view.author_name)
-        || (message_view.author_id.is_some() && message_view.author_id == user_profile.user_id.get());
+    let is_own_message = user_profile
+        .username
+        .with(|u| !u.is_empty() && u == &message_view.author_name)
+        || (message_view.author_id.is_some()
+            && message_view.author_id == user_profile.user_id.get());
 
     let render_status = move || {
         if message_view.is_pending {

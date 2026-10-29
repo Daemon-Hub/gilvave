@@ -58,8 +58,7 @@ pub(super) fn JoinServerModal(
             servers
                 .into_iter()
                 .filter(|s| {
-                    s.name.to_lowercase().contains(&q)
-                        || s.description.to_lowercase().contains(&q)
+                    s.name.to_lowercase().contains(&q) || s.description.to_lowercase().contains(&q)
                 })
                 .collect()
         }

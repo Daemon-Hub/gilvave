@@ -17,7 +17,8 @@ crates/
 - Because `crates/ui` is always compiled by Trunk to `wasm32-unknown-unknown` (where `target_os` is always `"unknown"` at compile time, even inside Tauri Desktop), `invoke_command` uses `is_tauri()` (`window.__TAURI_INTERNALS__` without `__IS_POLYFILL__`) to distinguish Desktop vs Web at runtime:
   - **Desktop (`is_tauri() == true`)**: `invoke_command` calls Tauri `handle_command` (`src-tauri/src/handler.rs`), accessing OS `keyring`, native `sysinfo` (`client: "desktop"`), and native window controls.
   - **Web (`is_tauri() == false`)**: `invoke_command` calls `handle_command_web` (`ui/src/utils.rs`), accessing browser cookies (`ui/src/security.rs`) and `woothee` user-agent parsing (`client: "web"`).
-- **Token storage split**: On Desktop, the server returns tokens in the JSON body (`AuthTokensResponse`) and the client stores them in the OS `keyring` via `invoke_command`. On Web, the server sets `HttpOnly` cookies via `Set-Cookie` (sent automatically with `RequestCredentials::Include`), with `ui/src/security.rs` providing cookie access when needed.
+- **Token storage split**: On Desktop, the server returns tokens in the JSON body (`AuthTokensResponse`) and the client stores them in the OS `keyring` via `invoke_command`. On Android, `keyring` is unavailable, and tokens are stored in thread-safe memory storage (`core/src/security.rs`). On Web, the server sets `HttpOnly` cookies via `Set-Cookie` (sent automatically with `RequestCredentials::Include`), with `ui/src/security.rs` providing cookie access when needed.
+- **SQLite Offline Cache (`crates/ui/src/cache.rs`, `src-tauri/src/database.rs`)**: On Desktop and Mobile (Android), the client transparently caches servers, channels, and message history locally via Tauri IPC commands (`GetCachedMessages`, `SyncCachedMessages`, `GetCachedServers`, `SyncCachedServers`, `GetCachedChannels`, `SyncCachedChannels`). Provides instantaneous 0ms display on load and during network absence. Web safely bypasses local cache operations as no-ops.
 
 ---
 
@@ -39,6 +40,10 @@ cargo build
 
 # Rust check UI (WASM target)
 cargo check --package gilvave-ui --target wasm32-unknown-unknown
+
+# Android build & dev
+cargo tauri android build --target aarch64 --apk --debug
+cargo tauri android dev --target aarch64
 
 # Run tests
 cargo test --package gilvave-core        # Core & DTO tests
@@ -302,6 +307,11 @@ crates/ui/src/
    - Sycamore's `spawn_local_scoped` binds the spawned future to the *current reactive scope*. If that scope is disposed or re-evaluated (for example, when a reactive signal like `loading.set(true)` causes an enclosing dynamic view expression to re-run), all scoped futures inside it are **immediately cancelled and dropped**.
    - Any pending `fetch` or HTTP `.await` inside an aborted scoped future will never resume, leaving loading spinners or stale state frozen permanently.
    - **Always** use `wasm_bindgen_futures::spawn_local` for asynchronous flows triggered by user actions (form submissions, button clicks) and long-running background loops (autologin polling), controlling lifecycle with explicit cancellation tokens (`poll_session_id`, `on_cleanup`).
+15. **Android Build & Cross-Compilation Gotchas**:
+   - **Desktop Window Isolation**: Window control methods like `window.minimize()`, `window.maximize()`, `window.start_dragging()`, and `window.open_devtools()` do not exist on Android `WebviewWindow` and must be isolated behind `#[cfg(not(any(target_os = "android", target_os = "ios")))]`.
+   - **Keyring on Android**: The `keyring` crate is unsupported on Android; tokens are held in thread-safe memory storage (`#[cfg(target_os = "android")]`).
+   - **Java & Kotlin Compatibility**: Modern JDK 23 deprecates compiling for Java 8. Always maintain `compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }` and `kotlinOptions { jvmTarget = "17" }` in `crates/src-tauri/gen/android/app/build.gradle.kts`.
+   - **App Launcher Icons**: The default Tauri Android template generates vector drawables in `drawable-v24/ic_launcher_foreground.xml` and `drawable/ic_launcher_background.xml` which take precedence over mipmap PNGs on API 24+. Remove those template drawables and populate `res/mipmap-*` and adaptive icons (`ic_launcher.xml`, `ic_launcher_round.xml`, with `#0a0e1a` background) via `cargo tauri icon`.
 
 ---
 

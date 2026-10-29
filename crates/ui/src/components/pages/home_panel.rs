@@ -9,11 +9,12 @@ use gilvave_core::dto::{
 };
 
 use crate::{
+    cache::CacheService,
     components::{
         common::{
-            AppTheme, ChannelContext, CreateServerContext, CreateServerOrigin, CustomTheme, HomeTab, ModalView,
-            OverviewTab, ScreenWrapper, ServerContext, UiModalContext, UserProfileContext, classes,
-            is_mobile_device, load_windowed_mode, save_windowed_mode,
+            AppTheme, ChannelContext, CreateServerContext, CreateServerOrigin, CustomTheme,
+            HomeTab, ModalView, OverviewTab, ScreenWrapper, ServerContext, UiModalContext,
+            UserProfileContext, classes, is_mobile_device, load_windowed_mode, save_windowed_mode,
         },
         features::{
             channels::{
@@ -27,9 +28,7 @@ use crate::{
             home::{home_dashboard::HomeDashboard, home_nav_panel::HomeNavPanel},
             members::members_panel::MembersPanel,
             profile::{ProfileSettingsModal, ThemeCatalogModal, ThemeJsonEditorModal},
-            servers::{
-                ServerOverviewModal, ServerSettingsModal, ServerSidebar, SidebarControls,
-            },
+            servers::{ServerOverviewModal, ServerSettingsModal, ServerSidebar, SidebarControls},
         },
         ui::icons::{GearIcon, HashIcon, HomeIcon},
     },
@@ -141,8 +140,14 @@ pub fn HomePanel() -> View {
                 });
             }
             spawn_local_scoped(async move {
-                let servers = Api::get_user_servers().await.unwrap_or_default();
-                server_context.list.set(servers);
+                let cached = CacheService::get_cached_servers().await;
+                if !cached.is_empty() {
+                    server_context.list.set(cached);
+                }
+                if let Ok(servers) = Api::get_user_servers().await {
+                    server_context.list.set(servers.clone());
+                    CacheService::sync_cached_servers(servers).await;
+                }
             });
         }
     });

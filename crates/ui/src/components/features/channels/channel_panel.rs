@@ -2,6 +2,7 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use super::channel_item::ChannelItem;
 use crate::{
+    cache::CacheService,
     components::{
         common::{ChannelContext, ServerContext, UiModalContext},
         ui::icons::{ChevronDownIcon, PlusIcon},
@@ -95,7 +96,22 @@ pub fn ChannelPanel() -> View {
             context.text.set(vec![]);
             context.voice.set(vec![]);
             spawn_local_scoped(async move {
+                let cached = CacheService::get_cached_channels(server_id).await;
+                if !cached.is_empty() {
+                    let mut text_channels = Vec::new();
+                    let mut voice_channels = Vec::new();
+                    for channel in cached {
+                        match channel.r#type {
+                            ChannelType::TEXT => text_channels.push(channel),
+                            ChannelType::VOICE => voice_channels.push(channel),
+                        }
+                    }
+                    context.text.set(text_channels);
+                    context.voice.set(voice_channels);
+                }
+
                 if let Ok(channels) = Api::get_server_channels(server_id).await {
+                    CacheService::sync_cached_channels(server_id, channels.clone()).await;
                     let mut text_channels = Vec::with_capacity(channels.len());
                     let mut voice_channels = Vec::with_capacity(channels.len());
                     for channel in channels {
