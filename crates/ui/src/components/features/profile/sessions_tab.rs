@@ -1,10 +1,4 @@
-use gilvave_core::{
-    dto::{
-        command::{CommandArgs, CommandResponse, CommandResult},
-        users::SessionView,
-    },
-    settings::collect_device_info,
-};
+use gilvave_core::dto::users::SessionView;
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::{
@@ -13,7 +7,7 @@ use crate::{
         SmartphoneIcon, TrashIcon,
     },
     http::api::Api,
-    utils::{invoke_command, to_local_datetime},
+    utils::to_local_datetime,
 };
 fn format_last_active(dt: time::OffsetDateTime, is_current: bool) -> String {
     if is_current {
@@ -63,59 +57,23 @@ async fn fetch_sessions_data(
     sessions_sig: Signal<Vec<SessionView>>,
     initial_load_sig: Signal<bool>,
 ) {
-    // 1. Collect real device info from Tauri desktop or Web browser runtime
-    let current_device = match invoke_command(CommandArgs::GetDeviceInfo.to_json()).await {
-        CommandResult::Ok(CommandResponse::GetDeviceInfo(info)) => info,
-        _ => collect_device_info(),
-    };
-
-    // 2. Fetch from backend API
     match Api::get_sessions().await {
         Ok(server_sessions) => {
             tracing::info!(
                 "[SessionsTab] Received {} sessions from server",
                 server_sessions.len()
             );
-            let mut list: Vec<SessionView> = server_sessions
+            let list: Vec<SessionView> = server_sessions
                 .into_iter()
                 .map(|(mut s, c)| {
                     s.is_current = c;
                     s
                 })
                 .collect();
-            let has_current = list.iter().any(|s| s.is_current);
-            if !has_current {
-                list.insert(
-                    0,
-                    SessionView {
-                        id: "curr-device".to_string(),
-                        device_info: current_device,
-                        ip_address: Some("127.0.0.1".to_string()),
-                        location: Some("Текущее рабочее место".to_string()),
-                        last_used_at: time::OffsetDateTime::now_utc(),
-                        created_at: time::OffsetDateTime::now_utc(),
-                        is_current: true,
-                    },
-                );
-            }
             sessions_sig.set(list);
         }
         Err(err) => {
             tracing::error!("[SessionsTab] Failed to fetch sessions: {:?}", err);
-            // Fallback: show the current local device as the active session if list was empty
-            if sessions_sig.with(|v| v.is_empty()) {
-                let now = time::OffsetDateTime::now_utc();
-                let fallback_list = vec![SessionView {
-                    id: "curr-session-local".to_string(),
-                    device_info: current_device,
-                    ip_address: Some("127.0.0.1 (Локальная сеть)".to_string()),
-                    location: Some("Текущее рабочее место".to_string()),
-                    last_used_at: now,
-                    created_at: now,
-                    is_current: true,
-                }];
-                sessions_sig.set(fallback_list);
-            }
         }
     }
 

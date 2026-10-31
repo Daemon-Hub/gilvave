@@ -42,7 +42,8 @@ cargo build
 cargo check --package gilvave-ui --target wasm32-unknown-unknown
 
 # Android build & dev
-cargo tauri android build --target aarch64 --apk --debug
+cargo tauri android build --target aarch64 --apk --debug   # Debug build (signed with debug keystore)
+cargo tauri android build --target aarch64 --apk           # Release build (auto-signed with keystore.properties or fallback debug key)
 cargo tauri android dev --target aarch64
 
 # Run tests

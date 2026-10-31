@@ -1,7 +1,4 @@
-use gilvave_core::{
-    dto::servers::{Server, ServerCreateInfo},
-    ids::{ServerId, UserId},
-};
+use gilvave_core::dto::servers::ServerCreateInfo;
 use sycamore::prelude::*;
 
 use crate::components::common::classes;
@@ -14,68 +11,6 @@ use super::{
     join_server_modal::JoinServerModal,
     server_actions::{create_server, select_server},
 };
-
-pub fn fallback_hardcoded_servers() -> Vec<Server> {
-    use gilvave_core::uuid::Uuid;
-    let epoch = time::OffsetDateTime::UNIX_EPOCH;
-    vec![
-        Server {
-            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440001)),
-            name: "Rust Developers".to_string(),
-            icon_url: String::new(),
-            created_at: epoch,
-            description: "Сообщество разработчиков на Rust. Обсуждаем код, делимся проектами и помогаем новичкам.".to_string(),
-            members_count: 1247,
-            cover: "https://images.unsplash.com/photo-1515879218367-8466d910auj4?w=600".to_string(),
-            is_public: true,
-            owner_id: UserId::default(),
-        },
-        Server {
-            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440002)),
-            name: "Гейм-дев".to_string(),
-            icon_url: String::new(),
-            created_at: epoch,
-            description: "Разработка игр на всех движках. Unity, Unreal, Godot — всё обсуждаем здесь.".to_string(),
-            members_count: 834,
-            cover: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600".to_string(),
-            is_public: true,
-            owner_id: UserId::default(),
-        },
-        Server {
-            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440003)),
-            name: "Музыка".to_string(),
-            icon_url: String::new(),
-            created_at: epoch,
-            description: "Делимся музыкой, обсуждаем альбомы и находим единомышленников по вкусам.".to_string(),
-            members_count: 2103,
-            cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600".to_string(),
-            is_public: true,
-            owner_id: UserId::default(),
-        },
-        Server {
-            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440004)),
-            name: "Аниме клуб".to_string(),
-            icon_url: String::new(),
-            created_at: epoch,
-            description: "Обсуждаем аниме, мангу и всё связанное с японской культурой. Новости, обзоры, рекомендации.".to_string(),
-            members_count: 3562,
-            cover: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600".to_string(),
-            is_public: true,
-            owner_id: UserId::default(),
-        },
-        Server {
-            id: ServerId(Uuid::from_u128(0x550e8400_e29b_41d4_a716_446655440005)),
-            name: "Memes & Chill".to_string(),
-            icon_url: String::new(),
-            created_at: epoch,
-            description: "Лучшие мемы, тёплая атмосфера и хорошее настроение каждый день.".to_string(),
-            members_count: 5891,
-            cover: "https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=600".to_string(),
-            is_public: true,
-            owner_id: UserId::default(),
-        },
-    ]
-}
 
 pub fn open_join_modal(context: CreateServerContext) {
     context.modal_view.set(ModalView::Join);

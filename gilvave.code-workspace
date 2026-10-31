@@ -22,7 +22,6 @@
             "target": true,
             "*/**/dist": true,
             "*/**/public": true,
-            "*/**/gen": true,
             "*.lock": true,
         },
         // Настройки поиска

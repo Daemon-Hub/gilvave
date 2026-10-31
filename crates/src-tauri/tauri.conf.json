@@ -19,7 +19,8 @@
         "width": 800,
         "height": 600,
         "decorations": false,
-        "devtools": true
+        "devtools": true,
+        "additionalBrowserArgs": "--ignore-certificate-errors"
       }
     ],
     "security": {

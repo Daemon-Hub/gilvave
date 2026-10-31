@@ -1,5 +1,5 @@
-pub const BASE_HTTP_URL: &str = "http://10.109.97.168:3000"; //"http://127.0.0.1:3000"; //"http://kim.netbird.cloud:3000";
-pub const BASE_WS_URL: &str = "ws://10.109.97.168:3100/ws"; //"ws://127.0.0.1:3100/ws"; //"ws://kim.netbird.cloud:3100/ws";
+pub const BASE_HTTP_URL: &str = "https://10.109.97.168:3131"; //"http://127.0.0.1:3131"; //"http://kim.netbird.cloud:3131";
+pub const BASE_WS_URL: &str = "wss://10.109.97.168:3131/ws"; //"ws://127.0.0.1:3131/ws"; //"ws://kim.netbird.cloud:3131/ws";
 
 use serde::{Deserialize, Serialize};
 

@@ -19,3 +19,6 @@ crates/src-tauri/gen/android/**/generated/
 crates/src-tauri/gen/android/**/jniLibs/**/*.so
 *.apk
 *.aab
+*.jks
+*.keystore
+keystore.properties

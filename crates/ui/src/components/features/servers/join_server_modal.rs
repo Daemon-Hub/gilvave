@@ -12,7 +12,7 @@ use crate::{
     http::api::Api,
 };
 
-use super::{server_card::server_card, server_sidebar::fallback_hardcoded_servers};
+use super::server_card::server_card;
 
 #[component(inline_props)]
 pub(super) fn JoinServerModal(
@@ -30,19 +30,12 @@ pub(super) fn JoinServerModal(
         spawn_local_scoped(async move {
             match Api::get_public_servers(1).await {
                 Ok((servers, has_more)) => {
-                    if servers.is_empty() {
-                        context.public_servers.set(fallback_hardcoded_servers());
-                        context.has_more_public_servers.set(false);
-                    } else {
-                        context.public_servers.set(servers);
-                        context.has_more_public_servers.set(has_more);
-                    }
+                    context.public_servers.set(servers);
+                    context.has_more_public_servers.set(has_more);
                 }
                 Err(_) => {
-                    if context.public_servers.with(|s| s.is_empty()) {
-                        context.public_servers.set(fallback_hardcoded_servers());
-                        context.has_more_public_servers.set(false);
-                    }
+                    context.public_servers.set(vec![]);
+                    context.has_more_public_servers.set(false);
                 }
             }
             is_loading.set(false);
