@@ -14,6 +14,8 @@ use crate::utils::invoke_command;
 pub mod servers;
 pub mod users;
 
+static REFRESH_MUTEX: futures_util::lock::Mutex<()> = futures_util::lock::Mutex::new(());
+
 pub struct Api;
 
 impl Api {
@@ -97,12 +99,16 @@ impl Api {
     ) -> Result<web_sys::Response, ErrorInfo> {
         let body_json = body.to_json()?;
         let response = Self::send_once(method, url, &body_json, auth_token).await?;
-        if response.status() == 401
-            && auth_token.is_some()
-            && Box::pin(Self::update_tokens()).await.is_ok()
-        {
-            let new_token = Self::fetch_access_token().await;
-            return Self::send_once(method, url, &body_json, Some(&new_token)).await;
+        if response.status() == 401 && auth_token.is_some() {
+            let _guard = REFRESH_MUTEX.lock().await;
+            let current_token = Self::fetch_access_token().await;
+            if !current_token.is_empty() && current_token != auth_token.unwrap_or_default() {
+                return Self::send_once(method, url, &body_json, Some(&current_token)).await;
+            }
+            if Box::pin(Self::update_tokens()).await.is_ok() {
+                let new_token = Self::fetch_access_token().await;
+                return Self::send_once(method, url, &body_json, Some(&new_token)).await;
+            }
         }
         Ok(response)
     }

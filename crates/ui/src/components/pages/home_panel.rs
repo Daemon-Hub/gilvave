@@ -136,9 +136,10 @@ pub fn HomePanel() -> View {
     };
     provide_context(channel_context);
 
-    let ws_started = create_signal(false);
+    let mut ws_started = false;
     create_effect(move || {
-        if screen_wrapper.is_home() {
+        if screen_wrapper.is_home() && !ws_started {
+            ws_started = true;
             spawn_local_scoped(async move {
                 if let Ok(user) = Api::get_profile().await {
                     let avatar = user.avatar().to_string();
@@ -172,12 +173,10 @@ pub fn HomePanel() -> View {
                 }
             });
 
-            if !ws_started.get() {
-                ws_started.set(true);
-                spawn_local_scoped(async move {
-                    let _ = WsService::listen_web_socket().await;
-                });
-            }
+            spawn_local_scoped(async move {
+                let _ = WsService::listen_web_socket().await;
+            });
+
             spawn_local_scoped(async move {
                 let cached = CacheService::get_cached_servers().await;
                 if !cached.is_empty() {

@@ -347,8 +347,7 @@ impl WsService {
                         web_sys::console::error_1(
                             &format!("[WS SERVICE] WebSocket connection error: {e:?}").into(),
                         );
-                        let _ = crate::http::api::Api::update_tokens().await;
-                        gloo_timers::future::sleep(core::time::Duration::from_secs(2)).await;
+                        gloo_timers::future::sleep(core::time::Duration::from_secs(3)).await;
                         continue;
                     }
                 }

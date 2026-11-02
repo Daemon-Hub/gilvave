@@ -53,7 +53,9 @@ pub fn FriendsPanel() -> View {
             if let Ok(r) = Api::get_friend_requests().await {
                 requests.set(r);
             }
-            if let Ok(b) = Api::get_blocked_users().await {
+            if active_tab.get_untracked() == FriendsTab::Blocked
+                && let Ok(b) = Api::get_blocked_users().await
+            {
                 blocked.set(b);
             }
             is_loading.set(false);
@@ -254,7 +256,14 @@ pub fn FriendsPanel() -> View {
                                 "friends-tab-btn"
                             }
                         },
-                        on:click=move |_| active_tab.set(FriendsTab::Blocked),
+                        on:click=move |_| {
+                            active_tab.set(FriendsTab::Blocked);
+                            spawn_local_scoped(async move {
+                                if let Ok(b) = Api::get_blocked_users().await {
+                                    blocked.set(b);
+                                }
+                            });
+                        },
                     ) {
                         span { "Заблокированные" }
                         (if total_blocked.get() > 0 {
