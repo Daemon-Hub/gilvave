@@ -5,7 +5,7 @@ use gilvave_core::{
     settings::collect_device_info,
 };
 use std::sync::Arc;
-use tauri::{State, WebviewWindow};
+use tauri::{Manager, State, WebviewWindow};
 use tokio::sync::Mutex;
 
 #[tauri::command]
@@ -75,8 +75,37 @@ pub async fn handle_command(
         }
         CommandArgs::WindowClose => {
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            let _ = window.close();
+            {
+                let state = window.state::<crate::CloseToTrayState>();
+                if state.0.load(std::sync::atomic::Ordering::Relaxed) {
+                    let _ = window.hide();
+                } else {
+                    let _ = window.close();
+                }
+            }
             CommandResult::Ok(CommandResponse::WindowClose)
+        }
+        CommandArgs::GetCloseToTray => {
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            {
+                let state = window.state::<crate::CloseToTrayState>();
+                CommandResult::Ok(CommandResponse::GetCloseToTray(
+                    state.0.load(std::sync::atomic::Ordering::Relaxed),
+                ))
+            }
+            #[cfg(any(target_os = "android", target_os = "ios"))]
+            {
+                CommandResult::Ok(CommandResponse::GetCloseToTray(false))
+            }
+        }
+        CommandArgs::SetCloseToTray { enabled } => {
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            {
+                let state = window.state::<crate::CloseToTrayState>();
+                state.0.store(enabled, std::sync::atomic::Ordering::Relaxed);
+            }
+            let _ = enabled;
+            CommandResult::Ok(CommandResponse::SetCloseToTray)
         }
         CommandArgs::WindowStartDragging => {
             #[cfg(not(any(target_os = "android", target_os = "ios")))]

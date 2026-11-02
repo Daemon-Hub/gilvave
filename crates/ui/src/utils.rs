@@ -83,6 +83,8 @@ async fn handle_command_web(args: Value) -> CommandResult {
         }
         CommandArgs::WindowClose => CommandResult::Ok(CommandResponse::WindowClose),
         CommandArgs::WindowStartDragging => CommandResult::Ok(CommandResponse::WindowStartDragging),
+        CommandArgs::GetCloseToTray => CommandResult::Ok(CommandResponse::GetCloseToTray(false)),
+        CommandArgs::SetCloseToTray { .. } => CommandResult::Ok(CommandResponse::SetCloseToTray),
         CommandArgs::OpenDevTools => {
             #[cfg(target_arch = "wasm32")]
             {

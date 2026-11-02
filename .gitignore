@@ -1,6 +1,7 @@
 */**/dist
 /target/
 /Cargo.lock
+.cargo/
 
 # Android & Gradle
 .gradle/

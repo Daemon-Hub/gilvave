@@ -108,6 +108,7 @@ pub struct UiModalContext {
     pub app_theme: Signal<AppTheme>,
     pub custom_themes: Signal<Vec<CustomTheme>>,
     pub is_windowed_mode: Signal<bool>,
+    pub is_close_to_tray: Signal<bool>,
     pub is_theme_catalog_open: Signal<bool>,
     pub is_theme_json_editor_open: Signal<bool>,
     pub theme_json_editor_content: Signal<String>,
@@ -117,4 +118,5 @@ pub struct UiModalContext {
     pub is_forward_modal_open: Signal<bool>,
     pub is_server_overview_open: Signal<bool>,
     pub server_overview_tab: Signal<OverviewTab>,
+    pub toast_message: Signal<Option<(bool, String)>>,
 }

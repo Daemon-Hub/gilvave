@@ -237,6 +237,17 @@ pub fn select_all_in_target_element(el: &web_sys::Element) {
 #[allow(dead_code)]
 pub fn select_all_in_target_element(_el: &web_sys::Element) {}
 
+#[allow(dead_code, unused_variables)]
+pub fn show_toast(modal_ctx: &UiModalContext, is_err: bool, msg: String) {
+    let toast_sig = modal_ctx.toast_message;
+    toast_sig.set(Some((is_err, msg)));
+    #[cfg(target_arch = "wasm32")]
+    wasm_bindgen_futures::spawn_local(async move {
+        gloo_timers::future::TimeoutFuture::new(4000).await;
+        toast_sig.set(None);
+    });
+}
+
 pub fn handle_global_context_menu(
     event: &web_sys::MouseEvent,
     menu_ctx: &ContextMenuContext,
@@ -255,7 +266,259 @@ pub fn handle_global_context_menu(
     #[cfg(target_arch = "wasm32")]
     if let Some(target) = event.target() {
         if let Ok(el) = target.dyn_into::<web_sys::Element>() {
-            // 1. Check if clicked inside a message item
+            // 1. Check if clicked inside an editable input / contenteditable / textarea
+            let is_editable = el.tag_name().eq_ignore_ascii_case("INPUT")
+                || el.tag_name().eq_ignore_ascii_case("TEXTAREA")
+                || el.get_attribute("contenteditable").as_deref() == Some("true")
+                || el
+                    .closest("[contenteditable='true']")
+                    .ok()
+                    .flatten()
+                    .is_some();
+
+            if is_editable {
+                let target_clone = el.clone();
+                let modal_ctx_owned = modal_ctx.cloned();
+
+                if !selected_text.is_empty() {
+                    let target_for_cut = el.clone();
+                    let modal_for_cut = modal_ctx.cloned();
+                    items.push(ContextMenuItem {
+                        label: "Вырезать".to_string(),
+                        icon: "cut",
+                        shortcut: Some("Ctrl+X"),
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || {
+                            cut_from_target_element(&target_for_cut, modal_for_cut.as_ref());
+                        }),
+                    });
+
+                    let sel = selected_text.clone();
+                    items.push(ContextMenuItem {
+                        label: "Копировать".to_string(),
+                        icon: "copy",
+                        shortcut: Some("Ctrl+C"),
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || copy_to_clipboard(&sel)),
+                    });
+                }
+
+                // Вставить (Paste) — всегда доступно для полей ввода
+                items.push(ContextMenuItem {
+                    label: "Вставить".to_string(),
+                    icon: "paste",
+                    shortcut: Some("Ctrl+V"),
+                    danger: false,
+                    separator_above: false,
+                    on_click: Rc::new(move || {
+                        let el_to_paste = target_clone.clone();
+                        let m_ctx = modal_ctx_owned.clone();
+                        #[cfg(target_arch = "wasm32")]
+                        wasm_bindgen_futures::spawn_local(async move {
+                            if let Some(window) = web_sys::window() {
+                                let clipboard = window.navigator().clipboard();
+                                let promise = clipboard.read_text();
+                                match wasm_bindgen_futures::JsFuture::from(promise).await {
+                                    Ok(js_val) => {
+                                        if let Some(text) = js_val.as_string() {
+                                            paste_into_target_element(&el_to_paste, &text, m_ctx.as_ref());
+                                        }
+                                    }
+                                    Err(err) => {
+                                        web_sys::console::warn_1(&format!("[CONTEXT_MENU] clipboard readText failed: {:?}", err).into());
+                                    }
+                                }
+                            }
+                        });
+                    }),
+                });
+
+                let target_for_sel = el.clone();
+                items.push(ContextMenuItem {
+                    label: "Выделить всё".to_string(),
+                    icon: "select_all",
+                    shortcut: Some("Ctrl+A"),
+                    danger: false,
+                    separator_above: true,
+                    on_click: Rc::new(move || {
+                        select_all_in_target_element(&target_for_sel);
+                    }),
+                });
+
+                menu_ctx.show(x, y, items);
+                return;
+            }
+
+            // 2. Check if clicked on a user element (member item, avatar, header, friend row)
+            if let Ok(Some(user_el)) = el.closest("[data-user-id]") {
+                let u_id_str = user_el.get_attribute("data-user-id").unwrap_or_default();
+                let u_name = user_el.get_attribute("data-username").unwrap_or_default();
+                if let Ok(target_uid) = UserId::try_from(u_id_str.as_str()) {
+                    let is_self = user_ctx
+                        .and_then(|u| u.user_id.get())
+                        .map_or(false, |my_id| my_id == target_uid);
+
+                    let is_friend_card = user_el.class_name().contains("friend-row-item")
+                        || user_el.closest(".friend-row-item").ok().flatten().is_some();
+
+                    if !is_self {
+                        if !is_friend_card {
+                            let m_ctx_clone = modal_ctx.cloned();
+                            let name_clone = u_name.clone();
+                            items.push(ContextMenuItem {
+                                label: "Добавить в друзья".to_string(),
+                                icon: "user_plus",
+                                shortcut: None,
+                                danger: false,
+                                separator_above: false,
+                                on_click: Rc::new(move || {
+                                    let m_ctx = m_ctx_clone.clone();
+                                    let target_display = if !name_clone.is_empty() {
+                                        format!("@{name_clone}")
+                                    } else {
+                                        "пользователю".to_string()
+                                    };
+                                    #[cfg(target_arch = "wasm32")]
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        use gilvave_core::dto::users::friends::SendFriendRequest;
+                                        let req = SendFriendRequest {
+                                            user_id: Some(target_uid),
+                                            username: None,
+                                        };
+                                        match crate::http::api::Api::send_friend_request(&req).await {
+                                            Ok(res) => {
+                                                if let Some(m) = m_ctx.as_ref() {
+                                                    show_toast(m, false, res.message);
+                                                }
+                                            }
+                                            Err(err) => {
+                                                if let Some(m) = m_ctx.as_ref() {
+                                                    show_toast(m, true, format!("Не удалось отправить запрос {}: {}", target_display, err.1));
+                                                }
+                                            }
+                                        }
+                                    });
+                                }),
+                            });
+                        }
+
+                        if let Some(m_ctx) = modal_ctx {
+                            let dm_name_sig = m_ctx.selected_dm_name;
+                            let home_tab_sig = m_ctx.home_tab;
+                            let s_ctx = server_ctx.cloned();
+                            let name_for_dm = u_name.clone();
+                            items.push(ContextMenuItem {
+                                label: "Написать сообщение".to_string(),
+                                icon: "message",
+                                shortcut: None,
+                                danger: false,
+                                separator_above: false,
+                                on_click: Rc::new(move || {
+                                    if let Some(sc) = s_ctx.as_ref() {
+                                        sc.current.set(None);
+                                    }
+                                    if !name_for_dm.is_empty() {
+                                        dm_name_sig.set(Some(name_for_dm.clone()));
+                                    }
+                                    home_tab_sig.set(crate::components::common::HomeTab::Chats);
+                                }),
+                            });
+                        }
+
+                        if is_friend_card {
+                            let m_ctx_clone = modal_ctx.cloned();
+                            let name_clone = u_name.clone();
+                            items.push(ContextMenuItem {
+                                label: "Удалить из друзей".to_string(),
+                                icon: "trash",
+                                shortcut: None,
+                                danger: true,
+                                separator_above: true,
+                                on_click: Rc::new(move || {
+                                    let m_ctx = m_ctx_clone.clone();
+                                    let target_display = if !name_clone.is_empty() {
+                                        format!("@{name_clone}")
+                                    } else {
+                                        "пользователь".to_string()
+                                    };
+                                    #[cfg(target_arch = "wasm32")]
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        match crate::http::api::Api::remove_friend(target_uid).await {
+                                            Ok(()) => {
+                                                if let Some(m) = m_ctx.as_ref() {
+                                                    show_toast(m, false, format!("Пользователь {} удален из друзей", target_display));
+                                                }
+                                            }
+                                            Err(err) => {
+                                                if let Some(m) = m_ctx.as_ref() {
+                                                    show_toast(m, true, format!("Ошибка удаления: {}", err.1));
+                                                }
+                                            }
+                                        }
+                                    });
+                                }),
+                            });
+                        }
+                    }
+
+                    if !u_name.is_empty() {
+                        let n_copy = format!("@{u_name}");
+                        items.push(ContextMenuItem {
+                            label: "Копировать имя пользователя".to_string(),
+                            icon: "copy",
+                            shortcut: None,
+                            danger: false,
+                            separator_above: true,
+                            on_click: Rc::new(move || copy_to_clipboard(&n_copy)),
+                        });
+                    }
+
+                    let id_copy = target_uid.to_string();
+                    items.push(ContextMenuItem {
+                        label: "Копировать ID пользователя".to_string(),
+                        icon: "info",
+                        shortcut: None,
+                        danger: false,
+                        separator_above: u_name.is_empty(),
+                        on_click: Rc::new(move || copy_to_clipboard(&id_copy)),
+                    });
+
+                    // If clicked on an author avatar/header inside a message, also offer "Ответить"
+                    if let Ok(Some(msg_el)) = el.closest("[data-message-id]") {
+                        if let Some(m_ctx) = modal_ctx {
+                            let msg_id_str = msg_el.get_attribute("data-message-id").unwrap_or_default();
+                            let parsed_msg_id = MessageId::try_from(msg_id_str.as_str()).ok();
+                            let found_msg = channel_ctx.and_then(|c_ctx| {
+                                parsed_msg_id.and_then(|m_id| {
+                                    c_ctx.messages.with(|msgs| msgs.iter().find(|m| m.id == m_id).cloned())
+                                })
+                            });
+                            if let Some(target_msg) = found_msg {
+                                let replying_sig = m_ctx.replying_to;
+                                let editing_sig = m_ctx.editing_message;
+                                items.push(ContextMenuItem {
+                                    label: "Ответить на сообщение".to_string(),
+                                    icon: "reply",
+                                    shortcut: None,
+                                    danger: false,
+                                    separator_above: true,
+                                    on_click: Rc::new(move || {
+                                        editing_sig.set(None);
+                                        replying_sig.set(Some(target_msg.clone()));
+                                    }),
+                                });
+                            }
+                        }
+                    }
+
+                    menu_ctx.show(x, y, items);
+                    return;
+                }
+            }
+
+            // 3. Check if clicked inside a message item (message bubble / text)
             if let Ok(Some(msg_el)) = el.closest("[data-message-id]") {
                 let msg_id_str = msg_el.get_attribute("data-message-id").unwrap_or_default();
                 let msg_content = msg_el
@@ -398,7 +661,73 @@ pub fn handle_global_context_menu(
                     });
                 }
 
-                // 4) Копировать текст
+                // 4) Добавить в друзья (Add friend by ID) - if another user's message
+                if !is_author {
+                    if let Some(target_uid) = parsed_author_id {
+                        let m_ctx_clone = modal_ctx.cloned();
+                        let a_name_clone = author_name.clone();
+                        items.push(ContextMenuItem {
+                            label: "Добавить в друзья".to_string(),
+                            icon: "user_plus",
+                            shortcut: None,
+                            danger: false,
+                            separator_above: true,
+                            on_click: Rc::new(move || {
+                                let m_ctx = m_ctx_clone.clone();
+                                let target_display = if !a_name_clone.is_empty() {
+                                    format!("@{a_name_clone}")
+                                } else {
+                                    "пользователю".to_string()
+                                };
+                                #[cfg(target_arch = "wasm32")]
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    use gilvave_core::dto::users::friends::SendFriendRequest;
+                                    let req = SendFriendRequest {
+                                        user_id: Some(target_uid),
+                                        username: None,
+                                    };
+                                    match crate::http::api::Api::send_friend_request(&req).await {
+                                        Ok(res) => {
+                                            if let Some(m) = m_ctx.as_ref() {
+                                                show_toast(m, false, res.message);
+                                            }
+                                        }
+                                        Err(err) => {
+                                            if let Some(m) = m_ctx.as_ref() {
+                                                show_toast(m, true, format!("Не удалось отправить запрос {}: {}", target_display, err.1));
+                                            }
+                                        }
+                                    }
+                                });
+                            }),
+                        });
+
+                        if let Some(m_ctx) = modal_ctx {
+                            let dm_name_sig = m_ctx.selected_dm_name;
+                            let home_tab_sig = m_ctx.home_tab;
+                            let s_ctx = server_ctx.cloned();
+                            let name_for_dm = author_name.clone();
+                            items.push(ContextMenuItem {
+                                label: "Написать сообщение".to_string(),
+                                icon: "message",
+                                shortcut: None,
+                                danger: false,
+                                separator_above: false,
+                                on_click: Rc::new(move || {
+                                    if let Some(sc) = s_ctx.as_ref() {
+                                        sc.current.set(None);
+                                    }
+                                    if !name_for_dm.is_empty() {
+                                        dm_name_sig.set(Some(name_for_dm.clone()));
+                                    }
+                                    home_tab_sig.set(crate::components::common::HomeTab::Chats);
+                                }),
+                            });
+                        }
+                    }
+                }
+
+                // 5) Копировать текст
                 let text_to_copy = if !selected_text.is_empty() {
                     selected_text.clone()
                 } else {
@@ -415,7 +744,7 @@ pub fn handle_global_context_menu(
                     on_click: Rc::new(move || copy_to_clipboard(&t_copy)),
                 });
 
-                // 5) Копировать ID сообщения
+                // 6) Копировать ID сообщения
                 let id_copy = msg_id_str.clone();
                 items.push(ContextMenuItem {
                     label: "Копировать ID сообщения".to_string(),
@@ -426,7 +755,20 @@ pub fn handle_global_context_menu(
                     on_click: Rc::new(move || copy_to_clipboard(&id_copy)),
                 });
 
-                // 7) Удалить (Delete) - only if author
+                // 7) Копировать ID автора
+                if let Some(a_id) = parsed_author_id {
+                    let a_id_str = a_id.to_string();
+                    items.push(ContextMenuItem {
+                        label: "Копировать ID автора".to_string(),
+                        icon: "info",
+                        shortcut: None,
+                        danger: false,
+                        separator_above: false,
+                        on_click: Rc::new(move || copy_to_clipboard(&a_id_str)),
+                    });
+                }
+
+                // 8) Удалить (Delete) - only if author
                 if is_author {
                     if let (Some(m_id), Some(ch_id)) = (parsed_msg_id, parsed_channel_id) {
                         let c_ctx_opt = channel_ctx.copied();
@@ -451,91 +793,6 @@ pub fn handle_global_context_menu(
                         });
                     }
                 }
-
-                menu_ctx.show(x, y, items);
-                return;
-            }
-
-            // 2. Check if clicked inside an editable input / contenteditable / textarea
-            let is_editable = el.tag_name().eq_ignore_ascii_case("INPUT")
-                || el.tag_name().eq_ignore_ascii_case("TEXTAREA")
-                || el.get_attribute("contenteditable").as_deref() == Some("true")
-                || el
-                    .closest("[contenteditable='true']")
-                    .ok()
-                    .flatten()
-                    .is_some();
-
-            if is_editable {
-                let target_clone = el.clone();
-                let modal_ctx_owned = modal_ctx.cloned();
-
-                if !selected_text.is_empty() {
-                    let target_for_cut = el.clone();
-                    let modal_for_cut = modal_ctx.cloned();
-                    items.push(ContextMenuItem {
-                        label: "Вырезать".to_string(),
-                        icon: "cut",
-                        shortcut: Some("Ctrl+X"),
-                        danger: false,
-                        separator_above: false,
-                        on_click: Rc::new(move || {
-                            cut_from_target_element(&target_for_cut, modal_for_cut.as_ref());
-                        }),
-                    });
-
-                    let sel = selected_text.clone();
-                    items.push(ContextMenuItem {
-                        label: "Копировать".to_string(),
-                        icon: "copy",
-                        shortcut: Some("Ctrl+C"),
-                        danger: false,
-                        separator_above: false,
-                        on_click: Rc::new(move || copy_to_clipboard(&sel)),
-                    });
-                }
-
-                // Вставить (Paste) — всегда доступно для полей ввода
-                items.push(ContextMenuItem {
-                    label: "Вставить".to_string(),
-                    icon: "paste",
-                    shortcut: Some("Ctrl+V"),
-                    danger: false,
-                    separator_above: false,
-                    on_click: Rc::new(move || {
-                        let el_to_paste = target_clone.clone();
-                        let m_ctx = modal_ctx_owned.clone();
-                        #[cfg(target_arch = "wasm32")]
-                        wasm_bindgen_futures::spawn_local(async move {
-                            if let Some(window) = web_sys::window() {
-                                let clipboard = window.navigator().clipboard();
-                                let promise = clipboard.read_text();
-                                match wasm_bindgen_futures::JsFuture::from(promise).await {
-                                    Ok(js_val) => {
-                                        if let Some(text) = js_val.as_string() {
-                                            paste_into_target_element(&el_to_paste, &text, m_ctx.as_ref());
-                                        }
-                                    }
-                                    Err(err) => {
-                                        web_sys::console::warn_1(&format!("[CONTEXT_MENU] clipboard readText failed: {:?}", err).into());
-                                    }
-                                }
-                            }
-                        });
-                    }),
-                });
-
-                let target_for_sel = el.clone();
-                items.push(ContextMenuItem {
-                    label: "Выделить всё".to_string(),
-                    icon: "select_all",
-                    shortcut: Some("Ctrl+A"),
-                    danger: false,
-                    separator_above: true,
-                    on_click: Rc::new(move || {
-                        select_all_in_target_element(&target_for_sel);
-                    }),
-                });
 
                 menu_ctx.show(x, y, items);
                 return;
@@ -697,6 +954,25 @@ fn MenuIcon(name: &'static str) -> View {
             svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
                 polyline(points="9 17 4 12 9 7")
                 path(d="M20 18v-2a4 4 0 0 0-4-4H4")
+            }
+        },
+        "user_plus" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                path(d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2")
+                circle(cx="8.5", cy="7", r="4")
+                line(x1="20", y1="8", x2="20", y2="14")
+                line(x1="23", y1="11", x2="17", y2="11")
+            }
+        },
+        "message" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                path(d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z")
+            }
+        },
+        "user" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                path(d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2")
+                circle(cx="12", cy="7", r="4")
             }
         },
         "forward" => view! {

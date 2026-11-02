@@ -108,6 +108,8 @@ fn test_all_command_args_variants_to_json() {
         CommandArgs::WindowClose,
         CommandArgs::WindowStartDragging,
         CommandArgs::OpenDevTools,
+        CommandArgs::GetCloseToTray,
+        CommandArgs::SetCloseToTray { enabled: true },
         CommandArgs::GetCachedMessages {
             channel_id: ChannelId::default(),
             limit: 50,

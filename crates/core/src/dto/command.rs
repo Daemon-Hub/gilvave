@@ -27,6 +27,10 @@ pub enum CommandArgs {
     WindowClose,
     WindowStartDragging,
     OpenDevTools,
+    GetCloseToTray,
+    SetCloseToTray {
+        enabled: bool,
+    },
     // Offline Cache Commands (Desktop/Mobile SQLite cache)
     GetCachedMessages {
         channel_id: ChannelId,
@@ -79,6 +83,8 @@ pub enum CommandResponse {
     WindowClose,
     WindowStartDragging,
     OpenDevTools,
+    GetCloseToTray(bool),
+    SetCloseToTray,
     // Offline Cache Responses
     GetCachedMessages(Vec<MessageView>),
     SyncCachedMessages,

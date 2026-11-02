@@ -14,7 +14,8 @@ use crate::{
         common::{
             AppTheme, ChannelContext, CreateServerContext, CreateServerOrigin, CustomTheme,
             HomeTab, ModalView, OverviewTab, ScreenWrapper, ServerContext, UiModalContext,
-            UserProfileContext, classes, is_mobile_device, load_windowed_mode, save_windowed_mode,
+            UserProfileContext, classes, is_mobile_device, load_close_to_tray, load_windowed_mode,
+            save_close_to_tray, save_windowed_mode,
         },
         features::{
             channels::{
@@ -30,7 +31,7 @@ use crate::{
             profile::{ProfileSettingsModal, ThemeCatalogModal, ThemeJsonEditorModal},
             servers::{ServerOverviewModal, ServerSettingsModal, ServerSidebar, SidebarControls},
         },
-        ui::icons::{GearIcon, HashIcon, HomeIcon},
+        ui::icons::{CloseSmallIcon, GearIcon, HashIcon, HomeIcon},
     },
     gateway::service::WsService,
     http::api::Api,
@@ -67,6 +68,7 @@ pub fn HomePanel() -> View {
         app_theme: create_signal(AppTheme::load_saved()),
         custom_themes: create_signal(initial_custom_themes),
         is_windowed_mode: create_signal(load_windowed_mode()),
+        is_close_to_tray: create_signal(load_close_to_tray()),
         is_theme_catalog_open: create_signal(false),
         is_theme_json_editor_open: create_signal(false),
         theme_json_editor_content: create_signal(String::new()),
@@ -76,6 +78,7 @@ pub fn HomePanel() -> View {
         is_forward_modal_open: create_signal(false),
         is_server_overview_open: create_signal(false),
         server_overview_tab: create_signal(OverviewTab::Saved),
+        toast_message: create_signal(None),
     };
     provide_context(ui_modal_context);
 
@@ -102,6 +105,20 @@ pub fn HomePanel() -> View {
     create_effect(move || {
         let windowed = ui_modal_context.is_windowed_mode.get();
         save_windowed_mode(windowed);
+    });
+
+    create_effect(move || {
+        let close_to_tray = ui_modal_context.is_close_to_tray.get();
+        save_close_to_tray(close_to_tray);
+        if crate::utils::is_tauri() {
+            wasm_bindgen_futures::spawn_local(async move {
+                let _ = crate::utils::invoke_command(
+                    gilvave_core::dto::command::CommandArgs::SetCloseToTray { enabled: close_to_tray }
+                        .to_json(),
+                )
+                .await;
+            });
+        }
     });
 
     let server_context = ServerContext {
@@ -535,6 +552,27 @@ pub fn HomePanel() -> View {
         })
         (if is_server_overview_open.get() {
             view! { ServerOverviewModal() }
+        } else {
+            view! {}
+        })
+        (if let Some((is_err, msg)) = ui_modal_context.toast_message.get_clone() {
+            let alert_class = if is_err {
+                "global-toast-notification error"
+            } else {
+                "global-toast-notification success"
+            };
+            let toast_sig = ui_modal_context.toast_message;
+            view! {
+                div(class=alert_class) {
+                    span(class="toast-text") { (msg) }
+                    button(
+                        class="toast-close-btn",
+                        on:click=move |_| toast_sig.set(None),
+                    ) {
+                        CloseSmallIcon()
+                    }
+                }
+            }
         } else {
             view! {}
         })

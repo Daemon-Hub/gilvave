@@ -10,8 +10,14 @@ pub fn MemberItem(member_view: MemberView) -> View {
     } else {
         view! { img(class="avatar", src=member_view.avatar) }
     };
+    let u_id_str = member_view.user_id.to_string();
+    let u_name = member_view.username.clone();
     view! {
-        div(class="member-item") {
+        div(
+            class="member-item",
+            data-user-id=u_id_str,
+            data-username=u_name,
+        ) {
             (avatar)
             (member_view.username)
         }

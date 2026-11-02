@@ -64,10 +64,16 @@ pub fn MessageItem(
         }
     };
 
+    let author_name = message_view.author_name.clone();
+    let author_name_attr = author_name.clone();
+    let author_id_attr = message_view.author_id.map(|id| id.to_string()).unwrap_or_default();
+
     let avatar_node = if is_first_in_group {
+        let a_id = author_id_attr.clone();
+        let a_name = author_name_attr.clone();
         if !avatar_url.is_empty() {
             view! {
-                div(class="message-avatar") {
+                div(class="message-avatar", data-user-id=a_id, data-username=a_name) {
                     img(class="message-avatar-img", src=avatar_url, alt="")
                 }
             }
@@ -80,7 +86,7 @@ pub fn MessageItem(
                 .to_uppercase()
                 .to_string();
             view! {
-                div(class="message-avatar") {
+                div(class="message-avatar", data-user-id=a_id, data-username=a_name) {
                     span { (first_char) }
                 }
             }
@@ -91,9 +97,6 @@ pub fn MessageItem(
         }
     };
 
-    let author_name = message_view.author_name.clone();
-    let author_name_attr = author_name.clone();
-
     let edited_badge = if message_view.edited {
         view! {
             span(class="message-edited-badge") { "(ред.)" }
@@ -103,9 +106,11 @@ pub fn MessageItem(
     };
 
     let (header_node, chained_node) = if is_first_in_group {
+        let h_id = author_id_attr.clone();
+        let h_name = author_name_attr.clone();
         (
             view! {
-                div(class="message-header") {
+                div(class="message-header", data-user-id=h_id, data-username=h_name) {
                     span(class="author") { (author_name) }
                     span(class="timestamp") {
                         (formatted_timestamp)

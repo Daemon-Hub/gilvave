@@ -13,7 +13,7 @@ crates/
 
 **Data flow (HTTP & WebSocket)**: UI components (`crates/ui`) call `Api::*` (`crates/ui/src/http/api/`) and `WsService::*` (`crates/ui/src/gateway/`) directly in WASM without routing network requests through Tauri IPC. `Api::request_raw` uses `RequestCredentials::Include` and automatically retries on `401` by calling `Api::update_tokens` (`POST /users/refresh`).
 
-**Command system (`invoke_command`)**: Only platform-dependent operations where Web and Desktop behavior differs (`GetAccessToken`, `GetRefreshToken`, `SetAccessToken`, `SetRefreshToken`, `GetDeviceInfo`, `WindowMinimize`, `WindowToggleMaximize`, `WindowClose`, `WindowStartDragging`, and future native features like system audio capture) pass through `CommandArgs` (`core/src/dto/command.rs`) → `invoke_command` (`ui/src/utils.rs`):
+**Command system (`invoke_command`)**: Only platform-dependent operations where Web and Desktop behavior differs (`GetAccessToken`, `GetRefreshToken`, `SetAccessToken`, `SetRefreshToken`, `GetDeviceInfo`, `WindowMinimize`, `WindowToggleMaximize`, `WindowClose`, `WindowStartDragging`, `GetCloseToTray`, `SetCloseToTray`, and future native features like system audio capture) pass through `CommandArgs` (`core/src/dto/command.rs`) → `invoke_command` (`ui/src/utils.rs`):
 - Because `crates/ui` is always compiled by Trunk to `wasm32-unknown-unknown` (where `target_os` is always `"unknown"` at compile time, even inside Tauri Desktop), `invoke_command` uses `is_tauri()` (`window.__TAURI_INTERNALS__` without `__IS_POLYFILL__`) to distinguish Desktop vs Web at runtime:
   - **Desktop (`is_tauri() == true`)**: `invoke_command` calls Tauri `handle_command` (`src-tauri/src/handler.rs`), accessing OS `keyring`, native `sysinfo` (`client: "desktop"`), and native window controls.
   - **Web (`is_tauri() == false`)**: `invoke_command` calls `handle_command_web` (`ui/src/utils.rs`), accessing browser cookies (`ui/src/security.rs`) and `woothee` user-agent parsing (`client: "web"`).
@@ -78,7 +78,7 @@ crates/ui/src/
   http/                     — Direct WASM HTTP client (web-sys fetch, auto-401 refresh)
     api/                    — Domain endpoints matching server infra (users, servers, messages)
       servers/              — Server and channel endpoints (mod.rs, channels.rs)
-      users/                — User endpoints (auth.rs, profile.rs, sessions.rs)
+      users/                — User endpoints (auth.rs, profile.rs, sessions.rs, friends.rs)
       messages.rs           — Message history endpoints
   gateway/                  — Direct WASM WebSocket client (ws_stream_wasm) & event dispatcher
   components/
@@ -108,7 +108,8 @@ crates/ui/src/
       chat/                 — MessagesArea, ChatInputArea (emoji modal, attachment menu, expand button),
                               ExpandedMessageEditorModal, MessageItem (grouping, read-more/collapse)
       members/              — Server member list (online/offline groups, roles, avatars)
-      home/                 — Home dashboard (greeting hero, quick actions, DM chat with ChatInputArea, friends online)
+      home/                 — Home dashboard (greeting hero, quick actions, DM chat with ChatInputArea, friends panel)
+      friends/              — Friends management panel (all friends, requests, blocked, add friend)
       profile/              — User profile settings modal (preview, bio, credentials, security,
                               appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal,
                               active sessions management tab SessionsTab)
@@ -132,6 +133,7 @@ crates/ui/src/
    - `draft_message: Signal<String>` & `is_message_editor_open: Signal<bool>` (shared message draft & full-size editor modal)
    - `app_theme: Signal<AppTheme>` & `custom_themes: Signal<Vec<CustomTheme>>` (active theme & user-installed custom JSON themes)
    - `is_windowed_mode: Signal<bool>` (toggles `.fullbleed` edge-to-edge layout vs floating windowed container)
+   - `is_close_to_tray: Signal<bool>` (controls minimizing to system tray on window close vs quitting the application)
    - `is_theme_catalog_open: Signal<bool>` (controls the standalone `ThemeCatalogModal`)
 7. **`CreateServerContext`**: Add/join server flow state (`modal_view: Home | Create | Join`, `is_modal_open: bool`, `from_dashboard: bool`).
 
@@ -233,7 +235,8 @@ crates/ui/src/
 - **Custom Application Context Menu & DevTools Security (`context_menu.rs`, `_context_menu.scss`, `app.rs`)**:
   - Unified contextual action menu replacing default browser context menu across Desktop (Tauri) and Web.
   - Automatically identifies target under right-click:
-    - Messages: copy text, copy message ID, quote in chat.
+    - Messages: reply, edit (if author), forward, add to friends (by author user ID if not author), direct message, copy text, copy message ID, copy author ID, delete (if author).
+    - Users (`[data-user-id]`, member list, avatar/header): add to friends (sends friend request by user ID), direct message, copy username, copy user ID.
     - Text selection: copy selected text.
     - Editable fields (`<input>`, `<textarea>`, `contenteditable`): Cut ("Вырезать"), Copy ("Копировать"), Paste ("Вставить" via `navigator.clipboard.readText()`), Select All ("Выделить всё").
     - Channels & Servers: copy name, copy ID; "Настройки сервера" is displayed conditionally only when the user is the owner of the server.
@@ -242,6 +245,26 @@ crates/ui/src/
   - **DevTools Toggle**: Controlled via `CommandArgs::OpenDevTools` invoking Tauri `window.open_devtools()` / `close_devtools()` backed by `tauri = { workspace = true, features = ["devtools"] }`.
   - Edge-resilient viewport boundary clamping prevents clipping at bottom and right window edges.
   - Dismisses on backdrop click, secondary contextmenu, or `Escape` key.
+- **System Tray Integration & Close-to-Tray Mode (Desktop)**:
+  - Enabled via `tauri/tray-icon` feature on desktop platforms (`#[cfg(not(any(target_os = "android", target_os = "ios")))]`).
+  - System tray icon with context menu ("Открыть Gilvave", "Выход") and left-click window toggle (`TrayIconEvent::Click`).
+  - Managed by `CloseToTrayState(AtomicBool)` in `crates/src-tauri` and `UiModalContext.is_close_to_tray` in `crates/ui` (persisted in `localStorage` under `gilvave_close_to_tray`, default `true` on desktop).
+  - When enabled, clicking the close button (`X`) or OS close events hides the window to the tray (`api.prevent_close(); window.hide()`).
+  - When disabled in settings ("Внешний вид" › "Workbench › System: Close to Tray"), clicking close completely closes and exits the application.
+
+- **Friends System Integration (`friends_panel.rs`, `_friends.scss`, `Api::*friends*`)**:
+  - Full client implementation of `gilvave-server`'s `users/friends.rs` endpoints:
+    - `GET /users/friends`, `DELETE /users/friends/{id}`
+    - `GET /users/friends/requests`, `POST /users/friends/requests` (by username or ID)
+    - `POST /users/friends/requests/{id}/accept`, `POST /users/friends/requests/{id}/decline`
+    - `GET /users/friends/blocks`, `POST /users/friends/blocks/{id}`, `DELETE /users/friends/blocks/{id}`
+  - Modular tabs:
+    - **"Все друзья"**: search filter, status badges, avatar fallback, actions to open DM chat (`selected_dm_name`), block user, or remove from friends.
+    - **"Ожидание"**: incoming requests with one-click "Принять" / "Отклонить", and outgoing requests with "Отменить".
+    - **"Заблокированные"**: list of blocked accounts with one-click "Разблокировать".
+    - **"Добавить в друзья"**: username input with validation (requests sent strictly by username; sending by ID is handled exclusively via right-click context menu on users/messages), "Отправить запрос" button, interactive status banner, and explanatory 3-step usage guide.
+  - Zero mock data: live API integration with reactive status feedback messages and auto-refresh on actions.
+  - Zero hardcoded colors: responsive SCSS styled strictly through CSS custom property tokens.
 
 ### Mobile & Responsive Layout
 - **Breakpoints**:

@@ -6,7 +6,11 @@ use crate::{
             CreateServerContext, CreateServerOrigin, HomeTab, ModalView, UiModalContext,
             UserProfileContext,
         },
-        features::{chat::messages_area::ChatInputArea, servers::open_join_modal},
+        features::{
+            chat::messages_area::ChatInputArea,
+            friends::FriendsPanel,
+            servers::open_join_modal,
+        },
         ui::icons::{ArrowLeftIcon, ArrowRightIcon, ChatBubbleIcon, GearIcon, GlobeIcon, PlusIcon},
     },
     utils::to_local_datetime,
@@ -57,18 +61,6 @@ fn dashboard_main_view(
 
     let open_settings = move |_| {
         modal_context.is_profile_settings_open.set(true);
-    };
-
-    let select_dm_smirnov = move |_| {
-        modal_context
-            .selected_dm_name
-            .set(Some("Алексей Смирнов".to_string()));
-    };
-
-    let select_dm_vasilieva = move |_| {
-        modal_context
-            .selected_dm_name
-            .set(Some("Елена Васильева".to_string()));
     };
 
     let go_back_to_chats = move |_| {
@@ -150,41 +142,7 @@ fn dashboard_main_view(
                 }
             }
 
-            div(class="dashboard-section-title") {
-                span { "ДРУЗЬЯ ОНЛАЙН" }
-            }
-
-            div(class="friends-online-list") {
-                div(class="friend-card") {
-                    div(class="friend-card-avatar") {
-                        img(src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100", alt="")
-                        div(class="status-dot online")
-                    }
-                    div(class="friend-card-info") {
-                        span(class="friend-name") { "Алексей Смирнов" }
-                        span(class="friend-status") { "В сети • Кодит на Rust 🦀" }
-                    }
-                    button(class="friend-action-btn", on:click=select_dm_smirnov) {
-                        span { "Написать" }
-                        ChatBubbleIcon()
-                    }
-                }
-
-                div(class="friend-card") {
-                    div(class="friend-card-avatar") {
-                        img(src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", alt="")
-                        div(class="status-dot online")
-                    }
-                    div(class="friend-card-info") {
-                        span(class="friend-name") { "Елена Васильева" }
-                        span(class="friend-status") { "В сети • Разрабатывает UI" }
-                    }
-                    button(class="friend-action-btn", on:click=select_dm_vasilieva) {
-                        span { "Написать" }
-                        ChatBubbleIcon()
-                    }
-                }
-            }
+            FriendsPanel()
         }
     }
 }

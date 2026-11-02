@@ -656,3 +656,35 @@ fn test_create_theme_info_serde() {
     assert_eq!(deserialized.description, "Vibrant synthwave theme");
     assert_eq!(deserialized.config["palette"]["primary"], "#ff007f");
 }
+
+#[test]
+fn test_friends_dto_serde() {
+    use gilvave_core::dto::users::friends::*;
+
+    let friend = FriendView {
+        id: UserId::default(),
+        username: "testuser".to_string(),
+        display_name: "Test User".to_string(),
+        avatar: "https://example.com/avatar.png".to_string(),
+        created_at: OffsetDateTime::now_utc(),
+    };
+    let json_str = serde_json::to_string(&friend).unwrap();
+    let deserialized: FriendView = serde_json::from_str(&json_str).unwrap();
+    assert_eq!(deserialized.username, "testuser");
+    assert_eq!(deserialized.display_name, "Test User");
+
+    let req = SendFriendRequest {
+        user_id: None,
+        username: Some("alice".to_string()),
+    };
+    let json_req = serde_json::to_string(&req).unwrap();
+    assert!(json_req.contains("alice"));
+    assert!(!json_req.contains("user_id"));
+
+    let res = SendFriendResponse {
+        status: FriendRequestResult::Sent,
+        message: "Запрос отправлен".to_string(),
+    };
+    let json_res = serde_json::to_string(&res).unwrap();
+    assert!(json_res.contains("\"status\":\"sent\""));
+}

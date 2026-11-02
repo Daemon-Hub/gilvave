@@ -5,8 +5,31 @@ use wasm_bindgen::JsCast;
 const STORAGE_KEY_ACTIVE_THEME: &str = "gilvave_theme";
 const STORAGE_KEY_CUSTOM_THEMES: &str = "gilvave_installed_custom_themes";
 const STORAGE_KEY_WINDOWED_MODE: &str = "gilvave_windowed_mode";
+const STORAGE_KEY_CLOSE_TO_TRAY: &str = "gilvave_close_to_tray";
 const STYLE_TAG_ACTIVE_CUSTOM: &str = "gilvave-custom-theme";
 const STYLE_TAG_CUSTOM_PREVIEWS: &str = "gilvave-custom-theme-previews";
+
+pub fn load_close_to_tray() -> bool {
+    if super::helpers::is_mobile_device() {
+        return false;
+    }
+    web_sys::window()
+        .and_then(|w| w.local_storage().ok().flatten())
+        .and_then(|s| s.get_item(STORAGE_KEY_CLOSE_TO_TRAY).ok().flatten())
+        .map(|v| v != "false")
+        .unwrap_or(true)
+}
+
+pub fn save_close_to_tray(enabled: bool) {
+    if let Some(window) = web_sys::window()
+        && let Ok(Some(storage)) = window.local_storage()
+    {
+        let _ = storage.set_item(
+            STORAGE_KEY_CLOSE_TO_TRAY,
+            if enabled { "true" } else { "false" },
+        );
+    }
+}
 
 pub fn load_windowed_mode() -> bool {
     if super::helpers::is_mobile_device() {

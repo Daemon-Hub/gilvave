@@ -15,6 +15,7 @@ pub enum ServerRecieve {
         message: String,
     },
     JoinSuccess,
+    #[serde(alias = "MESSAGE_CREATE")]
     MessageNew(MessageView),
     MessageUpdate(MessageView),
     MessageDelete {

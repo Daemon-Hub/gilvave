@@ -231,6 +231,7 @@ pub fn ProfileSettingsModal() -> View {
                             let current_theme = modal_context.app_theme;
                             let custom_themes_sig = modal_context.custom_themes;
                             let is_windowed_sig = modal_context.is_windowed_mode;
+                            let is_close_to_tray_sig = modal_context.is_close_to_tray;
 
                             let install_custom_theme_from_json = move |raw_json: String| {
                                 match CustomTheme::from_json_str(&raw_json) {
@@ -394,6 +395,50 @@ pub fn ProfileSettingsModal() -> View {
                                             }
                                         }
                                     }
+
+                                    // Close to Tray Toggle (Desktop only)
+                                    (if !crate::components::common::is_mobile_device() {
+                                        view! {
+                                            div(class="vscode-setting-item") {
+                                                div(class="vscode-setting-header") {
+                                                    span(class="vscode-setting-category") { "Workbench › System: " }
+                                                    span(class="vscode-setting-name") { "Close to Tray" }
+                                                }
+                                                p(class="vscode-setting-desc") {
+                                                    "Сворачивать окно в системный трей при нажатии на кнопку закрытия (крестик). Если отключено, приложение полностью завершает работу при закрытии."
+                                                }
+                                                div(
+                                                    class="vscode-toggle-row",
+                                                    on:click=move |_| {
+                                                        is_close_to_tray_sig.set(!is_close_to_tray_sig.get());
+                                                    },
+                                                ) {
+                                                    div(
+                                                        class=move || {
+                                                            if is_close_to_tray_sig.get() {
+                                                                "vscode-switch active"
+                                                            } else {
+                                                                "vscode-switch"
+                                                            }
+                                                        },
+                                                    ) {
+                                                        div(class="vscode-switch-thumb")
+                                                    }
+                                                    span(class="vscode-switch-label") {
+                                                        (move || {
+                                                            if is_close_to_tray_sig.get() {
+                                                                "Сворачивать в системный трей при закрытии"
+                                                            } else {
+                                                                "Полностью закрывать приложение при нажатии на крестик"
+                                                            }
+                                                        })
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        view! {}
+                                    })
 
                                     // Custom Themes Toolbar (VS Code Extensions / JSON style)
                                     div(class="custom-themes-toolbar") {
