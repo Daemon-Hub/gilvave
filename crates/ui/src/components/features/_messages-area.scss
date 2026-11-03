@@ -1577,6 +1577,91 @@
 
 
 // ─── Баннер ответа / редактирования над вводом ──────────────────────────────
+// ─── Островок редактирования над вводом (компактный полукруглый бейдж со свечением) ──
+.chat-edit-island-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px 0;
+    background: transparent;
+    animation: fadeIn 0.15s ease-out;
+
+    + .input-area {
+        padding-top: 6px;
+    }
+
+    .chat-edit-island {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 26px;
+        padding: 0 8px 0 10px;
+        border-radius: $radius-full;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-primary-alpha-40;
+        box-shadow:
+            0 0 14px $color-primary-alpha-30,
+            0 2px 6px $color-black-alpha-35;
+        animation: scaleInFast 0.15s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+            border-color: $color-primary;
+            box-shadow:
+                0 0 18px $color-primary-alpha-50,
+                0 2px 8px $color-black-alpha-50;
+        }
+
+        .island-edit-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-primary;
+            flex-shrink: 0;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke-width: 2.2;
+            }
+        }
+
+        .island-title {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: $color-text-white;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .island-close-btn {
+            width: 17px;
+            height: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            color: $color-text-muted;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 2px;
+            transition: background 0.12s ease, color 0.12s ease;
+            flex-shrink: 0;
+
+            svg {
+                width: 11px;
+                height: 11px;
+            }
+
+            &:hover {
+                background: $color-white-alpha-15;
+                color: $color-text-white;
+            }
+        }
+    }
+}
+
 .chat-action-banner {
     display: flex;
     align-items: center;
@@ -1594,12 +1679,6 @@
         border-radius: 2px;
         background: $color-primary;
         flex-shrink: 0;
-    }
-
-    &.chat-edit-banner {
-        .banner-spine {
-            background: $color-icon-amber;
-        }
     }
 
     .banner-info {

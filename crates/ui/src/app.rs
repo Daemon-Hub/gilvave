@@ -90,6 +90,23 @@ pub fn App() -> View {
         }
     });
 
+    // Auto-reconnect polling loop when offline
+    let connectivity_auto_retry = connectivity;
+    spawn_local_scoped(async move {
+        loop {
+            gloo_timers::future::sleep(core::time::Duration::from_secs(3)).await;
+            if connectivity_auto_retry.status.get() == NetworkStatus::Offline
+                && Api::get_profile().await.is_ok()
+            {
+                connectivity_auto_retry.status.set(NetworkStatus::Connected);
+                gloo_timers::future::sleep(core::time::Duration::from_millis(1800)).await;
+                if connectivity_auto_retry.status.get() == NetworkStatus::Connected {
+                    connectivity_auto_retry.status.set(NetworkStatus::Online);
+                }
+            }
+        }
+    });
+
     // Block all keyboard shortcuts used to debug or inspect the app (F12, Ctrl+Shift+I/J/C/K/E, Ctrl+U)
     if let Some(window) = web_sys::window() {
         let on_debug_key =
@@ -121,16 +138,32 @@ pub fn App() -> View {
     }
 
     // Pause background aurora animations when window/tab is hidden (0% GPU)
+    // and immediately trigger network check upon returning to the app on mobile
     if let Some(window) = web_sys::window()
         && let Some(doc) = window.document()
     {
         let doc_clone = doc.clone();
+        let connectivity_vis = connectivity;
         let on_visibility = Closure::<dyn Fn()>::new(move || {
             if let Some(root) = doc_clone.document_element() {
                 if doc_clone.hidden() {
                     let _ = root.set_attribute("data-window-hidden", "true");
                 } else {
                     let _ = root.remove_attribute("data-window-hidden");
+                    if connectivity_vis.status.get() == NetworkStatus::Offline {
+                        connectivity_vis.status.set(NetworkStatus::Reconnecting);
+                        wasm_bindgen_futures::spawn_local(async move {
+                            if Api::get_profile().await.is_ok() {
+                                connectivity_vis.status.set(NetworkStatus::Connected);
+                                gloo_timers::future::sleep(core::time::Duration::from_millis(1800)).await;
+                                if connectivity_vis.status.get() == NetworkStatus::Connected {
+                                    connectivity_vis.status.set(NetworkStatus::Online);
+                                }
+                            } else {
+                                connectivity_vis.status.set(NetworkStatus::Offline);
+                            }
+                        });
+                    }
                 }
             }
         });

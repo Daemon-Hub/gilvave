@@ -1,7 +1,7 @@
 pub mod channels;
 
 use gilvave_core::{
-    dto::servers::{MemberView, Server, ServerCreateInfo, ServerSmallPart},
+    dto::servers::{MemberView, Server, ServerCreateInfo, ServerSmallPart, UpdateServerInfo},
     error::ErrorInfo,
     ids::ServerId,
     settings::BASE_HTTP_URL,
@@ -75,5 +75,20 @@ impl Api {
         )
         .await?;
         Api::response_to_empty(res).await
+    }
+
+    pub async fn update_server(
+        server_id: ServerId,
+        info: &UpdateServerInfo,
+    ) -> Result<Server, ErrorInfo> {
+        let token = Self::fetch_access_token().await;
+        let res = Api::request_raw(
+            "PATCH",
+            &format!("{BASE_HTTP_URL}/servers/{server_id}"),
+            info,
+            Some(&token),
+        )
+        .await?;
+        Api::response_to::<Server>(res).await
     }
 }

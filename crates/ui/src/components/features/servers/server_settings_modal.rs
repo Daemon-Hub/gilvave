@@ -1,9 +1,11 @@
-use sycamore::prelude::*;
+use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::components::{
     common::{ServerContext, UiModalContext, classes},
     ui::icons::{CloseSmallIcon, GlobeIcon, LockIcon},
 };
+use crate::http::api::Api;
+use gilvave_core::dto::servers::UpdateServerInfo;
 
 #[component]
 pub fn ServerSettingsModal() -> View {
@@ -46,7 +48,7 @@ pub fn ServerSettingsModal() -> View {
             let sid = server.id;
             let s_name = server.name.clone();
             let s_icon = server.icon_url.clone();
-            server_context.current.set(Some(server));
+            server_context.current.set(Some(server.clone()));
 
             // Also update small part in server_context.list
             server_context.list.update(|list| {
@@ -54,6 +56,50 @@ pub fn ServerSettingsModal() -> View {
                     if item.id == sid {
                         item.name = s_name.clone();
                         item.icon_url = s_icon.clone();
+                    }
+                }
+            });
+
+            let req = UpdateServerInfo {
+                name: if !s_name.trim().is_empty() {
+                    Some(s_name.clone())
+                } else {
+                    None
+                },
+                description: Some(server.description.clone()),
+                icon_url: Some(server.icon_url.clone()),
+                cover: Some(server.cover.clone()),
+                is_public: Some(server.is_public),
+            };
+
+            let modal_ctx_clone = modal_context;
+            let s_ctx = server_context;
+            spawn_local_scoped(async move {
+                match Api::update_server(sid, &req).await {
+                    Ok(updated_server) => {
+                        let updated_name = updated_server.name.clone();
+                        let updated_icon = updated_server.icon_url.clone();
+                        s_ctx.current.set(Some(updated_server));
+                        s_ctx.list.update(|list| {
+                            for item in list.iter_mut() {
+                                if item.id == sid {
+                                    item.name = updated_name.clone();
+                                    item.icon_url = updated_icon.clone();
+                                }
+                            }
+                        });
+                        crate::components::ui::context_menu::show_toast(
+                            &modal_ctx_clone,
+                            false,
+                            "Настройки сервера сохранены".to_string(),
+                        );
+                    }
+                    Err(err) => {
+                        crate::components::ui::context_menu::show_toast(
+                            &modal_ctx_clone,
+                            true,
+                            format!("Ошибка сохранения настроек сервера: {}", err.1),
+                        );
                     }
                 }
             });

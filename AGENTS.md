@@ -17,8 +17,8 @@ crates/
 - Because `crates/ui` is always compiled by Trunk to `wasm32-unknown-unknown` (where `target_os` is always `"unknown"` at compile time, even inside Tauri Desktop), `invoke_command` uses `is_tauri()` (`window.__TAURI_INTERNALS__` without `__IS_POLYFILL__`) to distinguish Desktop vs Web at runtime:
   - **Desktop (`is_tauri() == true`)**: `invoke_command` calls Tauri `handle_command` (`src-tauri/src/handler.rs`), accessing OS `keyring`, native `sysinfo` (`client: "desktop"`), and native window controls.
   - **Web (`is_tauri() == false`)**: `invoke_command` calls `handle_command_web` (`ui/src/utils.rs`), accessing browser cookies (`ui/src/security.rs`) and `woothee` user-agent parsing (`client: "web"`).
-- **Token storage split**: On Desktop, the server returns tokens in the JSON body (`AuthTokensResponse`) and the client stores them in the OS `keyring` via `invoke_command`. On Android, `keyring` is unavailable, and tokens are stored in the app's sandboxed SQLite database (`auth_tokens` table) with in-memory caching (`src-tauri/src/database.rs`, `src-tauri/src/handler.rs`). On Web, the server sets `HttpOnly` cookies via `Set-Cookie` (sent automatically with `RequestCredentials::Include`), with `ui/src/security.rs` providing cookie access when needed.
-- **SQLite Offline Cache (`crates/ui/src/cache.rs`, `src-tauri/src/database.rs`)**: On Desktop and Mobile (Android), the client transparently caches servers, channels, and message history locally via Tauri IPC commands (`GetCachedMessages`, `SyncCachedMessages`, `GetCachedServers`, `SyncCachedServers`, `GetCachedChannels`, `SyncCachedChannels`). Provides instantaneous 0ms display on load and during network absence. Web safely bypasses local cache operations as no-ops.
+- **Token storage split**: On Desktop, the server returns tokens in the JSON body (`AuthTokensResponse`) and the client stores them in the OS `keyring` via `invoke_command`. On Android, `keyring` is unavailable, and tokens are stored in the app's sandboxed SQLite database (`auth_tokens` table) with in-memory caching (`src-tauri/src/database/tokens.rs`, `src-tauri/src/handler.rs`). On Web, the server sets `HttpOnly` cookies via `Set-Cookie` (sent automatically with `RequestCredentials::Include`), with `ui/src/security.rs` providing cookie access when needed.
+- **SQLite Offline Cache (`crates/ui/src/cache.rs`, `src-tauri/src/database/`)**: On Desktop and Mobile (Android), the client transparently caches servers, channels, and message history locally via Tauri IPC commands (`GetCachedMessages`, `SyncCachedMessages`, `GetCachedServers`, `SyncCachedServers`, `GetCachedChannels`, `SyncCachedChannels`). Provides instantaneous 0ms display on load and during network absence. Web safely bypasses local cache operations as no-ops.
 
 ---
 
@@ -85,9 +85,8 @@ crates/ui/src/
     common/                 — Shared reactive contexts, theme engine, mixins, variables, animations
       contexts.rs           — ScreenWrapper, UserProfileContext, ServerContext, ChannelContext,
                               UiModalContext, CreateServerContext
-      emoji.rs              — Twemoji URL generator, text segment parser for cross-platform emoji rendering
-      theme.rs              — AppTheme (Advanced, Standard, Custom), CustomTheme JSON parser,
-                              CSS variable generator, localStorage persistence, preview style injector
+      emoji/                — twemoji (SVG generator, segment parser), editor_dom (contenteditable synchronization)
+      theme/                — Modular theme engine: preferences, app_theme, css_engine, custom_theme, palette_vars
       _themes.scss          — Root CSS Custom Properties (:root / [data-theme="advanced"] & [data-theme="standard"])
       _variables.scss       — SCSS variables mapped to CSS custom properties (var(--color-*)), breakpoints
       _mixins.scss          — Media queries (@include respond-to), custom scrollbars, glassmorphism
@@ -96,25 +95,31 @@ crates/ui/src/
     layout/                 — App shell, window header
       header.rs             — Desktop drag region, custom window control buttons (minimize, close)
     pages/                  — Full-page screens
-      home_panel.rs         — Authenticated workspace container (sidebar, channels, chat, members, modals, search bar)
+      home_panel/           — Authenticated workspace container: gestures (Android back / swipe), header, peel_corner, mod.rs
       login_panel.rs        — Login form with validation & token persistence
-      register_panel.rs     — Registration form with client-side validation,
-                              two-phase email verification waiting screen, and background autologin polling
+      register_panel/       — Two-phase registration: register_form, waiting_confirmation, background autologin polling
     features/               — Feature domains
-      servers/              — Server sidebar, server actions, create/join/settings modals,
-                              sidebar user controls (mic, headphones, settings squircle)
+      servers/              — server_sidebar/ (server_item, create_modal, mod.rs),
+                              server_overview_modal/ (card, empty_state, owned_servers, mod.rs),
+                              server actions, settings modal, sidebar user controls
       channels/             — Channel list (text/voice), collapsible accordion groups,
-                              VoiceChannelArea (pre-connect stage, radar pulse, room dock), create channel modal
-      chat/                 — MessagesArea, ChatInputArea (emoji modal, attachment menu, expand button),
-                              ExpandedMessageEditorModal, MessageItem (grouping, read-more/collapse)
+                              voice_channel_area/ (header, welcome_card, room_dock, mod.rs), create channel modal
+      chat/                 — Modular chat architecture: messages_area/ (enriched, feed, header, mod.rs),
+                              chat_input_area/ (send_message, action_islands, attach_menu, emoji_picker, mod.rs),
+                              chat_scroll (date dividers, position retention & unread anchoring),
+                              emoji_search (multi-language emoji keyword mapper),
+                              expanded_editor_modal, message_item (grouping & collapse)
       members/              — Server member list (online/offline groups, roles, avatars)
       home/                 — Home dashboard (greeting hero, quick actions, DM chat with ChatInputArea, friends panel)
-      friends/              — Friends management panel (all friends, requests, blocked, add friend)
-      profile/              — User profile settings modal (preview, bio, credentials, security,
-                              appearance/themes tab, ThemeCatalogModal, ThemeJsonEditorModal,
-                              active sessions management tab SessionsTab)
+      friends/              — Friends management panel: all_friends_tab, requests_tab, blocked_tab, add_friend_tab, friends_panel
+      profile/              — User profile settings: profile_settings_modal/ (profile_tab,
+                              appearance_tab/ [workbench_settings, theme_toolbar, builtin_cards, custom_card, mod.rs],
+                              system_tab, security_tab), sessions_tab/ (session_card, security_tip),
+                              ThemeCatalogModal, ThemeJsonEditorModal
       auth/                 — Social buttons, auth form cards
-    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons, show_more_banner.rs, network_status.rs)
+    ui/                     — Atomic reusable UI elements (buttons, inputs, spinners, dividers, tooltips, icons,
+                              context_menu/ [builder, clipboard, menu_input, menu_message, menu_server_channel, menu_user, types],
+                              show_more_banner.rs, network_status.rs)
 ```
 
 ### Reactive Contexts (`components/common/contexts.rs`)
@@ -235,8 +240,8 @@ crates/ui/src/
 - **Custom Application Context Menu & DevTools Security (`context_menu.rs`, `_context_menu.scss`, `app.rs`)**:
   - Unified contextual action menu replacing default browser context menu across Desktop (Tauri) and Web.
   - Automatically identifies target under right-click:
-    - Messages: reply, edit (if author), forward, add to friends (by author user ID if not author), direct message, copy text, copy message ID, copy author ID, delete (if author).
-    - Users (`[data-user-id]`, member list, avatar/header): add to friends (sends friend request by user ID), direct message, copy username, copy user ID.
+    - Messages: reply, edit (if author), forward, add to friends (if not author and not already friends), direct message (if not author and already friends), copy text, copy message ID, copy author ID, delete (if author).
+    - Users (`[data-user-id]`, member list, avatar/header): add to friends (sends friend request by user ID, only when not friends), direct message (only when already friends), remove from friends (only when already friends), copy username, copy user ID.
     - Text selection: copy selected text.
     - Editable fields (`<input>`, `<textarea>`, `contenteditable`): Cut ("Вырезать"), Copy ("Копировать"), Paste ("Вставить" via `navigator.clipboard.readText()`), Select All ("Выделить всё").
     - Channels & Servers: copy name, copy ID; "Настройки сервера" is displayed conditionally only when the user is the owner of the server.
@@ -258,6 +263,25 @@ crates/ui/src/
     - `GET /users/friends/requests`, `POST /users/friends/requests` (by username or ID)
     - `POST /users/friends/requests/{id}/accept`, `POST /users/friends/requests/{id}/decline`
     - `GET /users/friends/blocks`, `POST /users/friends/blocks/{id}`, `DELETE /users/friends/blocks/{id}`
+  - FriendsPanel with 4 responsive tabs ("В сети / Все", "Ожидание", "Заблокированные", "Добавить в друзья"), horizontal scrolling on mobile/tablet without awkward wrapping, and spinning refresh icon animation matching the sessions tab.
+  - Greeting hero banner and quick access cards can be toggled on/off in Settings under Appearance (`is_show_greeting`, `is_show_quick_actions`).
+
+- **Mobile Navigation, Hardware Back Button & Swipes (`MainActivity.kt`, `home_panel.rs`)**:
+  - **Android Hardware/System Back Button**: In `MainActivity.kt`, `handleBackNavigation = false` overrides `WryActivity`'s default behavior, and an `OnBackPressedCallback` routes events to `window.__onAndroidBackPressed()` in WASM. WASM closes open modals, editing/reply banners, DMs, or channels and returns `true`; only when already at the top-level chat/channel list does it return `false`, allowing Android to exit/minimize the app.
+  - **Mobile Left/Right Swipes**: Responsive touch listeners on mobile (`home-panel-container`):
+    - When inside a chat or DM: swiping right ($\Delta X \ge 60\text{px}$, horizontal dominance) returns to the channel or DM list.
+    - When on the channel or chat list: swiping left ($\Delta X \le -60\text{px}$) reopens the last active chat or channel.
+    - Form inputs, textareas, and contenteditable elements are exempt to protect text selection and typing.
+
+- **WebSocket Heartbeat & Mobile Auto-Reconnect (`ws.rs`, `service.rs`, `app.rs`)**:
+  - `ServerSend::Heartbeat` sent every 20 seconds keeps mobile connections alive through NAT/firewalls and immediately detects broken connections.
+  - Background polling loop automatically probes `Api::get_profile()` every 3 seconds while offline, auto-recovering to `Connected` $\to$ `Online`.
+  - `visibilitychange` listener immediately triggers connection verification when returning to the app on mobile.
+
+- **Message Input Caret, Telegram-Style Editing & Settings Tabs (`messages_area.rs`, `_messages-area.scss`, `profile_settings_modal.rs`)**:
+  - Placeholder pseudo-element `[contenteditable]:empty::before` uses `position: absolute; pointer-events: none;` with input `on:focus`/`on:click` collapse to index 0, ensuring the blinking cursor always stays at the beginning of the field.
+  - Telegram-style compact "Редактирование" status bar: sits directly above the input without being embedded into the field itself, featuring a 14px edit pencil icon, compact "Редактирование" label, Esc hint, and cancel button (✕) with no bulky vertical spine and no old message snippet.
+  - Dedicated "Система" (`SettingsTab::System`) tab in Settings modal for system-level options like "Close to Tray". Appearance tab hosts the Greeting Banner and Quick Access Cards toggles.
   - Modular tabs:
     - **"Все друзья"**: search filter, status badges, avatar fallback, actions to open DM chat (`selected_dm_name`), block user, or remove from friends.
     - **"Ожидание"**: incoming requests with one-click "Принять" / "Отклонить", and outgoing requests with "Отменить".

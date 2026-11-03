@@ -5,6 +5,7 @@ use gilvave_core::{
         messages::MessageView,
         servers::channels::{ChannelType, ChannelView},
         servers::{MemberView, Server, ServerSmallPart},
+        users::friends::FriendView,
     },
     ids::{ServerId, UserId},
 };
@@ -42,6 +43,7 @@ pub struct ServerContext {
 pub enum CreateServerOrigin {
     #[default]
     Sidebar,
+    #[allow(dead_code)]
     Dashboard,
     OverviewTab,
     OverviewHome,
@@ -84,6 +86,7 @@ pub struct UserProfileContext {
     pub bio: Signal<String>,
     pub is_muted: Signal<bool>,
     pub is_deafened: Signal<bool>,
+    pub friends: Signal<Vec<FriendView>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
@@ -109,6 +112,8 @@ pub struct UiModalContext {
     pub custom_themes: Signal<Vec<CustomTheme>>,
     pub is_windowed_mode: Signal<bool>,
     pub is_close_to_tray: Signal<bool>,
+    pub is_show_greeting: Signal<bool>,
+    pub is_show_quick_actions: Signal<bool>,
     pub is_theme_catalog_open: Signal<bool>,
     pub is_theme_json_editor_open: Signal<bool>,
     pub theme_json_editor_content: Signal<String>,

@@ -35,6 +35,7 @@ pub enum ServerRecieve {
 #[serde(tag = "op", content = "d")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ServerSend {
+    Heartbeat,
     MessageCreate {
         channel_id: ChannelId,
         content: String,

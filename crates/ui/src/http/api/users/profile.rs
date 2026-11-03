@@ -1,5 +1,8 @@
 use gilvave_core::{
-    dto::users::{UserView, profile::CreateThemeInfo, profile::Theme},
+    dto::users::{
+        UserView,
+        profile::{CreateThemeInfo, Theme, UpdateProfileInfo},
+    },
     error::ErrorInfo,
     settings::BASE_HTTP_URL,
 };
@@ -41,5 +44,17 @@ impl Api {
         )
         .await?;
         Api::response_to_empty(res).await
+    }
+
+    pub async fn update_profile(info: &UpdateProfileInfo) -> Result<UserView, ErrorInfo> {
+        let token = Self::fetch_access_token().await;
+        let res = Api::request_raw(
+            "PATCH",
+            &format!("{BASE_HTTP_URL}/users/profile/me"),
+            info,
+            Some(&token),
+        )
+        .await?;
+        Api::response_to::<UserView>(res).await
     }
 }

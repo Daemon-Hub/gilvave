@@ -263,6 +263,7 @@ impl WsService {
                 };
 
                 let (sender, mut receiver) = unbounded::<ServerSend>();
+                let heartbeat_sender = sender.clone();
 
                 {
                     let mut state_sender = SENDER.lock().await;
@@ -332,8 +333,24 @@ impl WsService {
                             web_sys::console::warn_1(&"[WS SERVICE] send_task ended".into());
                         };
 
-                        futures_util::future::select(Box::pin(receive_task), Box::pin(send_task))
-                            .await;
+                        let heartbeat_task = async move {
+                            loop {
+                                gloo_timers::future::sleep(core::time::Duration::from_secs(20)).await;
+                                if heartbeat_sender.unbounded_send(ServerSend::Heartbeat).is_err() {
+                                    web_sys::console::warn_1(
+                                        &"[WS SERVICE] heartbeat sender failed, connection broken".into(),
+                                    );
+                                    break;
+                                }
+                            }
+                        };
+
+                        let tasks: Vec<std::pin::Pin<Box<dyn futures_util::Future<Output = ()>>>> = vec![
+                            Box::pin(receive_task),
+                            Box::pin(send_task),
+                            Box::pin(heartbeat_task),
+                        ];
+                        futures_util::future::select_all(tasks).await;
                         dispatch_gateway_event(GatewayEvent::Disconnected);
                         web_sys::console::warn_1(
                             &"[WS SERVICE] one of ws tasks finished, closing and reconnecting..."

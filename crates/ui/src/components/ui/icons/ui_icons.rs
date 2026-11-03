@@ -108,6 +108,7 @@ pub fn ChatBubbleIcon() -> View {
     }
 }
 
+#[allow(dead_code)]
 #[component]
 pub fn ArrowRightIcon() -> View {
     view! {

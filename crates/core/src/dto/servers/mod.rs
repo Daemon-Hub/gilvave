@@ -42,3 +42,17 @@ pub struct ServerCreateInfo {
     pub name: String,
     pub is_public: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
+pub struct UpdateServerInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_public: Option<bool>,
+}

@@ -26,7 +26,7 @@
     gap: 12px;
     padding-bottom: 14px;
     border-bottom: 1px solid $color-border-panel;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 
     @include respond-to(md) {
         gap: 8px;
@@ -42,6 +42,7 @@
     font-weight: $font-weight-bold;
     font-size: $font-size-base;
     user-select: none;
+    flex-shrink: 0;
 
     .friends-header-icon {
         display: flex;
@@ -61,6 +62,7 @@
     width: 1px;
     height: 22px;
     background: $color-border-subtle;
+    flex-shrink: 0;
 
     @include respond-to(sm) {
         display: none;
@@ -71,13 +73,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     flex: 1;
+    min-width: 0;
 
-    @include respond-to(sm) {
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 4px;
+    &::-webkit-scrollbar {
+        display: none;
     }
 }
 
@@ -96,6 +100,7 @@
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     user-select: none;
     white-space: nowrap;
+    flex-shrink: 0;
 
     &:hover {
         background: $color-bg-panel-hover;
@@ -152,30 +157,55 @@
     align-items: center;
     gap: 6px;
     margin-left: auto;
+    flex-shrink: 0;
 
     .friends-refresh-btn {
         width: 32px;
         height: 32px;
         border-radius: $radius-sm;
         background: $color-white-alpha-06;
-        border: 1px solid $color-white-alpha-10;
+        border: 1px solid $color-border-subtle;
         color: $color-text-channel;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease, transform 0.2s ease;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        flex-shrink: 0;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
 
         svg {
             width: 15px;
             height: 15px;
-            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            display: block;
+            transform-origin: 50% 50%;
+            transition: transform 0.3s ease;
         }
 
-        &:hover {
+        &:hover:not(:disabled) {
             background: $color-bg-panel-hover;
-            color: $color-text-heading;
-            transform: rotate(90deg);
+            color: $color-text-white;
+            border-color: $color-border;
+
+            svg {
+                transform: rotate(45deg);
+            }
+        }
+
+        &:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        &.is-loading svg {
+            animation: spin 0.75s linear infinite;
         }
     }
 }

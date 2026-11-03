@@ -1,5 +1,5 @@
-pub const BASE_HTTP_URL: &str = "https://192.168.12.55:3131"; //"http://127.0.0.1:3131"; //"http://kim.netbird.cloud:3131";
-pub const BASE_WS_URL: &str = "wss://192.168.12.55:3131/ws"; //"ws://127.0.0.1:3131/ws"; //"ws://kim.netbird.cloud:3131/ws";
+pub const BASE_HTTP_URL: &str = "https://127.0.0.1:3131"; //"http://127.0.0.1:3131"; //"http://kim.netbird.cloud:3131";
+pub const BASE_WS_URL: &str = "wss://127.0.0.1:3131/ws"; //"ws://127.0.0.1:3131/ws"; //"ws://kim.netbird.cloud:3131/ws";
 
 use serde::{Deserialize, Serialize};
 
@@ -138,7 +138,7 @@ pub fn collect_desktop() -> DeviceInfo {
 #[cfg(target_arch = "wasm32")]
 pub fn collect_web() -> DeviceInfo {
     let user_agent = web_sys::window()
-        .and_then(|w| Some(w.navigator()))
+        .map(|w| w.navigator())
         .and_then(|n| n.user_agent().ok())
         .unwrap_or_default();
 

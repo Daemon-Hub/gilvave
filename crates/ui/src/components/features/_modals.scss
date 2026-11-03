@@ -1303,7 +1303,8 @@
         }
 
         // ─── VS Code–style Theme Selector ────────────────────────────────────────
-        .theme-settings-pane {
+        .theme-settings-pane,
+        .system-settings-pane {
             display: flex;
             flex-direction: column;
             gap: 20px;

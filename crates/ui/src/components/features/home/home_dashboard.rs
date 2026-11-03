@@ -86,61 +86,74 @@ fn dashboard_main_view(
                 }
             }
 
-            div(class="home-hero-banner") {
-                div(class="hero-content") {
-                    h1 { (greeting_text.get_clone()) }
-                    p { "Ваше уютное пространство для текстовых, голосовых и видео чатов без ограничений." }
-                }
-                div(class="hero-decoration") {
-                    object(
-                        data="/public/stars.svg",
-                        r#type="image/svg+xml",
-                        width="80", height="80"
-                    )
-                }
-            }
-
-            div(class="dashboard-section-title") {
-                span { "БЫСТРЫЙ ДОСТУП" }
-            }
-
-            div(class="quick-actions-grid") {
-                div(class="quick-card join", on:click=open_join) {
-                    div(class="quick-card-icon") { GlobeIcon() }
-                    div(class="quick-card-text") {
-                        span(class="quick-card-title") { "Каталог серверов" }
-                        span(class="quick-card-desc") { "Найдите интересные публичные сообщества" }
+            (if modal_context.is_show_greeting.get() {
+                let greeting = greeting_text.get_clone();
+                view! {
+                    div(class="home-hero-banner") {
+                        div(class="hero-content") {
+                            h1 { (greeting) }
+                            p { "Ваше уютное пространство для текстовых, голосовых и видео чатов без ограничений." }
+                        }
+                        div(class="hero-decoration") {
+                            object(
+                                data="/public/stars.svg",
+                                r#type="image/svg+xml",
+                                width="80", height="80"
+                            )
+                        }
                     }
-                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
+            } else {
+                view! {}
+            })
 
-                div(class="quick-card create", on:click=open_create) {
-                    div(class="quick-card-icon") { PlusIcon() }
-                    div(class="quick-card-text") {
-                        span(class="quick-card-title") { "Создать сервер" }
-                        span(class="quick-card-desc") { "Создайте место для друзей или команды" }
+            (if modal_context.is_show_quick_actions.get() {
+                view! {
+                    div(class="dashboard-section-title") {
+                        span { "БЫСТРЫЙ ДОСТУП" }
                     }
-                    span(class="quick-card-arrow") { ArrowRightIcon() }
-                }
 
-                div(class="quick-card settings", on:click=open_settings) {
-                    div(class="quick-card-icon") { GearIcon() }
-                    div(class="quick-card-text") {
-                        span(class="quick-card-title") { "Настройки профиля" }
-                        span(class="quick-card-desc") { "Смените аватарку, никнейм и пароль" }
-                    }
-                    span(class="quick-card-arrow") { ArrowRightIcon() }
-                }
+                    div(class="quick-actions-grid") {
+                        div(class="quick-card join", on:click=open_join) {
+                            div(class="quick-card-icon") { GlobeIcon() }
+                            div(class="quick-card-text") {
+                                span(class="quick-card-title") { "Каталог серверов" }
+                                span(class="quick-card-desc") { "Найдите интересные публичные сообщества" }
+                            }
+                            span(class="quick-card-arrow") { ArrowRightIcon() }
+                        }
 
-                div(class="quick-card dms", on:click=go_back_to_chats) {
-                    div(class="quick-card-icon") { ChatBubbleIcon() }
-                    div(class="quick-card-text") {
-                        span(class="quick-card-title") { "Личные чаты" }
-                        span(class="quick-card-desc") { "Общайтесь один на один в безопасности" }
+                        div(class="quick-card create", on:click=open_create) {
+                            div(class="quick-card-icon") { PlusIcon() }
+                            div(class="quick-card-text") {
+                                span(class="quick-card-title") { "Создать сервер" }
+                                span(class="quick-card-desc") { "Создайте место для друзей или команды" }
+                            }
+                            span(class="quick-card-arrow") { ArrowRightIcon() }
+                        }
+
+                        div(class="quick-card settings", on:click=open_settings) {
+                            div(class="quick-card-icon") { GearIcon() }
+                            div(class="quick-card-text") {
+                                span(class="quick-card-title") { "Настройки профиля" }
+                                span(class="quick-card-desc") { "Смените аватарку, никнейм и пароль" }
+                            }
+                            span(class="quick-card-arrow") { ArrowRightIcon() }
+                        }
+
+                        div(class="quick-card dms", on:click=go_back_to_chats) {
+                            div(class="quick-card-icon") { ChatBubbleIcon() }
+                            div(class="quick-card-text") {
+                                span(class="quick-card-title") { "Личные чаты" }
+                                span(class="quick-card-desc") { "Общайтесь один на один в безопасности" }
+                            }
+                            span(class="quick-card-arrow") { ArrowRightIcon() }
+                        }
                     }
-                    span(class="quick-card-arrow") { ArrowRightIcon() }
                 }
-            }
+            } else {
+                view! {}
+            })
 
             FriendsPanel()
         }
