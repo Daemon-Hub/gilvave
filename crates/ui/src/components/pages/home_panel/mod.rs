@@ -25,7 +25,7 @@ use crate::{
             classes, is_mobile_device, load_close_to_tray, load_show_greeting,
             load_show_quick_actions, load_windowed_mode, save_close_to_tray, save_show_greeting,
             save_show_quick_actions, save_windowed_mode, AppTheme, ChannelContext,
-            CreateServerContext, CreateServerOrigin, CustomTheme, HomeTab, ModalView, OverviewTab,
+            CreateServerContext, CreateServerOrigin, CustomTheme, EmojiPack, HomeTab, ModalView, OverviewTab,
             ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
         },
         features::{
@@ -79,6 +79,7 @@ pub fn HomePanel() -> View {
         is_message_editor_open: create_signal(false),
         app_theme: create_signal(AppTheme::load_saved()),
         custom_themes: create_signal(initial_custom_themes),
+        emoji_pack: create_signal(EmojiPack::load_saved()),
         is_windowed_mode: create_signal(load_windowed_mode()),
         is_close_to_tray: create_signal(load_close_to_tray()),
         is_show_greeting: create_signal(load_show_greeting()),
@@ -114,6 +115,11 @@ pub fn HomePanel() -> View {
         let theme = ui_modal_context.app_theme.get_clone();
         let customs = ui_modal_context.custom_themes.get_clone();
         theme.apply(&customs);
+    });
+
+    create_effect(move || {
+        let pack = ui_modal_context.emoji_pack.get();
+        pack.save();
     });
 
     create_effect(move || {

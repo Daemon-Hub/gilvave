@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
-use super::chat_input_area::send_channel_message;
+use super::chat_input_area::{send_channel_message, EmojiPicker};
 use crate::components::common::{
     ChannelContext, ServerContext, UiModalContext, UserProfileContext, insert_text_into_editor,
     serialize_contenteditable, sync_editor_content,
@@ -18,6 +18,11 @@ pub fn ExpandedMessageEditorModal() -> View {
     let user_profile = use_context::<UserProfileContext>();
 
     let draft_message = modal_context.draft_message;
+    let is_emoji_open = create_signal(false);
+    let is_emoji_expanded = create_signal(false);
+    let emoji_search = create_signal(String::new());
+    let emoji_category = create_signal("smileys".to_string());
+    let has_scrollbar = create_signal(false);
 
     let target_title = create_memo(move || {
         let in_server = server_context.current.with(|s| s.is_some());
@@ -53,12 +58,28 @@ pub fn ExpandedMessageEditorModal() -> View {
         }
     };
 
+    let on_toggle_emoji = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
+        let next = !is_emoji_open.get();
+        is_emoji_open.set(next);
+        if !next {
+            is_emoji_expanded.set(false);
+        }
+    };
+
     let on_collapse = move |_| {
+        is_emoji_open.set(false);
+        is_emoji_expanded.set(false);
         modal_context.is_message_editor_open.set(false);
     };
 
     let on_overlay_click = move |_| {
-        modal_context.is_message_editor_open.set(false);
+        if is_emoji_open.get() {
+            is_emoji_open.set(false);
+            is_emoji_expanded.set(false);
+        } else {
+            modal_context.is_message_editor_open.set(false);
+        }
     };
 
     let on_window_click = move |e: web_sys::MouseEvent| {
@@ -150,7 +171,12 @@ pub fn ExpandedMessageEditorModal() -> View {
     let on_keydown = move |e: web_sys::KeyboardEvent| {
         if e.key() == "Escape" {
             e.prevent_default();
-            modal_context.is_message_editor_open.set(false);
+            if is_emoji_open.get() {
+                is_emoji_open.set(false);
+                is_emoji_expanded.set(false);
+            } else {
+                modal_context.is_message_editor_open.set(false);
+            }
         } else if e.key() == "Enter" && (e.ctrl_key() || e.meta_key()) {
             e.prevent_default();
             do_send();
@@ -160,7 +186,8 @@ pub fn ExpandedMessageEditorModal() -> View {
     let ensure_expanded_caret_at_start = |target: Option<web_sys::EventTarget>| {
         if let Some(target) = target
             && let Ok(el) = target.dyn_into::<HtmlElement>()
-            && el.inner_text().trim().is_empty()
+            && serialize_contenteditable(&el).is_empty()
+            && el.child_nodes().length() == 0
             && let Some(win) = web_sys::window()
             && let Ok(Some(sel)) = win.get_selection()
         {
@@ -168,74 +195,119 @@ pub fn ExpandedMessageEditorModal() -> View {
         }
     };
     let on_expanded_focus = move |e: web_sys::FocusEvent| ensure_expanded_caret_at_start(e.target());
-    let on_expanded_click = move |e: web_sys::MouseEvent| ensure_expanded_caret_at_start(e.target());
 
     view! {
         div(class="message-editor-overlay", on:click=on_overlay_click) {
-            form(
-                class="message-editor-window",
-                on:click=on_window_click,
-                on:submit=on_submit,
-            ) {
-                div(class="message-editor-header") {
-                    div(class="message-editor-title-group") {
-                        span(class="message-editor-badge") { "Редактор текста" }
-                        span(class="message-editor-target") { (target_title) }
+            div(class="message-editor-wrapper") {
+                form(
+                    class="message-editor-window",
+                    on:click=on_window_click,
+                    on:submit=on_submit,
+                ) {
+                    div(class="message-editor-header") {
+                        div(class="message-editor-title-group") {
+                            span(class="message-editor-badge") { "Редактор текста" }
+                            span(class="message-editor-target") { (target_title) }
+                        }
                     }
-                }
 
-                div(class="message-editor-body") {
-                    div(
-                        r#ref=expanded_editor_ref,
-                        class="expanded-editor-textarea",
-                        contenteditable="true",
-                        role="textbox",
-                        data-placeholder="Напишите сообщение...",
-                        on:input=on_expanded_input,
-                        on:focus=on_expanded_focus,
-                        on:click=on_expanded_click,
-                        on:keydown=on_keydown,
-                        on:paste=on_expanded_paste,
-                    )
-                    button(
-                        class="editor-collapse-btn",
-                        r#type="button",
-                        title="Свернуть окно и вернуться к обычному полю",
-                        on:click=on_collapse,
-                    ) {
-                        img(src="/public/arrow2.svg", alt="Свернуть")
-                    }
-                }
-
-                div(class="message-editor-footer") {
-                    div(class="message-editor-meta") {
-                        span(class=counter_class) { (char_count_text) }
-                        span(class="editor-shortcut-hint") { "Ctrl + Enter — отправить · Esc — свернуть" }
-                    }
-                    div(class="message-editor-actions") {
+                    div(class="message-editor-body") {
+                        div(
+                            r#ref=expanded_editor_ref,
+                            class="expanded-editor-textarea",
+                            contenteditable="true",
+                            role="textbox",
+                            data-placeholder="Напишите сообщение...",
+                            on:input=on_expanded_input,
+                            on:focus=on_expanded_focus,
+                            on:keydown=on_keydown,
+                            on:paste=on_expanded_paste,
+                        )
                         button(
-                            class="editor-Send-btn",
-                            r#type="submit",
-                            title="Отправить сообщение",
+                            class="editor-collapse-btn",
+                            r#type="button",
+                            title="Свернуть окно и вернуться к обычному полю",
+                            on:click=on_collapse,
                         ) {
-                            span { "Отправить" }
+                            img(src="/public/arrow2.svg", alt="Свернуть")
+                        }
+                        button(
+                            class=move || if is_emoji_open.get() {
+                                "editor-emoji-btn active"
+                            } else {
+                                "editor-emoji-btn"
+                            },
+                            r#type="button",
+                            title="Выбрать эмодзи",
+                            on:click=on_toggle_emoji,
+                        ) {
                             svg(
-                                xmlns="http://www.w3.org/2000/svg",
-                                width="16",
-                                height="16",
                                 viewBox="0 0 24 24",
                                 fill="none",
                                 stroke="currentColor",
-                                stroke-width="2.2",
+                                stroke-width="2",
                                 stroke-linecap="round",
                                 stroke-linejoin="round",
                             ) {
-                                line(x1="22", y1="2", x2="11", y2="13")
-                                polygon(points="22 2 15 22 11 13 2 9 22 2")
+                                circle(cx="12", cy="12", r="10")
+                                path(d="M8 14s1.5 2 4 2 4-2 4-2")
+                                circle(cx="9", cy="9", r="1.2", fill="currentColor", stroke="none")
+                                circle(cx="15", cy="9", r="1.2", fill="currentColor", stroke="none")
+                            }
+                        }
+                    }
+
+                    div(class="message-editor-footer") {
+                        div(class="message-editor-meta") {
+                            span(class=counter_class) { (char_count_text) }
+                            span(class="editor-shortcut-hint") { "Ctrl + Enter — отправить · Esc — свернуть" }
+                        }
+                        div(class="message-editor-actions") {
+                            button(
+                                class="editor-Send-btn",
+                                r#type="submit",
+                                title="Отправить сообщение",
+                            ) {
+                                span { "Отправить" }
+                                svg(
+                                    xmlns="http://www.w3.org/2000/svg",
+                                    width="16",
+                                    height="16",
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    stroke-width="2.2",
+                                    stroke-linecap="round",
+                                    stroke-linejoin="round",
+                                ) {
+                                    line(x1="22", y1="2", x2="11", y2="13")
+                                    polygon(points="22 2 15 22 11 13 2 9 22 2")
+                                }
                             }
                         }
                     }
                 }
+
+                (move || if is_emoji_open.get() {
+                    view! {
+                        div(
+                            class="editor-side-emoji-panel",
+                            on:click=move |e: web_sys::MouseEvent| e.stop_propagation(),
+                        ) {
+                            EmojiPicker(
+                                is_open=is_emoji_open,
+                                is_expanded=is_emoji_expanded,
+                                search=emoji_search,
+                                category=emoji_category,
+                                editor_ref=expanded_editor_ref,
+                                has_scrollbar=has_scrollbar,
+                                draft_message=draft_message,
+                            )
+                        }
+                    }
+                } else {
+                    view! {}
+                })
             }
         }
     }

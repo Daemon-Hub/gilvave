@@ -739,23 +739,25 @@ $pill-triangle-polygon: polygon(
         }
     }
 
-    .create-submit {
+    .create-submit,
+    .submit-btn {
         flex: 1;
         width: auto;
-        padding: 14px;
-        background: $color-primary;
+        padding: 13px 20px;
+        background: $gradient-send-btn;
         color: $color-text-on-accent;
         border: none;
         border-radius: $radius-btn;
         font-size: 15px;
         font-weight: $font-weight-semibold;
         cursor: pointer;
-        transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+        box-shadow: $shadow-send-btn;
+        transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.2s ease;
         @include focus-visible-ring($color-primary);
 
         &:hover {
-            background: $color-primary-hover;
-            box-shadow: $shadow-submit-hover;
+            filter: brightness(1.12);
+            box-shadow: $shadow-send-btn-hover;
         }
 
         &:active {
@@ -813,6 +815,42 @@ $pill-triangle-polygon: polygon(
 
     span {
         font-size: $font-size-sm;
+    }
+
+    &.error {
+        color: $color-danger;
+
+        svg {
+            stroke: $color-danger;
+            opacity: 0.8;
+        }
+
+        .error-text {
+            color: $color-danger;
+            max-width: 380px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .retry-btn {
+            padding: 8px 18px;
+            background: $color-primary-alpha-24;
+            color: $color-text-white;
+            border: 1px solid $color-primary-alpha-45;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+            transition: background 0.15s ease, transform 0.1s ease;
+
+            &:hover {
+                background: $color-primary;
+            }
+
+            &:active {
+                transform: scale(0.96);
+            }
+        }
     }
 }
 

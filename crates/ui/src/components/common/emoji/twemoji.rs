@@ -1,4 +1,6 @@
-//! Twemoji SVG URL generation and text segmentation.
+//! Twemoji SVG URL generation and text segmentation with multi-pack support.
+
+use super::pack::{emoji_to_pack_url, EmojiPack};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MessageSegment {
@@ -7,6 +9,7 @@ pub enum MessageSegment {
         char: String,
         url: String,
         name: String,
+        pack: Option<EmojiPack>,
     },
 }
 
@@ -32,13 +35,41 @@ pub fn emoji_to_twemoji_url(emoji: &str) -> String {
     url
 }
 
-/// Parses message text into plain text chunks and recognized emoji segments.
-pub fn parse_message_segments(text: &str) -> Vec<MessageSegment> {
+/// Parses message text into plain text chunks and recognized emoji segments using the specified pack.
+pub fn parse_message_segments(text: &str, pack: EmojiPack) -> Vec<MessageSegment> {
     let mut segments = Vec::new();
     let mut current_text = String::new();
     let mut remaining = text;
 
     while !remaining.is_empty() {
+        // Fast match for explicit pack-tagged emojis: <e:{pack}:{emoji}>
+        if remaining.starts_with("<e:")
+            && let Some(end_idx) = remaining.find('>')
+        {
+            let inner = &remaining[3..end_idx];
+            if let Some((pack_str, emoji_str)) = inner.split_once(':')
+                && let Some(explicit_pack) = EmojiPack::try_from_id(pack_str)
+                && !emoji_str.is_empty()
+                && !emoji_str.contains('<')
+            {
+                if !current_text.is_empty() {
+                    segments.push(MessageSegment::Text(std::mem::take(&mut current_text)));
+                }
+                let name = emojis::get(emoji_str)
+                    .map(|e| e.name().to_string())
+                    .unwrap_or_else(|| emoji_str.to_string());
+                let url = emoji_to_pack_url(emoji_str, explicit_pack);
+                segments.push(MessageSegment::Emoji {
+                    char: emoji_str.to_string(),
+                    url,
+                    name,
+                    pack: Some(explicit_pack),
+                });
+                remaining = &remaining[end_idx + 1..];
+                continue;
+            }
+        }
+
         let Some(first_char) = remaining.chars().next() else {
             break;
         };
@@ -79,11 +110,12 @@ pub fn parse_message_segments(text: &str) -> Vec<MessageSegment> {
                 segments.push(MessageSegment::Text(std::mem::take(&mut current_text)));
             }
             let emoji_str = emoji.as_str().to_string();
-            let url = emoji_to_twemoji_url(&emoji_str);
+            let url = emoji_to_pack_url(&emoji_str, pack);
             segments.push(MessageSegment::Emoji {
                 char: emoji_str,
                 url,
                 name: emoji.name().to_string(),
+                pack: None,
             });
             remaining = &remaining[len..];
         } else {
@@ -97,4 +129,10 @@ pub fn parse_message_segments(text: &str) -> Vec<MessageSegment> {
     }
 
     segments
+}
+
+/// Convenience helper that parses segments using the currently saved emoji pack.
+#[allow(dead_code)]
+pub fn parse_message_segments_default(text: &str) -> Vec<MessageSegment> {
+    parse_message_segments(text, EmojiPack::load_saved())
 }

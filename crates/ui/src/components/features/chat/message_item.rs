@@ -1,6 +1,7 @@
 use crate::{
     components::common::{
-        ChannelContext, MessageSegment, UserProfileContext, parse_message_segments,
+        handle_emoji_img_error, ChannelContext, MessageSegment, UiModalContext,
+        UserProfileContext, parse_message_segments,
     },
     utils::to_local_datetime,
 };
@@ -35,6 +36,7 @@ pub fn MessageItem(
     }
 
     let user_profile = use_context::<UserProfileContext>();
+    let modal_context = use_context::<UiModalContext>();
     let is_own_message = user_profile
         .username
         .with(|u| !u.is_empty() && u == &message_view.author_name)
@@ -259,20 +261,30 @@ pub fn MessageItem(
                 div(class="message-bubble") {
                     p {
                         (move || {
-                            let segments = displayed_text.with(|text| parse_message_segments(text));
+                            let default_pack = modal_context.emoji_pack.get_untracked();
+                            let segments = displayed_text.with(|text| parse_message_segments(text, default_pack));
                             let views: Vec<View> = segments
                                 .into_iter()
                                 .map(|seg| match seg {
                                     MessageSegment::Text(t) => view! { (t) },
-                                    MessageSegment::Emoji { char, url, name } => view! {
-                                        img(
-                                            class="chat-inline-emoji",
-                                            src=url,
-                                            alt=char,
-                                            title=name,
-                                            draggable="false",
-                                        )
-                                    },
+                                    MessageSegment::Emoji {
+                                        char,
+                                        url,
+                                        name,
+                                        ..
+                                    } => {
+                                        view! {
+                                            img(
+                                                class="chat-inline-emoji",
+                                                src=url,
+                                                alt=char,
+                                                title=name,
+                                                draggable="false",
+                                                loading="lazy",
+                                                on:error=handle_emoji_img_error,
+                                            )
+                                        }
+                                    }
                                 })
                                 .collect();
                             views

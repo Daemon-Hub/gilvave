@@ -153,15 +153,16 @@ pub fn ProfileSettingsModal() -> View {
                 class="server-modal profile-settings-modal",
                 on:click=move |e: web_sys::MouseEvent| e.stop_propagation(),
             ) {
-                div(class="server-modal-header") {
-                    span { "Настройки" }
+                div(class="profile-modal-top-bar") {
+                    div(class="profile-modal-title") { "Настройки профиля" }
                     button(class="modal-close-icon-btn", on:click=move |_| close(), title="Закрыть") {
                         CloseSmallIcon()
                     }
                 }
 
                 div(class="profile-modal-layout") {
-                    div(class="profile-sidebar") {
+                    div(class="profile-sidebar-tabs") {
+                        h4 { "НАСТРОЙКИ" }
                         div(
                             class=classes(vec![
                                 "profile-tab-item".into(),

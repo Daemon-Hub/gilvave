@@ -63,6 +63,13 @@ cargo clippy --workspace
 
 ---
 
+## Development Standards
+
+- **Rust Best Practices & Deep-Dive References**: Adhere to `rust-best-practices` and `rust-review`. On architectural decisions, public API designs, trait design, and refactoring, automatically consult the nested reference guides in `C:\Users\KIM\.gemini\config\skills\rust-best-practices\references/` (`rust-api-guidelines.md`, `effective-rust.md`, `rust-design-patterns.md`, `microsoft-rust-guidelines.md`, `google-rust-style-guide.md`).
+- **Invariants**: Idiomatic Rust (no `.unwrap()` in production paths), type-driven design, zero-cost abstractions (borrowed views `&str`, `&[T]` in signatures), zero hardcoded colors in SCSS, lint-clean code (`clippy` and `rustfmt`).
+
+---
+
 ## UI Architecture (`crates/ui`)
 
 Sycamore 0.9 + Trunk single-page WASM application styled with modular SCSS and a dynamic CSS Custom Properties theme engine.
@@ -219,11 +226,25 @@ crates/ui/src/
   - For other members, avatars are retrieved from `ServerContext.members`. If unavailable, a circular initial placeholder is rendered with an author-based color.
 - **Keyed Memo Key**:
   - Sycamore `Keyed` message list must include `(message.id, is_first, is_last, date_divider.clone(), avatar_url.clone())` so reactive changes to avatar loading or group status re-render cleanly without recreating entire message elements.
-- **Twemoji & Cross-Platform Emoji Rendering (`crates/ui/src/components/common/emoji.rs`, `message_item.rs`, `messages_area.rs`)**:
+- **Cross-Platform Emoji Engine & Telegram-Style Multi-Pack Mixing (`crates/ui/src/components/common/emoji/`, `message_item.rs`, `chat_input_area/`, `workbench_settings.rs`)**:
   - Windows `Segoe UI Emoji` intentionally does not render country flags (showing two-letter regional codes like `"RU"`) and shows tofu (`▯`) for newer Unicode 14/15/16 emojis.
-  - Handled via Twemoji SVG URLs (`https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/{codepoints}.svg`).
-  - In `MessageItem`, text is segmented by `parse_message_segments` into plain text and `.chat-inline-emoji` SVG images (`1.35em`, baseline aligned).
-  - **Inline Emojis in Chat Input**: Both `ChatInputArea` and `ExpandedMessageEditorModal` use rich-text `contenteditable="true"` containers instead of plain `<textarea>`. Selected emojis from the picker and pasted text render as inline `<img class="chat-inline-emoji" src="..." alt="..." data-emoji="..." />` with Twemoji SVG icons directly inside the input (enabling color flags like 🇷🇺 and visual parity with messages).
+  - **Zero Broken Emojis Rule**: Emojis are strictly rendered as high-fidelity image tags (`<img>`), never falling back to system Unicode glyphs. Every emoji image includes an automated fallback handler (`handle_emoji_img_error` / `on:error`) ensuring zero broken `[x]` images even if an asset is missing.
+  - **3 Selectable Visual Packs (`EmojiPack`)**:
+    1. **Microsoft Fluent 3D** (`EmojiPack::Fluent3D`, default): High-resolution glossy 3D WebP emojis (`@lobehub/fluent-emoji-3d@1.1.0/assets/{code}.webp`). Generic flags are full 3D; regional country flags in Fluent 3D are flat 2D waving banners by official Microsoft design.
+    2. **Apple / Telegram** (`EmojiPack::Apple`): Detailed classic iOS / Telegram style 64px PNGs (`emoji-datasource-apple@15.1.2/img/apple/64/{code}.png`).
+    3. **Google Noto Color** (`EmojiPack::Noto`): Official Android / Google emojis (`emoji-datasource-google@15.1.2/img/google/64/{code}.png`).
+  - **Telegram-Style Multi-Pack Mixing & Permanent Pack Retention**:
+    - Emojis picked from specific packs serialize as `<e:{pack}:{emoji}>` (e.g. `<e:apple:🍏>`, `<e:fluent_3d:💎>`), preserving the author's chosen pack style permanently in the chat history.
+    - Emojis from different packs can be seamlessly mixed within the same message or conversation.
+    - Changing the default pack in Settings does not retroactively mutate past sent messages.
+    - The Emoji Picker features an inline pack selector dock (`[ 💎 3D Fluent ] [ 🍏 Apple ] [ 🤖 Google Noto ]`) allowing instantaneous switching and mixing directly from the picker.
+    - Standard Unicode emojis without explicit tags default to the viewer's active preference.
+  - **Caret Position Retention**:
+    - When clicking inside the contenteditable editor containing emojis or text, browser native caret placement is preserved without forcibly jumping to offset 0.
+    - Inserting emojis from the picker automatically positions the caret immediately after the inserted image.
+  - **Standardized Codepoints**: Fully compliant with Unicode iamcal format (`0031-fe0f-20e3` for keycaps, `2764-fe0f` for qualified symbols, `1f1f7-1f1fa` for flags).
+  - **Persistent Local Caching (Service Worker)**: Dedicated Service Worker (`public/sw.js`) intercepts all emoji CDN requests and caches them permanently in `CacheStorage ('gilvave-emojis-v1')`. Emojis are downloaded only once; subsequent loads are instantaneous (0ms) and work 100% offline.
+  - **Inline Emojis in Chat Input**: Both `ChatInputArea` and `ExpandedMessageEditorModal` use rich-text `contenteditable="true"` containers instead of plain `<textarea>`. Selected emojis from the picker and pasted text render as inline `<img class="chat-inline-emoji" src="..." alt="..." data-emoji="..." />` directly inside the input (enabling color flags like 🇷🇺 and visual parity with messages).
   - `serialize_contenteditable` converts DOM nodes (text, `<br>`, and `<img data-emoji="...">`) back to clean plain Unicode text when updating `draft_message` and sending over WebSocket.
   - Emoji picker supports category switching without `"Все"` tab, strict vertical scrolling, an expand toggle (`arrow1.svg`/`arrow2.svg`) that enlarges emojis 2~2.5x (`46px` on desktop, `38px` on mobile), an explicit close button (`✕` `CloseSmallIcon`), a dimmed click-outside backdrop with touch support, auto-close on screen/channel switch, and a global `Escape` key listener.
 - **Pagination & Show More Banner (`show_more_banner.rs`, `_show_more_banner.scss`)**:

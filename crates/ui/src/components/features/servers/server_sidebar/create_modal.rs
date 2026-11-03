@@ -16,9 +16,10 @@ pub fn open_join_modal(context: CreateServerContext) {
     context.modal_view.set(ModalView::Join);
     context.is_modal_open.set(true);
     context.expanded_id.set(None);
-    context.public_servers_page.set(1);
-    context.has_more_public_servers.set(false);
-    context.public_servers.set(vec![]);
+    if context.public_servers.with(|s| s.is_empty()) {
+        context.public_servers_page.set(1);
+        context.has_more_public_servers.set(false);
+    }
 }
 
 #[component(inline_props)]
@@ -33,7 +34,6 @@ pub fn AddServerFlowModal() -> View {
         context.is_modal_open.set(false);
         context.modal_view.set(ModalView::Home);
         context.server_name.set(String::new());
-        context.public_servers.set(vec![]);
         if origin == CreateServerOrigin::OverviewHome
             && let Some(m_ctx) = try_use_context::<UiModalContext>()
         {
@@ -80,12 +80,10 @@ pub fn AddServerFlowModal() -> View {
             CreateServerOrigin::Dashboard => {
                 context.is_modal_open.set(false);
                 context.modal_view.set(ModalView::Home);
-                context.public_servers.set(vec![]);
             }
             CreateServerOrigin::OverviewTab => {
                 context.is_modal_open.set(false);
                 context.modal_view.set(ModalView::Home);
-                context.public_servers.set(vec![]);
                 if let Some(m_ctx) = try_use_context::<UiModalContext>() {
                     m_ctx.is_server_overview_open.set(true);
                 }

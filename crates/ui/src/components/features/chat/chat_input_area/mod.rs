@@ -5,11 +5,11 @@ mod attach_menu;
 mod emoji_picker;
 mod send_message;
 
+pub(crate) use emoji_picker::EmojiPicker;
 pub(crate) use send_message::send_channel_message;
 
 use action_islands::ActionIslands;
 use attach_menu::AttachMenu;
-use emoji_picker::EmojiPicker;
 
 use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
@@ -264,7 +264,8 @@ where
     let ensure_caret_at_start = |target: Option<web_sys::EventTarget>| {
         if let Some(target) = target
             && let Ok(el) = target.dyn_into::<HtmlElement>()
-            && el.inner_text().trim().is_empty()
+            && serialize_contenteditable(&el).is_empty()
+            && el.child_nodes().length() == 0
             && let Some(win) = web_sys::window()
             && let Ok(Some(sel)) = win.get_selection()
         {
@@ -272,7 +273,6 @@ where
         }
     };
     let on_input_focus = move |e: web_sys::FocusEvent| ensure_caret_at_start(e.target());
-    let on_input_click = move |e: web_sys::MouseEvent| ensure_caret_at_start(e.target());
 
     view! {
         div(class="chat-bottom-dock") {
@@ -365,7 +365,6 @@ where
                         data-placeholder="Напишите сообщение...",
                         on:input=on_input,
                         on:focus=on_input_focus,
-                        on:click=on_input_click,
                         on:keydown=on_keydown,
                         on:paste=on_paste,
                     )

@@ -1,7 +1,7 @@
 //! DOM manipulation and contenteditable editor synchronization for inline emojis and rich text.
 
 #[cfg(target_arch = "wasm32")]
-use super::twemoji::{parse_message_segments, MessageSegment};
+use super::twemoji::{parse_message_segments_default, MessageSegment};
 
 #[cfg(target_arch = "wasm32")]
 pub fn serialize_contenteditable(node: &web_sys::Node) -> String {
@@ -32,6 +32,13 @@ fn serialize_node_inner(node: &web_sys::Node, out: &mut String) {
             let tag = el.tag_name().to_uppercase();
             if tag == "IMG" {
                 if let Some(emoji) = el.get_attribute("data-emoji") {
+                    if let Some(pack) = el.get_attribute("data-pack") {
+                        if !pack.is_empty() {
+                            use std::fmt::Write;
+                            let _ = write!(out, "<e:{pack}:{emoji}>");
+                            return;
+                        }
+                    }
                     out.push_str(&emoji);
                 } else if let Some(alt) = el.get_attribute("alt") {
                     out.push_str(&alt);
@@ -63,6 +70,7 @@ pub fn insert_emoji_into_editor(
     emoji_char: &str,
     emoji_url: &str,
     emoji_title: &str,
+    pack_id: &str,
 ) {
     use wasm_bindgen::JsCast;
 
@@ -83,6 +91,7 @@ pub fn insert_emoji_into_editor(
     img.set_src(emoji_url);
     let _ = img.set_attribute("alt", emoji_char);
     let _ = img.set_attribute("data-emoji", emoji_char);
+    let _ = img.set_attribute("data-pack", pack_id);
     let _ = img.set_attribute("title", emoji_title);
     let _ = img.set_attribute("draggable", "false");
 
@@ -114,6 +123,14 @@ pub fn insert_emoji_into_editor(
     }
 
     let _ = editor.append_child(&img);
+    if let Ok(Some(selection)) = window.get_selection() {
+        if let Ok(range) = document.create_range() {
+            let _ = range.set_start_after(&img);
+            let _ = range.set_end_after(&img);
+            let _ = selection.remove_all_ranges();
+            let _ = selection.add_range(&range);
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -122,6 +139,7 @@ pub fn insert_emoji_into_editor(
     _emoji_char: &str,
     _emoji_url: &str,
     _emoji_title: &str,
+    _pack_id: &str,
 ) {
 }
 
@@ -136,7 +154,7 @@ pub fn insert_text_into_editor(editor: &web_sys::Element, text: &str) {
         return;
     };
 
-    let segments = parse_message_segments(text);
+    let segments = parse_message_segments_default(text);
     let fragment = document.create_document_fragment();
 
     for seg in segments {
@@ -155,13 +173,21 @@ pub fn insert_text_into_editor(editor: &web_sys::Element, text: &str) {
                     }
                 }
             }
-            MessageSegment::Emoji { char, url, name } => {
+            MessageSegment::Emoji {
+                char,
+                url,
+                name,
+                pack,
+            } => {
                 if let Ok(img_node) = document.create_element("img") {
                     if let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>() {
                         img.set_class_name("chat-inline-emoji");
                         img.set_src(&url);
                         let _ = img.set_attribute("alt", &char);
                         let _ = img.set_attribute("data-emoji", &char);
+                        if let Some(p) = pack {
+                            let _ = img.set_attribute("data-pack", p.as_str());
+                        }
                         let _ = img.set_attribute("title", &name);
                         let _ = img.set_attribute("draggable", "false");
                         let _ = fragment.append_child(&img);

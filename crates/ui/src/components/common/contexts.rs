@@ -96,6 +96,7 @@ pub enum HomeTab {
     Dashboard,
 }
 
+use super::emoji::EmojiPack;
 use super::theme::{AppTheme, CustomTheme};
 
 #[derive(Clone, Copy)]
@@ -110,6 +111,7 @@ pub struct UiModalContext {
     pub is_message_editor_open: Signal<bool>,
     pub app_theme: Signal<AppTheme>,
     pub custom_themes: Signal<Vec<CustomTheme>>,
+    pub emoji_pack: Signal<EmojiPack>,
     pub is_windowed_mode: Signal<bool>,
     pub is_close_to_tray: Signal<bool>,
     pub is_show_greeting: Signal<bool>,

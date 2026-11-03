@@ -22,24 +22,34 @@ pub(super) fn JoinServerModal(
     let context = use_context::<CreateServerContext>();
     let is_at_bottom = create_signal(false);
     let is_loading = create_signal(context.public_servers.with(|s| s.is_empty()));
+    let load_error = create_signal(None::<String>);
     let search_query = create_signal(String::new());
     let body_ref = create_node_ref();
 
-    // Fetch initial page 1 on mount if list is empty
-    if context.public_servers.with(|s| s.is_empty()) {
+    let fetch_initial = move || {
+        is_loading.set(true);
+        load_error.set(None);
         spawn_local_scoped(async move {
             match Api::get_public_servers(1).await {
                 Ok((servers, has_more)) => {
                     context.public_servers.set(servers);
+                    context.public_servers_page.set(1);
                     context.has_more_public_servers.set(has_more);
+                    load_error.set(None);
                 }
-                Err(_) => {
+                Err(err) => {
                     context.public_servers.set(vec![]);
                     context.has_more_public_servers.set(false);
+                    load_error.set(Some(format!("{err}")));
                 }
             }
             is_loading.set(false);
         });
+    };
+
+    // Fetch initial page 1 on mount if list is empty
+    if context.public_servers.with(|s| s.is_empty()) {
+        fetch_initial();
     }
 
     let filtered_servers = create_memo(move || {
@@ -148,11 +158,25 @@ pub(super) fn JoinServerModal(
                     r#ref=body_ref,
                     on:scroll=on_scroll,
                 ) {
-                    (if filtered_servers.with(|l| l.is_empty()) {
+                    (move || if filtered_servers.with(|l| l.is_empty()) {
                         if is_loading.get() {
                             view! {
                                 div(class="join-modal-empty") {
                                     span { "Загрузка серверов..." }
+                                }
+                            }
+                        } else if let Some(err_text) = load_error.get_clone() {
+                            view! {
+                                div(class="join-modal-empty error") {
+                                    GlobeIcon()
+                                    span(class="error-text") { (format!("Не удалось загрузить серверы: {err_text}")) }
+                                    button(
+                                        class="retry-btn",
+                                        r#type="button",
+                                        on:click=move |_| fetch_initial(),
+                                    ) {
+                                        "Повторить попытку"
+                                    }
                                 }
                             }
                         } else {

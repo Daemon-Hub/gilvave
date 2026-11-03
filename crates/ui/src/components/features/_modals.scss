@@ -8,6 +8,22 @@
     align-items: center;
     gap: 12px;
     margin-top: 20px;
+
+    .submit-btn,
+    .create-submit {
+        background: $gradient-send-btn;
+        box-shadow: $shadow-send-btn;
+        color: $color-text-on-accent;
+
+        &:hover {
+            filter: brightness(1.12);
+            box-shadow: $shadow-send-btn-hover;
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
 }
 
 // ─── Close Icon Button ─────────────────────────────────────────────────────────
@@ -322,7 +338,8 @@
         }
     }
 
-    .profile-sidebar-tabs {
+    .profile-sidebar-tabs,
+    .profile-sidebar {
         width: 230px;
         background: $color-bg-container-dark;
         padding: 24px 16px;
@@ -1339,7 +1356,139 @@
                 }
 
                 .vscode-select-wrapper {
-                    max-width: 360px;
+                    position: relative;
+                    max-width: 420px;
+                    width: 100%;
+
+                    .custom-select-backdrop {
+                        position: fixed;
+                        inset: 0;
+                        z-index: 95;
+                        background: transparent;
+                        cursor: default;
+                    }
+
+                    .custom-select-trigger {
+                        position: relative;
+                        z-index: 96;
+                        width: 100%;
+                        padding: 10px 14px;
+                        border-radius: $radius-md;
+                        background: $color-bg-input;
+                        color: $color-text-white;
+                        border: 1px solid $color-border;
+                        font-size: 13.5px;
+                        font-weight: $font-weight-medium;
+                        outline: none;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        text-align: left;
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+                        box-sizing: border-box;
+
+                        &:hover {
+                            border-color: $color-border-input-focus;
+                            background: $color-bg-panel-hover;
+                        }
+
+                        &.is-open {
+                            border-color: $color-primary;
+                            box-shadow: $shadow-input-focus;
+                        }
+
+                        .select-label {
+                            flex: 1;
+                            min-width: 0;
+                            white-space: normal;
+                            word-break: break-word;
+                            line-height: 1.35;
+                            font-size: 13.5px;
+                            color: $color-text-white;
+                        }
+
+                        .select-chevron {
+                            flex-shrink: 0;
+                            width: 16px;
+                            height: 16px;
+                            color: $color-text-muted;
+                            transition: transform $transition-fast ease, color $transition-fast ease;
+
+                            &.is-rotated {
+                                transform: rotate(180deg);
+                                color: $color-primary;
+                            }
+                        }
+                    }
+
+                    .custom-select-dropdown {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        width: 100%;
+                        box-sizing: border-box;
+                        max-height: 280px;
+                        overflow-y: auto;
+                        background: $color-bg-panel;
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
+                        border: 1px solid $color-border;
+                        border-radius: $radius-md;
+                        box-shadow: $shadow-modal;
+                        z-index: 96;
+                        padding: 6px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        animation: fadeIn 0.15s ease-out;
+
+                        .custom-select-option {
+                            padding: 9px 12px;
+                            border-radius: $radius-sm;
+                            cursor: pointer;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                            text-align: left;
+                            border: 1px solid transparent;
+                            transition: background $transition-fast ease, border-color $transition-fast ease;
+                            box-sizing: border-box;
+                            width: 100%;
+
+                            &:hover {
+                                background: $color-bg-panel-hover;
+                            }
+
+                            &.is-selected {
+                                background: $color-primary-alpha-15;
+                                border-color: $color-primary;
+
+                                .option-title {
+                                    color: $color-icon-cyan;
+                                }
+                            }
+
+                            .option-title {
+                                font-size: 13px;
+                                font-weight: $font-weight-bold;
+                                color: $color-text-white;
+                                white-space: normal;
+                                word-break: break-word;
+                                line-height: 1.35;
+                            }
+
+                            .option-desc {
+                                font-size: 11.5px;
+                                color: $color-text-muted;
+                                white-space: normal;
+                                word-break: break-word;
+                                line-height: 1.35;
+                            }
+                        }
+                    }
 
                     .vscode-theme-select {
                         width: 100%;
@@ -1365,6 +1514,7 @@
                         }
                     }
                 }
+
 
                 .vscode-toggle-row {
                     display: flex;
