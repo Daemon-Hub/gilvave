@@ -7,8 +7,8 @@ mod tests;
 mod twemoji;
 
 pub use editor_dom::{
-    focus_editor_at_end, insert_emoji_into_editor, insert_text_into_editor,
-    serialize_contenteditable, sync_editor_content,
+    focus_editor_at_end, insert_emoji_into_editor, insert_image_into_editor,
+    insert_text_into_editor, serialize_contenteditable, sync_editor_content,
 };
 #[allow(unused_imports)]
 pub use pack::{

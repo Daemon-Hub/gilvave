@@ -14,7 +14,7 @@ mod tests;
 
 pub use message::{
     MAX_MESSAGE_CHARS, MESSAGE_COLLAPSE_CHARS, MESSAGE_COUNTER_VISIBLE_CHARS,
-    sanitize_message, validate_message,
+    count_typed_chars, sanitize_message, validate_message,
 };
 pub use unicode::{
     is_allowed_username_symbol, is_bidi_override, is_combining_mark, is_cyrillic_letter,

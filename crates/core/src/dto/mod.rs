@@ -1,3 +1,4 @@
+pub mod files;
 pub mod command;
 pub mod messages;
 pub mod servers;

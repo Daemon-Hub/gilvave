@@ -94,6 +94,7 @@ pub fn HomePanel() -> View {
         is_server_overview_open: create_signal(false),
         server_overview_tab: create_signal(OverviewTab::Saved),
         toast_message: create_signal(None),
+        lightbox_image: create_signal(None),
     };
     provide_context(ui_modal_context);
 
@@ -461,6 +462,32 @@ pub fn HomePanel() -> View {
                         on:click=move |_| toast_sig.set(None),
                     ) {
                         CloseSmallIcon()
+                    }
+                }
+            }
+        } else {
+            view! {}
+        })
+        (if let Some((src, alt)) = ui_modal_context.lightbox_image.get_clone() {
+            let lightbox_sig = ui_modal_context.lightbox_image;
+            view! {
+                div(
+                    class="chat-image-lightbox-overlay",
+                    on:click=move |_| lightbox_sig.set(None),
+                ) {
+                    div(class="lightbox-content", on:click=move |e: web_sys::MouseEvent| e.stop_propagation()) {
+                        button(
+                            class="lightbox-close-btn",
+                            title="Закрыть (Esc)",
+                            on:click=move |_| lightbox_sig.set(None),
+                        ) {
+                            CloseSmallIcon()
+                        }
+                        img(
+                            class="lightbox-full-img",
+                            src=src,
+                            alt=alt,
+                        )
                     }
                 }
             }

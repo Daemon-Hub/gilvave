@@ -19,6 +19,14 @@ macro_rules! id_type {
             }
         }
 
+        impl std::str::FromStr for $name {
+            type Err = Error;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Uuid::parse_str(s).map(Self)
+            }
+        }
+
         impl TryFrom<String> for $name {
             type Error = Error;
 
@@ -51,3 +59,4 @@ macro_rules! id_type {
 
 id_type!(ServerId);
 id_type!(ChannelId);
+id_type!(FileId);

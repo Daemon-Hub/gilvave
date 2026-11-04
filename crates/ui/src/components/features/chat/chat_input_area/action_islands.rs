@@ -1,10 +1,10 @@
 //! Action status bars displayed above the chat input (replying and editing banners).
 
-use sycamore::prelude::*;
 use crate::components::{
     common::UiModalContext,
     ui::icons::{CloseSmallIcon, EditIcon},
 };
+use sycamore::prelude::*;
 
 #[component]
 pub(crate) fn ActionIslands() -> View {

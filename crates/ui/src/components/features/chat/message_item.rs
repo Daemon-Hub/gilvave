@@ -1,12 +1,35 @@
 use crate::{
-    components::common::{
-        handle_emoji_img_error, ChannelContext, MessageSegment, UiModalContext,
-        UserProfileContext, parse_message_segments,
+    components::{
+        common::{ChannelContext, UiModalContext, UserProfileContext},
+        ui::markdown::render_chat_markdown,
     },
     utils::to_local_datetime,
 };
 use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHARS};
 use sycamore::prelude::*;
+use wasm_bindgen::JsCast;
+
+fn visible_text_len(s: &str) -> usize {
+    let mut count = 0;
+    let mut in_url = false;
+    let mut chars = s.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == ']' && chars.peek() == Some(&'(') {
+            chars.next();
+            in_url = true;
+            continue;
+        }
+        if in_url {
+            if c == ')' {
+                in_url = false;
+            }
+            continue;
+        }
+        count += 1;
+    }
+    count
+}
 
 const TIME_FORMAT: &[time::format_description::FormatItem<'static>] =
     time::macros::format_description!("[hour]:[minute]");
@@ -68,7 +91,10 @@ pub fn MessageItem(
 
     let author_name = message_view.author_name.clone();
     let author_name_attr = author_name.clone();
-    let author_id_attr = message_view.author_id.map(|id| id.to_string()).unwrap_or_default();
+    let author_id_attr = message_view
+        .author_id
+        .map(|id| id.to_string())
+        .unwrap_or_default();
 
     let avatar_node = if is_first_in_group {
         let a_id = author_id_attr.clone();
@@ -142,7 +168,7 @@ pub fn MessageItem(
 
     let full_content = message_view.content.clone();
     let full_content_attr = full_content.clone();
-    let is_long = full_content.chars().count() > MESSAGE_COLLAPSE_CHARS;
+    let is_long = visible_text_len(&full_content) > MESSAGE_COLLAPSE_CHARS;
     let truncated_content = if is_long {
         let prefix: String = full_content.chars().take(MESSAGE_COLLAPSE_CHARS).collect();
         format!("{prefix}…")
@@ -244,6 +270,19 @@ pub fn MessageItem(
         view! {}
     };
 
+    let on_bubble_click = move |e: web_sys::MouseEvent| {
+        if let Some(target) = e.target()
+            && let Ok(el) = target.dyn_into::<web_sys::HtmlElement>()
+            && el.class_list().contains("chat-message-image")
+            && let Ok(img) = el.dyn_into::<web_sys::HtmlImageElement>()
+        {
+            e.stop_propagation();
+            modal_context
+                .lightbox_image
+                .set(Some((img.src(), img.alt())));
+        }
+    };
+
     view! {
         div(
             class=class_list,
@@ -258,36 +297,14 @@ pub fn MessageItem(
                 (forward_node)
                 (reply_view)
                 (header_node)
-                div(class="message-bubble") {
-                    p {
+                div(class="message-bubble", on:click=on_bubble_click) {
+                    div(class="message-markdown-content") {
                         (move || {
                             let default_pack = modal_context.emoji_pack.get_untracked();
-                            let segments = displayed_text.with(|text| parse_message_segments(text, default_pack));
-                            let views: Vec<View> = segments
-                                .into_iter()
-                                .map(|seg| match seg {
-                                    MessageSegment::Text(t) => view! { (t) },
-                                    MessageSegment::Emoji {
-                                        char,
-                                        url,
-                                        name,
-                                        ..
-                                    } => {
-                                        view! {
-                                            img(
-                                                class="chat-inline-emoji",
-                                                src=url,
-                                                alt=char,
-                                                title=name,
-                                                draggable="false",
-                                                loading="lazy",
-                                                on:error=handle_emoji_img_error,
-                                            )
-                                        }
-                                    }
-                                })
-                                .collect();
-                            views
+                            let html_str = displayed_text.with(|text| render_chat_markdown(text, default_pack));
+                            let el = sycamore::web::tags::div()
+                                .dangerously_set_inner_html(std::borrow::Cow::Owned(html_str));
+                            View::from(el)
                         })
                     }
                     (if is_long {

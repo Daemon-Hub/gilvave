@@ -126,4 +126,5 @@ pub struct UiModalContext {
     pub is_server_overview_open: Signal<bool>,
     pub server_overview_tab: Signal<OverviewTab>,
     pub toast_message: Signal<Option<(bool, String)>>,
+    pub lightbox_image: Signal<Option<(String, String)>>,
 }

@@ -1,5 +1,6 @@
 pub mod dto;
 pub mod error;
+pub mod files;
 pub mod ids;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod security;

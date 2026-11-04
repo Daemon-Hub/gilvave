@@ -115,8 +115,27 @@ fn test_validate_message_empty() {
     assert!(validate_message("  \u{200B}  \u{FEFF}  ").is_err());
     // Корректное сообщение
     assert!(validate_message("Привет!").is_ok());
-    // Сообщение длиной ровно 16 384 символа разрешено
-    assert!(validate_message(&"а".repeat(16_384)).is_ok());
-    // Превышение лимита 16 384 символа отклоняется
-    assert!(validate_message(&"а".repeat(16_385)).is_err());
+    // Сообщение допустимой длины разрешено
+    assert!(validate_message(&"а".repeat(MAX_MESSAGE_CHARS)).is_ok());
+    // Превышение лимита отклоняется
+    assert!(validate_message(&"а".repeat(MAX_MESSAGE_CHARS + 1)).is_err());
+}
+
+#[test]
+fn test_count_typed_chars_with_attachments() {
+    // Сообщение только с картинкой (data-URL на 50 000 символов)
+    let fake_data_url = format!("data:image/png;base64,{}", "A".repeat(50_000));
+    let msg_img_only = format!("![screenshot.png]({fake_data_url})");
+    assert_eq!(count_typed_chars(&msg_img_only), 0);
+    assert!(validate_message(&msg_img_only).is_ok());
+
+    // Сообщение с текстом и ссылкой на файл
+    let msg_with_text = format!("Привет! ![test.png]({fake_data_url}) Как дела?");
+    assert_eq!(count_typed_chars(&msg_with_text), 18); // "Привет!  Как дела?"
+    assert!(validate_message(&msg_with_text).is_ok());
+
+    // Ссылка на файл [doc.pdf](file:UUID)
+    let msg_file = "[document.pdf](file:0192e2b3-8a4e-7b70-8000-123456789abc)";
+    assert_eq!(count_typed_chars(msg_file), 12); // "document.pdf"
+    assert!(validate_message(msg_file).is_ok());
 }

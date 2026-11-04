@@ -15,6 +15,11 @@ pub(crate) fn setup_android_back_button(
 ) {
     if let Some(window) = web_sys::window() {
         let on_android_back = Closure::<dyn Fn() -> bool>::new(move || {
+            // Priority 0: Lightbox photo viewer
+            if modal_ctx.lightbox_image.with(|img| img.is_some()) {
+                modal_ctx.lightbox_image.set(None);
+                return true;
+            }
             // Priority 1: Message editing/replying/forwarding/editor modals
             if modal_ctx.is_message_editor_open.get() {
                 modal_ctx.is_message_editor_open.set(false);

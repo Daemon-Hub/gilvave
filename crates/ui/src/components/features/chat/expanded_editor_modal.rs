@@ -4,10 +4,11 @@ use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
-use super::chat_input_area::{send_channel_message, EmojiPicker};
+use super::chat_input_area::{EmojiPicker, send_channel_message};
 use crate::components::common::{
-    ChannelContext, ServerContext, UiModalContext, UserProfileContext, insert_text_into_editor,
-    serialize_contenteditable, sync_editor_content,
+    ChannelContext, ServerContext, UiModalContext, UserProfileContext, insert_image_into_editor,
+    insert_text_into_editor, read_image_file_as_data_url, serialize_contenteditable,
+    sync_editor_content,
 };
 
 #[component]
@@ -23,6 +24,7 @@ pub fn ExpandedMessageEditorModal() -> View {
     let emoji_search = create_signal(String::new());
     let emoji_category = create_signal("smileys".to_string());
     let has_scrollbar = create_signal(false);
+    let expanded_editor_ref = create_node_ref();
 
     let target_title = create_memo(move || {
         let in_server = server_context.current.with(|s| s.is_some());
@@ -42,12 +44,12 @@ pub fn ExpandedMessageEditorModal() -> View {
     });
 
     let char_count_text = create_memo(move || {
-        let count = draft_message.with(|msg| msg.chars().count());
+        let count = draft_message.with(|msg| gilvave_core::validation::count_typed_chars(msg));
         format!("{count} / {}", gilvave_core::validation::MAX_MESSAGE_CHARS)
     });
 
     let is_over_limit = create_memo(move || {
-        draft_message.with(|msg| msg.chars().count() > gilvave_core::validation::MAX_MESSAGE_CHARS)
+        draft_message.with(|msg| gilvave_core::validation::count_typed_chars(msg) > gilvave_core::validation::MAX_MESSAGE_CHARS)
     });
 
     let counter_class = move || {
@@ -87,6 +89,15 @@ pub fn ExpandedMessageEditorModal() -> View {
     };
 
     let do_send = move || {
+        if let Some(node) = expanded_editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            let current = serialize_contenteditable(&editor);
+            if !current.trim().is_empty() {
+                draft_message.set(current);
+            }
+        }
+
         let in_server = server_context.current.with(|s| s.is_some());
         if in_server {
             let is_valid =
@@ -115,8 +126,6 @@ pub fn ExpandedMessageEditorModal() -> View {
         e.prevent_default();
         do_send();
     };
-
-    let expanded_editor_ref = create_node_ref();
 
     create_effect(move || {
         let msg = draft_message.get_clone();
@@ -148,11 +157,179 @@ pub fn ExpandedMessageEditorModal() -> View {
         }
     };
 
+    let attach_image_to_expanded_editor = move |name: String, url: String| {
+        if let Some(node) = expanded_editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            insert_image_into_editor(&editor, &name, &url);
+            let serialized = serialize_contenteditable(&editor);
+            let _ = editor.remove_attribute("data-empty");
+            draft_message.set(serialized);
+        }
+    };
+
+    let attach_snippet_to_expanded_editor = move |snippet: String| {
+        if let Some(node) = expanded_editor_ref.try_get()
+            && let Ok(editor) = node.dyn_into::<HtmlElement>()
+        {
+            insert_text_into_editor(&editor, &snippet);
+            let serialized = serialize_contenteditable(&editor);
+            let _ = editor.remove_attribute("data-empty");
+            draft_message.set(serialized);
+        }
+    };
+
+    let handle_expanded_upload_file = move |file: web_sys::File| {
+        let file_size = file.size() as u64;
+        if file_size > gilvave_core::files::MAX_FILE_SIZE_BYTES {
+            web_sys::console::warn_1(
+                &format!(
+                    "Файл \"{}\" ({:.1} МБ) превышает максимальный размер {} МБ",
+                    file.name(),
+                    file_size as f64 / (1024.0 * 1024.0),
+                    gilvave_core::files::MAX_FILE_SIZE_MB
+                )
+                .into(),
+            );
+            return;
+        }
+
+        let is_image = file.type_().starts_with("image/");
+        let file_clone = file.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            if is_image {
+                let local_data = read_image_file_as_data_url(file_clone).await.ok();
+                if let Some((name, local_url)) = local_data.clone() {
+                    attach_image_to_expanded_editor(name.clone(), local_url.clone());
+                }
+
+                match crate::http::api::Api::upload_file(&file).await {
+                    Ok(res) => {
+                        let file_url = if res.url.starts_with('/') {
+                            format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
+                        } else {
+                            res.url
+                        };
+
+                        if let Some((_name, local_url)) = local_data {
+                            if let Some(node) = expanded_editor_ref.try_get()
+                                && let Ok(editor) = node.dyn_into::<HtmlElement>()
+                            {
+                                if let Ok(imgs) = editor.query_selector_all("img.chat-preview-image") {
+                                    for j in 0..imgs.length() {
+                                        if let Some(img_node) = imgs.get(j)
+                                            && let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>()
+                                        {
+                                            let current_src = img.src();
+                                            if current_src == local_url || current_src.starts_with("data:") {
+                                                img.set_src(&file_url);
+                                                let _ = img.set_attribute("src", &file_url);
+                                            }
+                                        }
+                                    }
+                                }
+                                let serialized = serialize_contenteditable(&editor);
+                                draft_message.set(serialized);
+                            } else {
+                                draft_message.update(|msg| *msg = msg.replace(&local_url, &file_url));
+                            }
+                        } else {
+                            attach_image_to_expanded_editor(res.name, file_url);
+                        }
+                    }
+                    Err(err) => {
+                        web_sys::console::error_1(&format!("Upload failed: {err:?}").into());
+                        crate::components::ui::context_menu::clipboard::show_toast(
+                            &modal_context,
+                            true,
+                            format!("Ошибка загрузки «{}»: {}", file.name(), err.1),
+                        );
+                        if let Some((_name, local_url)) = local_data {
+                            if let Some(node) = expanded_editor_ref.try_get()
+                                && let Ok(editor) = node.dyn_into::<HtmlElement>()
+                            {
+                                if let Ok(imgs) = editor.query_selector_all("img.chat-preview-image") {
+                                    for j in 0..imgs.length() {
+                                        if let Some(img_node) = imgs.get(j)
+                                            && let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>()
+                                        {
+                                            if img.src() == local_url || img.src().starts_with("data:") {
+                                                img.remove();
+                                            }
+                                        }
+                                    }
+                                }
+                                let serialized = serialize_contenteditable(&editor);
+                                draft_message.set(serialized);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            match crate::http::api::Api::upload_file(&file).await {
+                Ok(res) => {
+                    let file_url = if res.url.starts_with('/') {
+                        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
+                    } else {
+                        res.url
+                    };
+                    if res.is_previewable {
+                        let snippet = format!("![{}]({}) ", res.name, file_url);
+                        attach_snippet_to_expanded_editor(snippet);
+                    } else {
+                        let snippet = format!("[{}](file:{}) ", res.name, res.id);
+                        attach_snippet_to_expanded_editor(snippet);
+                    }
+                }
+                Err(err) => {
+                    web_sys::console::error_1(&format!("Upload failed: {err:?}").into());
+                    crate::components::ui::context_menu::clipboard::show_toast(
+                        &modal_context,
+                        true,
+                        format!("Ошибка загрузки «{}»: {}", file.name(), err.1),
+                    );
+                }
+            }
+        });
+    };
+
     let on_expanded_paste = move |event: web_sys::Event| {
-        if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>() {
+        if let Ok(paste_event) = event.dyn_into::<web_sys::ClipboardEvent>()
+            && let Some(cd) = paste_event.clipboard_data()
+        {
+            let items = cd.items();
+            let mut found_file = false;
+            for i in 0..items.length() {
+                if let Some(item) = items.get(i)
+                    && let Ok(Some(file)) = item.get_as_file()
+                {
+                    found_file = true;
+                    paste_event.prevent_default();
+                    let file_size = file.size() as u64;
+                    if file_size > gilvave_core::files::MAX_FILE_SIZE_BYTES {
+                        crate::components::ui::context_menu::clipboard::show_toast(
+                            &modal_context,
+                            true,
+                            format!(
+                                "Файл «{}» ({:.1} МБ) превышает максимальный лимит {} МБ",
+                                file.name(),
+                                file_size as f64 / (1024.0 * 1024.0),
+                                gilvave_core::files::MAX_FILE_SIZE_MB
+                            ),
+                        );
+                        break;
+                    }
+                    handle_expanded_upload_file(file);
+                    break;
+                }
+            }
+            if found_file {
+                return;
+            }
             paste_event.prevent_default();
-            if let Some(cd) = paste_event.clipboard_data()
-                && let Ok(text) = cd.get_data("text/plain")
+            if let Ok(text) = cd.get_data("text/plain")
                 && let Some(target) = paste_event.current_target()
             {
                 let el: HtmlElement = target.unchecked_into();
@@ -194,7 +371,8 @@ pub fn ExpandedMessageEditorModal() -> View {
             let _ = sel.collapse(Some(el.as_ref()));
         }
     };
-    let on_expanded_focus = move |e: web_sys::FocusEvent| ensure_expanded_caret_at_start(e.target());
+    let on_expanded_focus =
+        move |e: web_sys::FocusEvent| ensure_expanded_caret_at_start(e.target());
 
     view! {
         div(class="message-editor-overlay", on:click=on_overlay_click) {

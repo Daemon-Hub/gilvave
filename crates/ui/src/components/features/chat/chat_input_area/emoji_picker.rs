@@ -4,11 +4,11 @@ use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 
-use super::super::emoji_search::{matches_emoji_query, EMOJI_GROUPS};
+use super::super::emoji_search::{EMOJI_GROUPS, matches_emoji_query};
 use crate::components::{
     common::{
-        emoji_to_pack_url, handle_emoji_img_error, insert_emoji_into_editor,
-        serialize_contenteditable, UiModalContext, ALL_EMOJI_PACKS, EmojiPack,
+        ALL_EMOJI_PACKS, EmojiPack, UiModalContext, emoji_to_pack_url, handle_emoji_img_error,
+        insert_emoji_into_editor, serialize_contenteditable,
     },
     ui::icons::CloseSmallIcon,
 };

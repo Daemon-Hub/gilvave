@@ -11,6 +11,7 @@ use gilvave_core::{
 
 use crate::utils::invoke_command;
 
+pub mod files;
 pub mod servers;
 pub mod users;
 
@@ -88,6 +89,82 @@ impl Api {
             )
         })?;
 
+        Ok(response)
+    }
+
+    async fn send_multipart_once(
+        method: &str,
+        url: &str,
+        form_data: &web_sys::FormData,
+        auth_token: Option<&str>,
+    ) -> Result<web_sys::Response, ErrorInfo> {
+        let window = web_sys::window().ok_or_else(|| {
+            ErrorInfo::from_code(
+                ErrorCode::WindowUnavailable,
+                "No window available".to_string(),
+            )
+        })?;
+
+        let opts = web_sys::RequestInit::new();
+        opts.set_method(method);
+        opts.set_credentials(web_sys::RequestCredentials::Include);
+
+        let headers = web_sys::Headers::new()
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}")))?;
+        headers
+            .set("Accept", "application/json")
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}")))?;
+
+        if let Some(token) = auth_token
+            && !token.is_empty()
+        {
+            headers
+                .set("Authorization", &format!("Bearer {token}"))
+                .map_err(|e| {
+                    ErrorInfo::from_code(ErrorCode::HttpInvalidHeaders, format!("{e:?}"))
+                })?;
+        }
+        opts.set_headers(&headers);
+        opts.set_body(form_data);
+
+        let request = web_sys::Request::new_with_str_and_init(url, &opts)
+            .map_err(|e| ErrorInfo::from_code(ErrorCode::HttpRequestFailed, format!("{e:?}")))?;
+
+        let promise = window.fetch_with_request(&request);
+        let resp_value = wasm_bindgen_futures::JsFuture::from(promise)
+            .await
+            .map_err(|e| {
+                ErrorInfo::from_code(ErrorCode::HttpRequestFailed, format!("Fetch error: {e:?}"))
+            })?;
+
+        let response: web_sys::Response = resp_value.dyn_into().map_err(|e| {
+            ErrorInfo::from_code(
+                ErrorCode::HttpInvalidResponse,
+                format!("Invalid response: {e:?}"),
+            )
+        })?;
+
+        Ok(response)
+    }
+
+    pub async fn request_multipart(
+        method: &str,
+        url: &str,
+        form_data: &web_sys::FormData,
+        auth_token: Option<&str>,
+    ) -> Result<web_sys::Response, ErrorInfo> {
+        let response = Self::send_multipart_once(method, url, form_data, auth_token).await?;
+        if response.status() == 401 && auth_token.is_some() {
+            let _guard = REFRESH_MUTEX.lock().await;
+            let current_token = Self::fetch_access_token().await;
+            if !current_token.is_empty() && current_token != auth_token.unwrap_or_default() {
+                return Self::send_multipart_once(method, url, form_data, Some(&current_token)).await;
+            }
+            if Box::pin(Self::update_tokens()).await.is_ok() {
+                let new_token = Self::fetch_access_token().await;
+                return Self::send_multipart_once(method, url, form_data, Some(&new_token)).await;
+            }
+        }
         Ok(response)
     }
 

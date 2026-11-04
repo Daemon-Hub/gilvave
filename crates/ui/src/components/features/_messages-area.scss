@@ -321,6 +321,309 @@
             display: inline;
         }
 
+        .message-markdown-content {
+            display: inline-block;
+            max-width: 100%;
+            word-break: break-word;
+
+            > p:first-child {
+                margin-top: 0;
+            }
+
+            > p:last-child {
+                margin-bottom: 0;
+            }
+
+            p {
+                margin: 0 0 6px 0;
+                line-height: 1.48;
+                color: $color-text-chat;
+                font-size: 14px;
+                white-space: pre-wrap;
+                word-break: break-word;
+
+                &:only-child {
+                    margin-bottom: 0;
+                    display: inline;
+                }
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+                margin: 10px 0 6px;
+                font-weight: 700;
+                color: $color-text-heading;
+                line-height: 1.3;
+
+                &:first-child {
+                    margin-top: 0;
+                }
+            }
+
+            h1 { font-size: 17px; }
+            h2 { font-size: 15.5px; }
+            h3 { font-size: 14.5px; }
+            h4, h5, h6 { font-size: 14px; }
+
+            strong, b {
+                font-weight: 700;
+                color: $color-text-heading;
+            }
+
+            em, i {
+                font-style: italic;
+            }
+
+            s, del, strike {
+                text-decoration: line-through;
+                opacity: 0.75;
+            }
+
+            a {
+                color: $color-primary-blue;
+                text-decoration: underline;
+                text-underline-offset: 2.5px;
+                word-break: break-all;
+                transition: color 0.15s ease;
+
+                &:hover {
+                    color: $color-primary-light;
+                }
+            }
+
+            blockquote {
+                margin: 6px 0;
+                padding: 4px 12px;
+                border-left: 3px solid $color-primary;
+                background: $color-white-alpha-04;
+                border-radius: 0 $radius-sm $radius-sm 0;
+                color: $color-text-muted;
+
+                p {
+                    margin: 0;
+                }
+            }
+
+            code {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                font-size: 12.5px;
+                padding: 1.5px 5.5px;
+                border-radius: $radius-sm;
+                background: $color-white-alpha-08;
+                border: 1px solid $color-white-alpha-08;
+                color: $color-primary-lighter;
+                word-break: break-word;
+            }
+
+            pre {
+                margin: 8px 0;
+                padding: 10px 14px;
+                border-radius: $radius-md;
+                background: $color-bg-panel-darkest;
+                border: 1px solid $color-white-alpha-08;
+                overflow-x: auto;
+                @include scrollbar(6px, $color-white-alpha-18);
+
+                code {
+                    padding: 0;
+                    border: none;
+                    background: transparent;
+                    color: $color-text-chat;
+                    font-size: 13px;
+                    line-height: 1.45;
+                    white-space: pre;
+                    word-break: normal;
+                }
+            }
+
+            ul, ol {
+                margin: 4px 0 6px;
+                padding-left: 22px;
+
+                li {
+                    margin-bottom: 2px;
+                    line-height: 1.45;
+
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+                }
+            }
+
+            table {
+                border-collapse: collapse;
+                margin: 8px 0;
+                max-width: 100%;
+                font-size: 13px;
+                border: 1px solid $color-white-alpha-10;
+                border-radius: $radius-sm;
+                overflow: hidden;
+
+                th, td {
+                    border: 1px solid $color-white-alpha-10;
+                    padding: 6px 10px;
+                    text-align: left;
+                }
+
+                th {
+                    background: $color-white-alpha-06;
+                    font-weight: 600;
+                    color: $color-text-heading;
+                }
+
+                tr:nth-child(even) td {
+                    background: $color-white-alpha-03;
+                }
+            }
+
+            .chat-message-image {
+                display: block;
+                max-width: 440px;
+                max-height: 340px;
+                width: auto;
+                height: auto;
+                border-radius: $radius-md;
+                margin: 6px 0;
+                object-fit: cover;
+                box-shadow: 0 4px 16px $color-black-alpha-35;
+                border: 1px solid $color-white-alpha-10;
+                cursor: pointer;
+                transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+                &:hover {
+                    transform: scale(1.01);
+                    box-shadow: 0 6px 20px $color-black-alpha-50;
+                    filter: brightness(1.04);
+                }
+
+                @include respond-to(sm) {
+                    max-width: 100%;
+                    max-height: 260px;
+                }
+            }
+
+            .chat-message-video-wrapper {
+                display: block;
+                max-width: 480px;
+                margin: 6px 0;
+
+                .chat-message-video {
+                    display: block;
+                    width: 100%;
+                    max-height: 340px;
+                    border-radius: $radius-md;
+                    background: $color-bg-panel-darkest;
+                    border: 1px solid $color-white-alpha-10;
+                    box-shadow: 0 4px 16px $color-black-alpha-35;
+                    outline: none;
+
+                    @include respond-to(sm) {
+                        max-height: 260px;
+                    }
+                }
+            }
+
+            .chat-message-file {
+                display: inline-flex;
+                align-items: center;
+                gap: 12px;
+                max-width: 420px;
+                padding: 10px 14px;
+                margin: 6px 0;
+                background: $color-bg-input-panel;
+                border: 1px solid $color-white-alpha-12;
+                border-radius: $radius-md;
+                text-decoration: none;
+                cursor: pointer;
+                transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+                box-shadow: 0 2px 8px $color-black-alpha-20;
+
+                &:hover {
+                    background: $color-bg-panel-hover;
+                    border-color: $color-primary-alpha-40;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 14px $color-black-alpha-35;
+
+                    .chat-message-file-icon {
+                        background: $color-primary-alpha-25;
+                        color: $color-primary;
+                    }
+
+                    .chat-message-file-download {
+                        background: $color-primary;
+                        color: $color-text-on-accent;
+                        transform: scale(1.05);
+                    }
+                }
+
+                &:active {
+                    transform: scale(0.98);
+                }
+
+                .chat-message-file-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 38px;
+                    height: 38px;
+                    flex-shrink: 0;
+                    border-radius: $radius-sm;
+                    background: $color-white-alpha-08;
+                    color: $color-text-label;
+                    transition: background 0.15s ease, color 0.15s ease;
+
+                    svg {
+                        stroke: currentColor;
+                    }
+                }
+
+                .chat-message-file-info {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                    flex: 1;
+
+                    .chat-message-file-name {
+                        font-size: 13.5px;
+                        font-weight: 600;
+                        color: $color-text-heading;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        line-height: 1.3;
+                    }
+
+                    .chat-message-file-action {
+                        font-size: 11.5px;
+                        color: $color-text-muted;
+                        line-height: 1.3;
+                        margin-top: 2px;
+                    }
+                }
+
+                .chat-message-file-download {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 32px;
+                    height: 32px;
+                    flex-shrink: 0;
+                    border-radius: $radius-sm;
+                    background: $color-white-alpha-08;
+                    color: $color-text-heading;
+                    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+
+                    svg {
+                        stroke: currentColor;
+                    }
+                }
+
+                @include respond-to(sm) {
+                    max-width: 100%;
+                    width: 100%;
+                }
+            }
+        }
+
         .chat-inline-emoji {
             display: inline-block;
             width: 1.35em;
@@ -575,6 +878,18 @@
             user-select: all;
             pointer-events: auto;
         }
+
+        .chat-preview-image {
+            display: inline-block;
+            max-width: 110px;
+            max-height: 80px;
+            border-radius: $radius-sm;
+            object-fit: cover;
+            margin: 4px;
+            vertical-align: middle;
+            border: 1px solid $color-white-alpha-12;
+            box-shadow: 0 2px 6px $color-black-alpha-20;
+        }
     }
 
     // ── Иконка скрепки (всегда в левом нижнем углу внутри input) ──
@@ -621,6 +936,15 @@
         &:active {
             transform: scale(0.94);
         }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
+        }
     }
 
     // ── Иконка эмодзи (всегда в правом нижнем углу внутри input) ──
@@ -666,6 +990,15 @@
 
         &:active {
             transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
         }
     }
 
@@ -722,6 +1055,15 @@
 
         &:active {
             transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
         }
     }
 
@@ -861,6 +1203,15 @@
 
         &:active {
             transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
         }
     }
 }
@@ -1518,6 +1869,18 @@
                 user-select: all;
                 pointer-events: auto;
             }
+
+            .chat-preview-image {
+                display: inline-block;
+                max-width: 140px;
+                max-height: 100px;
+                border-radius: $radius-sm;
+                object-fit: cover;
+                margin: 6px;
+                vertical-align: middle;
+                border: 1px solid $color-white-alpha-12;
+                box-shadow: 0 2px 8px $color-black-alpha-20;
+            }
         }
 
         .editor-collapse-btn {
@@ -2026,5 +2389,76 @@
     }
     100% {
         background: transparent;
+    }
+}
+
+// ─── Полноэкранный просмотрщик изображений (Lightbox) ─────────────────────────
+.chat-image-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-black-alpha-85;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: fadeIn 0.18s ease-out;
+    padding: 24px;
+    cursor: zoom-out;
+
+    .lightbox-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+    }
+
+    .lightbox-close-btn {
+        position: absolute;
+        top: -16px;
+        right: -16px;
+        z-index: 2;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-white-alpha-15;
+        color: $color-text-white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 14px $color-black-alpha-50;
+        transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            transform: scale(1.1);
+            background: $color-danger;
+            color: $color-text-white;
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+        }
+    }
+
+    .lightbox-full-img {
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: $radius-lg;
+        box-shadow: 0 10px 40px $color-black-alpha-50;
+        border: 1px solid $color-white-alpha-12;
+        user-select: none;
     }
 }

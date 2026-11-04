@@ -1,7 +1,7 @@
 //! DOM manipulation and contenteditable editor synchronization for inline emojis and rich text.
 
 #[cfg(target_arch = "wasm32")]
-use super::twemoji::{parse_message_segments_default, MessageSegment};
+use super::twemoji::{MessageSegment, parse_message_segments_default};
 
 #[cfg(target_arch = "wasm32")]
 pub fn serialize_contenteditable(node: &web_sys::Node) -> String {
@@ -40,6 +40,24 @@ fn serialize_node_inner(node: &web_sys::Node, out: &mut String) {
                         }
                     }
                     out.push_str(&emoji);
+                } else if el.class_list().contains("chat-message-image")
+                    || el.class_list().contains("chat-preview-image")
+                    || el.has_attribute("data-filename")
+                {
+                    let alt = el
+                        .get_attribute("alt")
+                        .unwrap_or_else(|| "image".to_string());
+                    let src = el
+                        .dyn_ref::<web_sys::HtmlImageElement>()
+                        .map(|i| i.src())
+                        .or_else(|| el.get_attribute("src"))
+                        .unwrap_or_default();
+                    if !src.is_empty() {
+                        use std::fmt::Write;
+                        let _ = write!(out, "![{alt}]({src})");
+                    } else if let Some(alt_attr) = el.get_attribute("alt") {
+                        out.push_str(&alt_attr);
+                    }
                 } else if let Some(alt) = el.get_attribute("alt") {
                     out.push_str(&alt);
                 }
@@ -144,6 +162,87 @@ pub fn insert_emoji_into_editor(
 }
 
 #[cfg(target_arch = "wasm32")]
+pub fn insert_image_into_editor(editor: &web_sys::Element, alt: &str, src: &str) {
+    use wasm_bindgen::JsCast;
+
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = window.document() else {
+        return;
+    };
+    let Ok(img_node) = document.create_element("img") else {
+        return;
+    };
+    let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>() else {
+        return;
+    };
+    img.set_class_name("chat-message-image chat-preview-image");
+    img.set_src(src);
+    let _ = img.set_attribute("src", src);
+    let _ = img.set_attribute("alt", alt);
+    let _ = img.set_attribute("data-filename", alt);
+    let _ = img.set_attribute("draggable", "false");
+    let _ = editor.append_child(&img);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn insert_image_into_editor(_editor: &web_sys::Element, _alt: &str, _src: &str) {}
+
+#[cfg(target_arch = "wasm32")]
+fn append_text_with_images_to_fragment(
+    document: &web_sys::Document,
+    fragment: &web_sys::DocumentFragment,
+    text: &str,
+) {
+    use wasm_bindgen::JsCast;
+
+    let mut remaining = text;
+    while !remaining.is_empty() {
+        if remaining.starts_with("![")
+            && let Some(bracket_end) = remaining.find(']')
+        {
+            let alt = &remaining[2..bracket_end];
+            let after_bracket = &remaining[bracket_end + 1..];
+            if after_bracket.starts_with('(')
+                && let Some(paren_end) = after_bracket.find(')')
+            {
+                let url = &after_bracket[1..paren_end];
+                if let Ok(img_node) = document.create_element("img") {
+                    if let Ok(img) = img_node.dyn_into::<web_sys::HtmlImageElement>() {
+                        img.set_class_name("chat-message-image chat-preview-image");
+                        img.set_src(url);
+                        let _ = img.set_attribute("src", url);
+                        let _ = img.set_attribute("alt", alt);
+                        let _ = img.set_attribute("data-filename", alt);
+                        let _ = img.set_attribute("draggable", "false");
+                        let _ = fragment.append_child(&img);
+                    }
+                }
+                remaining = &after_bracket[paren_end + 1..];
+                continue;
+            }
+        }
+
+        let next_img = remaining.find("![").unwrap_or(remaining.len());
+        let chunk = &remaining[..next_img];
+        let lines: Vec<&str> = chunk.split('\n').collect();
+        for (idx, line) in lines.iter().enumerate() {
+            if idx > 0 {
+                if let Ok(br) = document.create_element("br") {
+                    let _ = fragment.append_child(&br);
+                }
+            }
+            if !line.is_empty() {
+                let text_node = document.create_text_node(line);
+                let _ = fragment.append_child(&text_node);
+            }
+        }
+        remaining = &remaining[next_img..];
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
 pub fn insert_text_into_editor(editor: &web_sys::Element, text: &str) {
     use wasm_bindgen::JsCast;
 
@@ -160,18 +259,7 @@ pub fn insert_text_into_editor(editor: &web_sys::Element, text: &str) {
     for seg in segments {
         match seg {
             MessageSegment::Text(t) => {
-                let lines: Vec<&str> = t.split('\n').collect();
-                for (idx, line) in lines.iter().enumerate() {
-                    if idx > 0 {
-                        if let Ok(br) = document.create_element("br") {
-                            let _ = fragment.append_child(&br);
-                        }
-                    }
-                    if !line.is_empty() {
-                        let text_node = document.create_text_node(line);
-                        let _ = fragment.append_child(&text_node);
-                    }
-                }
+                append_text_with_images_to_fragment(&document, &fragment, &t);
             }
             MessageSegment::Emoji {
                 char,
