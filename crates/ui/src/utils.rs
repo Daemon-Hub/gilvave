@@ -147,6 +147,12 @@ async fn handle_command_web(args: Value) -> CommandResult {
         CommandArgs::SyncCachedChannels { .. } => {
             CommandResult::Ok(CommandResponse::SyncCachedChannels)
         }
+        CommandArgs::SaveCachedFile { .. } => {
+            CommandResult::Ok(CommandResponse::SaveCachedFile)
+        }
+        CommandArgs::OpenFile { .. } => {
+            CommandResult::Ok(CommandResponse::OpenFile)
+        }
     }
 }
 

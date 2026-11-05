@@ -262,5 +262,80 @@ pub async fn handle_command(
                 CommandResult::Ok(CommandResponse::SyncCachedChannels)
             }
         }
+        CommandArgs::SaveCachedFile {
+            file_id,
+            filename,
+            data,
+        } => {
+            let cache_dir = std::env::temp_dir()
+                .join("Gilvave")
+                .join("cached_files")
+                .join(&file_id);
+            if let Err(e) = std::fs::create_dir_all(&cache_dir) {
+                return Ok(CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::CommandExecutionFailed,
+                    format!("Failed to create cache dir: {e}"),
+                )));
+            }
+            let file_path = cache_dir.join(&filename);
+            if let Err(e) = std::fs::write(&file_path, &data) {
+                return Ok(CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::CommandExecutionFailed,
+                    format!("Failed to write cached file: {e}"),
+                )));
+            }
+            CommandResult::Ok(CommandResponse::SaveCachedFile)
+        }
+        CommandArgs::OpenFile {
+            file_id,
+            filename,
+            data,
+        } => {
+            let cache_dir = std::env::temp_dir()
+                .join("Gilvave")
+                .join("cached_files")
+                .join(&file_id);
+            let file_path = cache_dir.join(&filename);
+
+            if let Some(bytes) = data {
+                if let Err(e) = std::fs::create_dir_all(&cache_dir) {
+                    return Ok(CommandResult::Error(ErrorInfo::from_code(
+                        ErrorCode::CommandExecutionFailed,
+                        format!("Failed to create cache dir: {e}"),
+                    )));
+                }
+                if let Err(e) = std::fs::write(&file_path, &bytes) {
+                    return Ok(CommandResult::Error(ErrorInfo::from_code(
+                        ErrorCode::CommandExecutionFailed,
+                        format!("Failed to write cached file: {e}"),
+                    )));
+                }
+            } else if !file_path.exists() {
+                return Ok(CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::NotFound,
+                    format!("File not found in local cache: {}", file_path.display()),
+                )));
+            }
+
+            use tauri_plugin_opener::OpenerExt;
+            let path_str = file_path.display().to_string();
+            let mut opened = window.app_handle().opener().open_path(&path_str, None::<&str>).is_ok();
+            if !opened {
+                tracing::warn!("opener open_path failed, using system fallback");
+                #[cfg(target_os = "windows")]
+                {
+                    opened = std::process::Command::new("explorer")
+                        .arg(&file_path)
+                        .spawn()
+                        .is_ok();
+                    if !opened {
+                        let _ = std::process::Command::new("powershell")
+                            .args(["-NoProfile", "-NonInteractive", "-Command", "Start-Process", "-FilePath", &format!("\"{}\"", path_str)])
+                            .spawn();
+                    }
+                }
+            }
+            CommandResult::Ok(CommandResponse::OpenFile)
+        }
     })
 }

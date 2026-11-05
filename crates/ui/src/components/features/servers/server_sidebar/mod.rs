@@ -28,13 +28,14 @@ pub fn ServerSidebar() -> View {
     };
 
     view! {
-        Indexed(
+        Keyed(
             list=server_context.list,
             view=|server| {
                 view! {
                     ServerIconItem(server=server)
                 }
             },
+            key=|server| server.id,
         )
         ServerIcon(
             server_name=create_signal("+".to_string()),

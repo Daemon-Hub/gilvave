@@ -10,7 +10,7 @@ use rusqlite::{Connection, params};
 
 pub fn get_cached_servers(conn: &Connection) -> rusqlite::Result<Vec<ServerSmallPart>> {
     let mut stmt =
-        conn.prepare("SELECT id, name, icon_url, is_owner FROM servers ORDER BY created_at ASC")?;
+        conn.prepare("SELECT id, name, icon_url, is_owner FROM servers ORDER BY position ASC, rowid ASC")?;
     let rows = stmt.query_map([], |row| {
         let id_str: String = row.get(0)?;
         let name: String = row.get(1)?;
@@ -34,18 +34,20 @@ pub fn sync_cached_servers(
 ) -> rusqlite::Result<()> {
     let tx = conn.transaction()?;
 
-    for s in servers {
+    for (pos, s) in servers.iter().enumerate() {
         tx.execute(
-            "INSERT INTO servers (id, name, icon_url, is_owner) VALUES (?1, ?2, ?3, ?4)
+            "INSERT INTO servers (id, name, icon_url, is_owner, position) VALUES (?1, ?2, ?3, ?4, ?5)
              ON CONFLICT(id) DO UPDATE SET
                  name = excluded.name,
                  icon_url = excluded.icon_url,
-                 is_owner = excluded.is_owner;",
+                 is_owner = excluded.is_owner,
+                 position = excluded.position;",
             params![
                 s.id.to_string(),
                 s.name,
                 s.icon_url,
                 if s.is_owner { 1 } else { 0 },
+                pos as i64,
             ],
         )?;
     }

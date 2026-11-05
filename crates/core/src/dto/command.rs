@@ -63,6 +63,16 @@ pub enum CommandArgs {
         server_id: ServerId,
         channels: Vec<ChannelView>,
     },
+    SaveCachedFile {
+        file_id: String,
+        filename: String,
+        data: Vec<u8>,
+    },
+    OpenFile {
+        file_id: String,
+        filename: String,
+        data: Option<Vec<u8>>,
+    },
 }
 
 impl CommandArgs {
@@ -95,6 +105,8 @@ pub enum CommandResponse {
     SyncCachedServers,
     GetCachedChannels(Vec<ChannelView>),
     SyncCachedChannels,
+    SaveCachedFile,
+    OpenFile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

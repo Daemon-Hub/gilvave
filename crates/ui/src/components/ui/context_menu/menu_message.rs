@@ -105,20 +105,29 @@ pub(crate) fn build_message_menu(
         && let Some(m_ctx) = modal_ctx
     {
         let editing_sig = m_ctx.editing_message;
-            let replying_sig = m_ctx.replying_to;
-            let draft_sig = m_ctx.draft_message;
-            let edit_content = msg_content.clone();
-            let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
-            items.push(ContextMenuItem {
-                label: "Изменить".to_string(),
-                icon: "edit",
-                shortcut: Some("E"),
-                danger: false,
-                separator_above: false,
-                on_click: Rc::new(move || {
-                    replying_sig.set(None);
-                    editing_sig.set(Some(target_msg.clone()));
-                    draft_sig.set(edit_content.clone());
+        let replying_sig = m_ctx.replying_to;
+        let draft_sig = m_ctx.draft_message;
+        let pending_att_sig = m_ctx.pending_attachments;
+        let edit_content = msg_content.clone();
+        let target_msg = found_message.clone().unwrap_or(target_msg_fallback.clone());
+        items.push(ContextMenuItem {
+            label: "Изменить".to_string(),
+            icon: "edit",
+            shortcut: Some("E"),
+            danger: false,
+            separator_above: false,
+            on_click: Rc::new(move || {
+                replying_sig.set(None);
+                editing_sig.set(Some(target_msg.clone()));
+
+                let (clean_text, parsed_attachments) =
+                    crate::components::common::media::extract_attachments_from_markdown(
+                        &edit_content,
+                    );
+
+                draft_sig.set(clean_text.clone());
+                pending_att_sig.set(parsed_attachments);
+
                     #[cfg(target_arch = "wasm32")]
                     if let Some(window) = web_sys::window() {
                         if let Some(doc) = window.document() {
@@ -126,9 +135,13 @@ pub(crate) fn build_message_menu(
                                 if let Ok(html_el) = editor.dyn_into::<web_sys::HtmlElement>() {
                                     crate::components::common::sync_editor_content(
                                         &html_el,
-                                        &edit_content,
+                                        &clean_text,
                                     );
-                                    let _ = html_el.remove_attribute("data-empty");
+                                    if clean_text.is_empty() {
+                                        let _ = html_el.set_attribute("data-empty", "true");
+                                    } else {
+                                        let _ = html_el.remove_attribute("data-empty");
+                                    }
                                     crate::components::common::focus_editor_at_end(&html_el);
                                 }
                             }

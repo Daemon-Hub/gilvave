@@ -127,4 +127,6 @@ pub struct UiModalContext {
     pub server_overview_tab: Signal<OverviewTab>,
     pub toast_message: Signal<Option<(bool, String)>>,
     pub lightbox_image: Signal<Option<(String, String)>>,
+    pub pending_attachments: Signal<Vec<super::media::PendingAttachment>>,
+    pub is_uploading_attachment: Signal<bool>,
 }

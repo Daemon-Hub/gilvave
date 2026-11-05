@@ -150,6 +150,21 @@ fn test_all_command_args_variants_to_json() {
             server_id: ServerId::default(),
             channels: vec![],
         },
+        CommandArgs::SaveCachedFile {
+            file_id: "test-id".to_string(),
+            filename: "test.pdf".to_string(),
+            data: vec![1, 2, 3],
+        },
+        CommandArgs::OpenFile {
+            file_id: "test-id".to_string(),
+            filename: "test.pdf".to_string(),
+            data: Some(vec![1, 2, 3]),
+        },
+        CommandArgs::OpenFile {
+            file_id: "test-id".to_string(),
+            filename: "test.pdf".to_string(),
+            data: None,
+        },
     ];
 
     for cmd in commands {

@@ -37,6 +37,7 @@ pub fn ProfileSettingsModal() -> View {
     let modal_context = use_context::<UiModalContext>();
 
     let active_tab = create_signal(SettingsTab::Profile);
+    let show_logout_confirm = create_signal(false);
 
     let name_input = create_signal(String::new());
     let avatar_input = create_signal(String::new());
@@ -140,6 +141,11 @@ pub fn ProfileSettingsModal() -> View {
     };
 
     let handle_logout = move || {
+        show_logout_confirm.set(true);
+    };
+
+    let confirm_logout = move || {
+        show_logout_confirm.set(false);
         modal_context.is_profile_settings_open.set(false);
         screen_wrapper.set(ActiveScreen::Login);
     };
@@ -263,5 +269,56 @@ pub fn ProfileSettingsModal() -> View {
                 }
             }
         }
+
+        (if show_logout_confirm.get() {
+            view! {
+                div(
+                    class="island-confirm-overlay profile-logout-confirm-overlay",
+                    on:click=move |e: web_sys::MouseEvent| {
+                        e.stop_propagation();
+                        show_logout_confirm.set(false);
+                    },
+                ) {
+                    div(
+                        class="island-confirm-card profile-logout-confirm-card",
+                        on:click=move |e: web_sys::MouseEvent| e.stop_propagation(),
+                    ) {
+                        div(class="island-confirm-header") {
+                            div(class="island-confirm-icon-badge danger") {
+                                LogOutIcon()
+                            }
+                            span(class="island-confirm-title") { "Выйти из аккаунта?" }
+                        }
+                        p(class="island-confirm-desc") {
+                            "Вы действительно хотите завершить текущую сессию и выйти из своей учётной записи на этом устройстве?"
+                        }
+                        div(class="island-confirm-actions") {
+                            button(
+                                r#type="button",
+                                class="island-confirm-btn cancel-btn",
+                                on:click=move |e: web_sys::MouseEvent| {
+                                    e.stop_propagation();
+                                    show_logout_confirm.set(false);
+                                },
+                            ) {
+                                "Отмена"
+                            }
+                            button(
+                                r#type="button",
+                                class="island-confirm-btn danger-btn",
+                                on:click=move |e: web_sys::MouseEvent| {
+                                    e.stop_propagation();
+                                    confirm_logout();
+                                },
+                            ) {
+                                "Выйти"
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            view! {}
+        })
     }
 }

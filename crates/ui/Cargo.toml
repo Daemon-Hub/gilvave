@@ -28,7 +28,7 @@ futures-util.workspace = true
 futures-channel = "0.3"
 tracing.workspace = true
 time.workspace = true
-web-sys.workspace = true
+web-sys = { workspace = true, features = ["HtmlVideoElement", "MouseEvent", "DomRect"] }
 
 gilvave-core = { path = "../core" }
 pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }

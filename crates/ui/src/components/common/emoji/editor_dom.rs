@@ -162,6 +162,7 @@ pub fn insert_emoji_into_editor(
 }
 
 #[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
 pub fn insert_image_into_editor(editor: &web_sys::Element, alt: &str, src: &str) {
     use wasm_bindgen::JsCast;
 
@@ -187,6 +188,7 @@ pub fn insert_image_into_editor(editor: &web_sys::Element, alt: &str, src: &str)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
 pub fn insert_image_into_editor(_editor: &web_sys::Element, _alt: &str, _src: &str) {}
 
 #[cfg(target_arch = "wasm32")]

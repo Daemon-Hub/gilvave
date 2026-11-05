@@ -38,6 +38,72 @@
                 "command": "trunk serve --config ui/Trunk.toml",
                 "type": "shell",
                 "group": "build"
+            },
+            {
+                "label": "Tauri Dev",
+                "command": "cargo tauri dev",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Tauri Build",
+                "command": "cargo tauri build",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Tauri Build for Linux",
+                "command": "cargo tauri build --target x86_64-unknown-linux-gnu",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Tauri Build for Windows",
+                "command": "cargo tauri build --target x86_64-pc-windows-gnu",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Tauri Build for MacOS",
+                "command": "cargo tauri build --target x86_64-apple-darwin",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Tauri Build for Android aarch64",
+                "command": "cargo tauri android build --target aarch64 --apk --release",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Install Release APK",
+                "command": "adb install -r \"${workspaceFolder}\\crates\\src-tauri\\gen\\android\\app\\build\\outputs\\apk\\universal\\release\\app-universal-release.apk\"",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Install Debug APK",
+                "command": "adb install -r \"${workspaceFolder}\\crates\\src-tauri\\gen\\android\\app\\build\\outputs\\apk\\universal\\debug\\app-universal-debug.apk\"",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Run MSI Installer",
+                "command": "${workspaceFolder}\\target\\release\\bundle\\msi\\Gilvave_0.0.1_x64_en-US.msi",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Run EXE Installer",
+                "command": "${workspaceFolder}\\target\\release\\bundle\\exe\\Gilvave_0.0.1_x64_en-US.exe",
+                "type": "shell",
+                "group": "build"
+            },
+            {
+                "label": "Run DMG Installer",
+                "command": "open \"${workspaceFolder}/target/release/bundle/dmg/Gilvave-0.0.1-x64.dmg\"",
+                "type": "shell",
+                "group": "build"
             }
         ]
     },

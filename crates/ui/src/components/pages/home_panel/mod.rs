@@ -95,6 +95,8 @@ pub fn HomePanel() -> View {
         server_overview_tab: create_signal(OverviewTab::Saved),
         toast_message: create_signal(None),
         lightbox_image: create_signal(None),
+        pending_attachments: create_signal(Vec::new()),
+        is_uploading_attachment: create_signal(false),
     };
     provide_context(ui_modal_context);
 
@@ -171,55 +173,71 @@ pub fn HomePanel() -> View {
     create_effect(move || {
         if screen_wrapper.is_home() && !ws_started {
             ws_started = true;
-            spawn_local_scoped(async move {
-                if let Ok(user) = Api::get_profile().await {
-                    let avatar = user.avatar().to_string();
-                    let bio = user.bio().to_string();
-                    user_profile.user_id.set(Some(user.id));
-                    user_profile.username.set(user.username.clone());
-                    user_profile.avatar.set(avatar.clone());
-                    user_profile.bio.set(bio.clone());
 
-                    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
-                        let _ = storage.set_item("gilvave_cached_user_id", &user.id.to_string());
-                        let _ = storage.set_item("gilvave_cached_username", &user.username);
-                        let _ = storage.set_item("gilvave_cached_avatar", &avatar);
-                        let _ = storage.set_item("gilvave_cached_bio", &bio);
-                    }
-
-                    if let Ok(friends) = Api::get_friends().await {
-                        user_profile.friends.set(friends);
-                    }
-                } else if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
-                    if let Ok(Some(name)) = storage.get_item("gilvave_cached_username") {
-                        user_profile.username.set(name);
-                    }
-                    if let Ok(Some(avatar)) = storage.get_item("gilvave_cached_avatar") {
-                        user_profile.avatar.set(avatar);
-                    }
-                    if let Ok(Some(bio)) = storage.get_item("gilvave_cached_bio") {
-                        user_profile.bio.set(bio);
-                    }
-                    if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id")
-                        && let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str)
-                    {
-                        user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
-                    }
+            // 1. Instant 0ms cache restore from localStorage & SQLite
+            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+                if let Ok(Some(name)) = storage.get_item("gilvave_cached_username") {
+                    user_profile.username.set(name);
                 }
-            });
-
-            spawn_local_scoped(async move {
-                let _ = WsService::listen_web_socket().await;
-            });
+                if let Ok(Some(avatar)) = storage.get_item("gilvave_cached_avatar") {
+                    user_profile.avatar.set(avatar);
+                }
+                if let Ok(Some(bio)) = storage.get_item("gilvave_cached_bio") {
+                    user_profile.bio.set(bio);
+                }
+                if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id")
+                    && let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str)
+                {
+                    user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
+                }
+            }
 
             spawn_local_scoped(async move {
                 let cached = CacheService::get_cached_servers().await;
                 if !cached.is_empty() {
                     server_context.list.set(cached);
                 }
-                if let Ok(servers) = Api::get_user_servers().await {
-                    server_context.list.set(servers.clone());
-                    CacheService::sync_cached_servers(servers).await;
+            });
+
+            // 2. Start WebSocket background connection loop
+            spawn_local_scoped(async move {
+                let _ = WsService::listen_web_socket().await;
+            });
+
+            // 3. Initial network fetch & retry loop for delayed connections or empty cache
+            spawn_local_scoped(async move {
+                let servers_synced = sync_servers_to_context(server_context).await;
+                let _ = sync_profile_to_context(user_profile).await;
+
+                if !servers_synced && server_context.list.with(|l| l.is_empty()) {
+                    for delay_sec in [1, 2, 3, 5] {
+                        gloo_timers::future::sleep(core::time::Duration::from_secs(delay_sec)).await;
+                        if !server_context.list.with(|l| l.is_empty()) {
+                            break;
+                        }
+                        web_sys::console::log_1(
+                            &"[HOME_PANEL] Retrying servers sync due to delayed initial connection...".into(),
+                        );
+                        if sync_servers_to_context(server_context).await {
+                            let _ = sync_profile_to_context(user_profile).await;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // 4. Reactive WebSocket gateway event listener: re-sync servers and profile immediately on connect / reconnect
+            let mut gw_rx = crate::gateway::handler::subscribe_gateway_events();
+            spawn_local_scoped(async move {
+                use futures_util::StreamExt;
+                while let Some(event) = gw_rx.next().await {
+                    if matches!(event, crate::gateway::handler::GatewayEvent::Connected) {
+                        web_sys::console::log_1(
+                            &"[HOME_PANEL] Gateway connected -> syncing servers & profile".into(),
+                        );
+                        sync_servers_to_context(server_context).await;
+                        sync_profile_to_context(user_profile).await;
+                    }
                 }
             });
         }
@@ -470,6 +488,7 @@ pub fn HomePanel() -> View {
         })
         (if let Some((src, alt)) = ui_modal_context.lightbox_image.get_clone() {
             let lightbox_sig = ui_modal_context.lightbox_image;
+            let is_vid = crate::components::common::media::is_video_source(&src, &alt);
             view! {
                 div(
                     class="chat-image-lightbox-overlay",
@@ -483,11 +502,26 @@ pub fn HomePanel() -> View {
                         ) {
                             CloseSmallIcon()
                         }
-                        img(
-                            class="lightbox-full-img",
-                            src=src,
-                            alt=alt,
-                        )
+                        (if is_vid {
+                            view! {
+                                video(
+                                    class="lightbox-full-video",
+                                    src=src,
+                                    title=alt,
+                                    controls=true,
+                                    autoplay=true,
+                                    playsinline=true,
+                                )
+                            }
+                        } else {
+                            view! {
+                                img(
+                                    class="lightbox-full-img",
+                                    src=src,
+                                    alt=alt,
+                                )
+                            }
+                        })
                     }
                 }
             }
@@ -496,3 +530,45 @@ pub fn HomePanel() -> View {
         })
     }
 }
+
+async fn sync_servers_to_context(server_context: ServerContext) -> bool {
+    match Api::get_user_servers().await {
+        Ok(servers) => {
+            server_context.list.set(servers.clone());
+            CacheService::sync_cached_servers(servers).await;
+            true
+        }
+        Err(err) => {
+            web_sys::console::warn_1(
+                &format!("[HOME_PANEL] get_user_servers failed: {err:?}").into(),
+            );
+            false
+        }
+    }
+}
+
+async fn sync_profile_to_context(user_profile: UserProfileContext) -> bool {
+    if let Ok(user) = Api::get_profile().await {
+        let avatar = user.avatar().to_string();
+        let bio = user.bio().to_string();
+        user_profile.user_id.set(Some(user.id));
+        user_profile.username.set(user.username.clone());
+        user_profile.avatar.set(avatar.clone());
+        user_profile.bio.set(bio.clone());
+
+        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+            let _ = storage.set_item("gilvave_cached_user_id", &user.id.to_string());
+            let _ = storage.set_item("gilvave_cached_username", &user.username);
+            let _ = storage.set_item("gilvave_cached_avatar", &avatar);
+            let _ = storage.set_item("gilvave_cached_bio", &bio);
+        }
+
+        if let Ok(friends) = Api::get_friends().await {
+            user_profile.friends.set(friends);
+        }
+        true
+    } else {
+        false
+    }
+}
+

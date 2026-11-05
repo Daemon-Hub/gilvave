@@ -33,6 +33,7 @@ mod tests {
         assert!(tables.contains(&"servers".to_string()));
         assert!(tables.contains(&"channels".to_string()));
         assert!(tables.contains(&"messages".to_string()));
+        assert!(tables.contains(&"auth_tokens".to_string()));
     }
 
     #[test]

@@ -501,6 +501,596 @@
                 }
             }
 
+            .chat-message-media-gallery {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: flex-start;
+                margin-top: 8px;
+                padding: 8px;
+                border-radius: $radius-lg;
+                background: $color-bg-panel-dark;
+                border: 1px solid $color-border-subtle;
+                width: fit-content;
+                max-width: 100%;
+                box-sizing: border-box;
+
+                &:has(.chat-message-video-card:fullscreen),
+                &:has(.chat-message-video-card.is-fullscreen) {
+                    position: static !important;
+                    transform: none !important;
+                    filter: none !important;
+                    contain: none !important;
+                    background: transparent !important;
+                    border-color: transparent !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                }
+
+                .chat-message-image {
+                    display: block;
+                    border-radius: 8px;
+                    object-fit: cover;
+                    cursor: pointer;
+                    margin: 0;
+                    transition: transform 0.15s ease, filter 0.15s ease;
+
+                    &:hover {
+                        filter: brightness(1.06);
+                    }
+                }
+
+                &.single-media {
+                    .chat-message-image {
+                        max-height: 320px;
+                        max-width: 440px;
+                        width: auto;
+                    }
+
+                    .chat-message-video-card {
+                        max-width: 480px;
+                        margin: 0;
+                    }
+                }
+
+                &.multi-media {
+                    .chat-message-image {
+                        max-height: 220px;
+                        max-width: 280px;
+                        flex: 0 1 auto;
+                    }
+
+                    .chat-message-video-card {
+                        max-width: 320px;
+                        margin: 0;
+                        flex: 0 1 auto;
+                    }
+                }
+            }
+
+            .chat-message-video-card {
+                display: flex;
+                flex-direction: column;
+                max-width: 480px;
+                border-radius: $radius-md;
+                overflow: hidden;
+                background: $color-bg-panel-dark;
+                border: 1px solid $color-border-subtle;
+                box-shadow: 0 4px 16px $color-black-alpha-35;
+                margin: 4px 0;
+
+                .chat-message-video {
+                    display: block;
+                    width: 100%;
+                    max-height: 320px;
+                    background: $color-black;
+                    outline: none;
+
+                    @include respond-to(sm) {
+                        max-height: 240px;
+                    }
+                }
+
+                // Фирменный кастомный видеоплеер Gilvave
+                &.custom-player {
+                    border: 1px solid $color-border;
+                    background: $color-bg-panel-dark;
+                    box-shadow: 0 6px 22px $color-black-alpha-50;
+
+                    .video-fullscreen-topbar {
+                        display: none;
+                    }
+
+                    .video-stage {
+                        position: relative;
+                        width: 100%;
+                        background: $color-black;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        overflow: hidden;
+
+                        .chat-custom-video {
+                            display: block;
+                            width: 100%;
+                            max-height: 340px;
+                            object-fit: contain;
+                            outline: none;
+
+                            @include respond-to(sm) {
+                                max-height: 240px;
+                            }
+                        }
+
+                        .video-center-play-btn {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%) scale(1);
+                            width: 54px;
+                            height: 54px;
+                            border-radius: 50%;
+                            background: $color-primary;
+                            color: $color-text-white;
+                            border: none;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            box-shadow:
+                                0 0 24px $color-primary-alpha-50,
+                                0 4px 14px $color-black-alpha-50;
+                            transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.15s ease, opacity 0.2s ease;
+                            z-index: 2;
+
+                            &:hover {
+                                transform: translate(-50%, -50%) scale(1.12);
+                                background: $color-primary-hover;
+                            }
+
+                            &:active {
+                                transform: translate(-50%, -50%) scale(0.95);
+                            }
+
+                            svg.play-icon {
+                                width: 22px;
+                                height: 22px;
+                                margin-left: 3px;
+                            }
+                        }
+                    }
+
+                    &.is-playing {
+                        .video-center-play-btn {
+                            opacity: 0;
+                            pointer-events: none;
+                            transform: translate(-50%, -50%) scale(0.8);
+                        }
+
+                        .video-play-toggle {
+                            .icon-play {
+                                display: none;
+                            }
+                            .icon-pause {
+                                display: block;
+                            }
+                        }
+                    }
+
+                    &.is-paused {
+                        .video-center-play-btn {
+                            opacity: 1;
+                            pointer-events: auto;
+                            transform: translate(-50%, -50%) scale(1);
+                        }
+
+                        .video-play-toggle {
+                            .icon-play {
+                                display: block;
+                            }
+                            .icon-pause {
+                                display: none;
+                            }
+                        }
+                    }
+
+                    &.is-muted {
+                        .video-volume-toggle {
+                            .icon-volume-on {
+                                display: none;
+                            }
+                            .icon-volume-muted {
+                                display: block;
+                                color: $color-danger-light;
+                            }
+                        }
+                    }
+
+                    &:not(.is-muted) {
+                        .video-volume-toggle {
+                            .icon-volume-on {
+                                display: block;
+                            }
+                            .icon-volume-muted {
+                                display: none;
+                            }
+                        }
+                    }
+
+                    .video-custom-controls {
+                        background: $color-bg-panel-darkest;
+                        padding: 4px 10px 7px;
+                        border-top: 1px solid $color-white-alpha-08;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+
+                        .video-scrubber-track {
+                            width: 100%;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: $color-white-alpha-12;
+                            position: relative;
+                            cursor: pointer;
+                            transition: height 0.12s ease;
+
+                            &:hover {
+                                height: 8px;
+
+                                .video-scrubber-thumb {
+                                    transform: translateY(-50%) scale(1.2);
+                                }
+                            }
+
+                            .video-scrubber-fill {
+                                height: 100%;
+                                width: 0%;
+                                border-radius: 3px;
+                                background: linear-gradient(90deg, $color-primary, $color-primary-end-light);
+                                position: relative;
+                                pointer-events: none;
+
+                                .video-scrubber-thumb {
+                                    position: absolute;
+                                    right: -5px;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    width: 10px;
+                                    height: 10px;
+                                    border-radius: 50%;
+                                    background: $color-text-white;
+                                    box-shadow: 0 0 6px $color-primary;
+                                    transition: transform 0.12s ease;
+                                }
+                            }
+                        }
+
+                        .video-controls-row {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 8px;
+
+                            .video-controls-left,
+                            .video-controls-right {
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }
+
+                            .video-btn {
+                                width: 28px;
+                                height: 28px;
+                                border-radius: $radius-sm;
+                                background: transparent;
+                                border: none;
+                                color: $color-text-chat;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                cursor: pointer;
+                                text-decoration: none;
+                                padding: 0;
+                                transition: background 0.12s ease, color 0.12s ease;
+
+                                svg {
+                                    width: 15px;
+                                    height: 15px;
+                                }
+
+                                &:hover {
+                                    background: $color-white-alpha-12;
+                                    color: $color-text-white;
+                                }
+                            }
+
+                            .video-time-display {
+                                display: flex;
+                                align-items: center;
+                                gap: 3px;
+                                font-size: 11px;
+                                font-variant-numeric: tabular-nums;
+                                color: $color-text-muted;
+                                user-select: none;
+                                margin-left: 2px;
+
+                                .video-time-current {
+                                    color: $color-text-chat;
+                                    font-weight: 600;
+                                }
+                            }
+
+                            .video-track-name {
+                                font-size: 11.5px;
+                                color: $color-text-muted;
+                                max-width: 130px;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                                margin-left: 6px;
+                                user-select: none;
+                            }
+                        }
+                    }
+
+                    // Полноэкранный режим: стильный полупрозрачный фон с блюром и кинематографическим дизайном
+                    &:fullscreen,
+                    &:-webkit-full-screen,
+                    &.is-fullscreen {
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        max-width: 100vw !important;
+                        max-height: 100vh !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        background: $color-black-alpha-75 !important;
+                        backdrop-filter: blur(28px) saturate(180%) !important;
+                        -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        justify-content: space-between !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        inset: 0 !important;
+                        z-index: 2147483647 !important;
+                        box-shadow: none !important;
+                        box-sizing: border-box !important;
+                        overflow: hidden !important;
+
+                        &::backdrop {
+                            background: $color-black-alpha-75 !important;
+                            backdrop-filter: blur(28px) saturate(180%) !important;
+                            -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+                        }
+
+                        .video-fullscreen-topbar {
+                            display: flex !important;
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            z-index: 100 !important;
+                            align-items: center !important;
+                            justify-content: space-between !important;
+                            padding: 20px 28px !important;
+                            background: linear-gradient(180deg, $color-black-alpha-85 0%, $color-black-alpha-35 60%, transparent 100%) !important;
+                            pointer-events: auto !important;
+
+                            .video-topbar-info {
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                                min-width: 0;
+
+                                .video-topbar-icon {
+                                    color: $color-primary;
+                                    flex-shrink: 0;
+                                }
+
+                                .video-topbar-title {
+                                    font-size: 14.5px;
+                                    font-weight: 600;
+                                    color: $color-text-white;
+                                    text-shadow: 0 2px 8px $color-black-alpha-85;
+                                    max-width: 60vw;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    white-space: nowrap;
+                                }
+                            }
+
+                            .video-fullscreen-close-btn {
+                                width: 36px;
+                                height: 36px;
+                                border-radius: 50%;
+                                background: $color-white-alpha-12;
+                                backdrop-filter: blur(8px);
+                                -webkit-backdrop-filter: blur(8px);
+                                border: 1px solid $color-white-alpha-15;
+                                color: $color-text-white;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                cursor: pointer;
+                                transition: background 0.15s ease, transform 0.12s ease;
+
+                                &:hover {
+                                    background: $color-danger;
+                                    transform: scale(1.08);
+                                }
+
+                                &:active {
+                                    transform: scale(0.95);
+                                }
+                            }
+                        }
+
+                        .video-stage {
+                            flex: 1 1 auto !important;
+                            width: 100% !important;
+                            height: 100% !important;
+                            max-height: none !important;
+                            min-height: 0 !important;
+                            background: transparent !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            position: relative !important;
+                            padding: 64px 24px 84px !important;
+                            box-sizing: border-box !important;
+
+                            .chat-custom-video {
+                                max-width: calc(100vw - 48px) !important;
+                                max-height: calc(100vh - 148px) !important;
+                                width: auto !important;
+                                height: auto !important;
+                                object-fit: contain !important;
+                                border-radius: 12px !important;
+                                box-shadow:
+                                    0 20px 50px $color-black-alpha-75,
+                                    0 0 36px $color-primary-alpha-20 !important;
+                                outline: none !important;
+                            }
+
+                            .video-center-play-btn {
+                                width: 76px !important;
+                                height: 76px !important;
+                                background: linear-gradient(135deg, $color-primary, $color-primary-hover) !important;
+                                box-shadow:
+                                    0 0 36px $color-primary-alpha-50,
+                                    0 8px 24px $color-black-alpha-50 !important;
+
+                                svg.play-icon {
+                                    width: 32px !important;
+                                    height: 32px !important;
+                                    margin-left: 5px !important;
+                                }
+                            }
+                        }
+
+                        .video-custom-controls {
+                            position: absolute !important;
+                            bottom: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            z-index: 100 !important;
+                            width: 100% !important;
+                            background: linear-gradient(0deg, $color-black-alpha-85 0%, $color-black-alpha-50 55%, transparent 100%) !important;
+                            padding: 36px 32px 20px !important;
+                            border-top: none !important;
+                            box-sizing: border-box !important;
+
+                            .video-scrubber-track {
+                                max-width: 1100px;
+                                margin: 0 auto;
+                                height: 7px;
+                                background: $color-white-alpha-22;
+                                border-radius: 4px;
+
+                                &:hover {
+                                    height: 9px;
+                                }
+
+                                .video-scrubber-fill {
+                                    background: linear-gradient(90deg, $color-primary, $color-primary-blue);
+                                    box-shadow: 0 0 10px $color-primary-alpha-50;
+                                }
+                            }
+
+                            .video-controls-row {
+                                max-width: 1100px;
+                                margin: 0 auto;
+                                width: 100%;
+
+                                .video-btn {
+                                    width: 36px;
+                                    height: 36px;
+                                    border-radius: $radius-sm;
+
+                                    svg {
+                                        width: 20px;
+                                        height: 20px;
+                                    }
+
+                                    &:hover {
+                                        background: $color-white-alpha-15;
+                                        color: $color-text-white;
+                                    }
+                                }
+
+                                .video-time-display {
+                                    font-size: 13.5px;
+                                }
+
+                                .video-track-name {
+                                    font-size: 13px;
+                                    max-width: 350px;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                .video-card-footer {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 6px 10px;
+                    background: $color-bg-panel-darkest;
+                    border-top: 1px solid $color-white-alpha-08;
+                    gap: 8px;
+
+                    .video-card-info {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        min-width: 0;
+                        overflow: hidden;
+
+                        .video-card-icon {
+                            color: $color-primary-blue;
+                            flex-shrink: 0;
+                        }
+
+                        .video-card-name {
+                            font-size: 11.5px;
+                            font-weight: 500;
+                            color: $color-text-heading;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                    }
+
+                    .video-card-download-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 6px;
+                        background: $color-white-alpha-08;
+                        color: $color-text-white;
+                        border: none;
+                        text-decoration: none;
+                        flex-shrink: 0;
+                        transition: background 0.15s ease, transform 0.12s ease;
+
+                        &:hover {
+                            background: $color-primary;
+                            transform: scale(1.05);
+                        }
+                    }
+                }
+            }
+
             .chat-message-video-wrapper {
                 display: block;
                 max-width: 480px;
@@ -557,6 +1147,31 @@
 
                 &:active {
                     transform: scale(0.98);
+                }
+
+                &.is-cached {
+                    border-color: $color-success-alpha-20;
+
+                    .chat-message-file-icon {
+                        background: $color-success-alpha-20;
+                        color: $color-success;
+                    }
+
+                    .chat-message-file-action.cached-action {
+                        color: $color-success;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                    .cached-check-icon {
+                        stroke: $color-success;
+                        flex-shrink: 0;
+                    }
+
+                    .chat-message-file-download {
+                        color: $color-success;
+                    }
                 }
 
                 .chat-message-file-icon {
@@ -2111,11 +2726,11 @@
 }
 
 
-// ─── Баннер ответа / редактирования над вводом ──────────────────────────────
-// ─── Островок редактирования над вводом (компактный полукруглый бейдж со свечением) ──
-.chat-edit-island-bar {
+// ─── Баннер ответа / островки действий над вводом ──────────────────────────
+.chat-action-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 6px;
     padding: 8px 16px 0;
     background: transparent;
     animation: fadeIn 0.15s ease-out;
@@ -2123,12 +2738,20 @@
     + .input-area {
         padding-top: 6px;
     }
+}
+
+.chat-action-islands-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.15s ease-out;
 
     .chat-edit-island {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        height: 26px;
+        height: 28px;
         padding: 0 8px 0 10px;
         border-radius: $radius-full;
         background: $color-bg-panel-dark;
@@ -2187,6 +2810,335 @@
             svg {
                 width: 11px;
                 height: 11px;
+            }
+
+            &:hover {
+                background: $color-white-alpha-15;
+                color: $color-text-white;
+            }
+        }
+    }
+
+    .chat-action-island {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        border-radius: 14px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border-subtle;
+        box-shadow:
+            0 0 12px $color-black-alpha-35,
+            0 2px 6px $color-black-alpha-24;
+        animation: scaleInFast 0.15s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        max-width: 100%;
+
+        &:hover {
+            border-color: $color-border;
+            box-shadow:
+                0 0 16px $color-black-alpha-50,
+                0 3px 8px $color-black-alpha-35;
+        }
+
+        &.chat-photos-island {
+            border-color: $color-primary-blue;
+            box-shadow:
+                0 0 14px $color-primary-alpha-30,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-primary-blue;
+                box-shadow:
+                    0 0 18px $color-primary-alpha-50,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.photo-glow {
+                color: $color-primary-blue;
+                filter: drop-shadow(0 0 6px $color-primary-blue);
+            }
+        }
+
+        &.chat-videos-island {
+            border-color: $color-icon-amber;
+            box-shadow:
+                0 0 14px $color-primary-alpha-20,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-icon-amber;
+                box-shadow:
+                    0 0 18px $color-primary-alpha-40,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.video-glow {
+                color: $color-icon-amber;
+                filter: drop-shadow(0 0 6px $color-icon-amber);
+            }
+        }
+
+        &.chat-files-island {
+            border-color: $color-primary-end-light;
+            box-shadow:
+                0 0 14px $color-primary-end-alpha-25,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-primary-end-light;
+                box-shadow:
+                    0 0 18px $color-primary-end-alpha-30,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.file-glow {
+                color: $color-primary-end-light;
+                filter: drop-shadow(0 0 6px $color-primary-end-alpha-30);
+            }
+        }
+
+        .island-badge-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            margin-left: 4px;
+            margin-right: 2px;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke-width: 2.2;
+            }
+        }
+
+        .island-items-scroll {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            max-width: 500px;
+            padding: 1px;
+
+            @include scrollbar(4px, $color-white-alpha-10);
+        }
+
+        .attachment-thumb-card {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: $color-bg-input;
+            border: 1px solid $color-border-subtle;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+
+            &:hover {
+                border-color: $color-primary-alpha-50;
+                transform: translateY(-1px);
+
+                .card-detach-btn {
+                    opacity: 1;
+                }
+            }
+
+            &.video-thumb-card {
+                .thumb-video-wrapper {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                }
+
+                .thumb-play-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: $color-black-alpha-35;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.15s ease;
+
+                    .thumb-play-triangle {
+                        width: 0;
+                        height: 0;
+                        border-style: solid;
+                        border-width: 5px 0 5px 8px;
+                        border-color: transparent transparent transparent $color-text-white;
+                        filter: drop-shadow(0 2px 4px $color-black-alpha-72);
+                    }
+                }
+
+                &:hover .thumb-play-overlay {
+                    background: $color-black-alpha-15;
+                }
+            }
+
+            .thumb-media-img,
+            .thumb-media-video {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .thumb-media-placeholder,
+            .thumb-video-placeholder {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: $color-text-muted;
+                background: $color-bg-panel;
+            }
+
+            .card-detach-btn {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: $color-black-alpha-72;
+                color: $color-text-white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.12s ease, transform 0.12s ease;
+
+                svg {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                &:hover {
+                    background: $color-danger;
+                    transform: scale(1.1);
+                }
+            }
+        }
+
+        .attachment-file-card {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 44px;
+            padding: 0 24px 0 6px;
+            border-radius: 8px;
+            background: $color-bg-input;
+            border: 1px solid $color-border-subtle;
+            flex-shrink: 0;
+            max-width: 220px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+
+            &:hover {
+                border-color: $color-primary-alpha-50;
+                transform: translateY(-1px);
+
+                .card-detach-btn {
+                    opacity: 1;
+                }
+            }
+
+            .file-card-icon-badge {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                background: $color-primary-alpha-20;
+                color: $color-primary;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                font-weight: 700;
+                flex-shrink: 0;
+                user-select: none;
+            }
+
+            .file-card-details {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                min-width: 0;
+                overflow: hidden;
+
+                .file-card-name {
+                    font-size: 11px;
+                    font-weight: 500;
+                    color: $color-text-white;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .file-card-size {
+                    font-size: 9.5px;
+                    color: $color-text-muted;
+                }
+            }
+
+            .card-detach-btn {
+                position: absolute;
+                top: 3px;
+                right: 3px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: transparent;
+                color: $color-text-muted;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+
+                svg {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                &:hover {
+                    background: $color-danger-alpha-40;
+                    color: $color-danger;
+                    transform: scale(1.1);
+                }
+            }
+        }
+
+        .island-group-close-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: $color-text-muted;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            flex-shrink: 0;
+            margin-left: 2px;
+            margin-right: 2px;
+            transition: background 0.12s ease, color 0.12s ease;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke-width: 2.2;
             }
 
             &:hover {
@@ -2452,7 +3404,8 @@
         }
     }
 
-    .lightbox-full-img {
+    .lightbox-full-img,
+    .lightbox-full-video {
         max-width: 90vw;
         max-height: 90vh;
         object-fit: contain;
@@ -2460,5 +3413,127 @@
         box-shadow: 0 10px 40px $color-black-alpha-50;
         border: 1px solid $color-white-alpha-12;
         user-select: none;
+        outline: none;
+    }
+}
+
+.island-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-black-alpha-72;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.15s ease-out;
+    padding: 16px;
+
+    .island-confirm-card {
+        width: 100%;
+        max-width: 380px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border;
+        border-radius: $radius-lg;
+        padding: 20px 22px;
+        box-shadow:
+            0 12px 36px $color-black-alpha-50,
+            0 0 0 1px $color-white-alpha-08;
+        animation: scaleInFast 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+
+        &.profile-logout-confirm-card {
+            max-width: 420px;
+        }
+    }
+
+    .island-confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .island-confirm-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: $radius-md;
+            background: $color-danger-alpha-15;
+            color: $color-danger;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+
+            svg {
+                width: 20px;
+                height: 20px;
+                stroke-width: 2.2;
+            }
+
+            &.danger {
+                background: $color-danger-alpha-15;
+                color: $color-danger;
+            }
+        }
+
+        .island-confirm-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: $color-text-white;
+        }
+    }
+
+    .island-confirm-desc {
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: $color-text-label;
+        margin: 0;
+    }
+
+    .island-confirm-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 4px;
+
+        .island-confirm-btn {
+            height: 36px;
+            padding: 0 16px;
+            border-radius: $radius-md;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s ease, transform 0.12s ease;
+
+            &:active {
+                transform: scale(0.97);
+            }
+
+            &.cancel-btn {
+                background: $color-bg-panel-hover;
+                color: $color-text-chat;
+                border: 1px solid $color-border-subtle;
+
+                &:hover {
+                    background: $color-bg-panel-active;
+                    color: $color-text-white;
+                }
+            }
+
+            &.danger-btn {
+                background: $color-danger;
+                color: $color-text-white;
+                box-shadow: 0 4px 12px $color-danger-alpha-40;
+
+                &:hover {
+                    background: $color-danger-hover;
+                    box-shadow: 0 6px 16px $color-danger-alpha-75;
+                }
+            }
+        }
     }
 }

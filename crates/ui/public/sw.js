@@ -6,6 +6,7 @@
  */
 
 const CACHE_NAME = 'gilvave-emojis-v1';
+const FILES_CACHE_NAME = 'gilvave-files-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -17,7 +18,11 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => k.startsWith('gilvave-emojis-') && k !== CACHE_NAME)
+          .filter(
+            (k) =>
+              (k.startsWith('gilvave-emojis-') && k !== CACHE_NAME) ||
+              (k.startsWith('gilvave-files-') && k !== FILES_CACHE_NAME)
+          )
           .map((k) => caches.delete(k))
       );
       await self.clients.claim();
@@ -32,6 +37,31 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
+
+  // 1. Transparent file caching (/files/*)
+  if (url.pathname.startsWith('/files/')) {
+    event.respondWith(
+      caches.open(FILES_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) {
+          return cached;
+        }
+
+        try {
+          const response = await fetch(request);
+          if (response && response.ok) {
+            cache.put(request, response.clone());
+          }
+          return response;
+        } catch (_err) {
+          return cached || new Response('Offline: file not found in cache', { status: 404 });
+        }
+      })
+    );
+    return;
+  }
+
+  // 2. Emoji assets caching
 
   const isEmojiAsset =
     (url.hostname === 'cdn.jsdelivr.net' &&
