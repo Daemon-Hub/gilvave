@@ -50,6 +50,7 @@ pub fn select_server(server_id: ServerId) {
     }
 
     context.members.set(vec![]);
+    context.online_users.set(std::collections::HashSet::new());
 
     wasm_bindgen_futures::spawn_local(async move {
         if let Ok(server) = Api::get_server_by_id(server_id).await {

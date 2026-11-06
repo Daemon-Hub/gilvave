@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use sycamore::prelude::*;
 
 use gilvave_core::{
@@ -37,6 +38,7 @@ pub struct ServerContext {
     pub current: Signal<Option<Server>>,
     pub list: Signal<Vec<ServerSmallPart>>,
     pub members: Signal<Vec<MemberView>>,
+    pub online_users: Signal<HashSet<UserId>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     dto::messages::MessageView,
-    ids::{ChannelId, MessageId},
+    ids::{ChannelId, MessageId, ServerId, UserId},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +24,16 @@ pub enum ServerRecieve {
     },
     ChannelHistoryBefore(Vec<MessageView>),
     ChannelHistoryAfter(Vec<MessageView>),
+    ServerOnline {
+        server_id: ServerId,
+        online_users: Vec<UserId>,
+    },
+    UserOnline {
+        user_id: UserId,
+    },
+    UserOffline {
+        user_id: UserId,
+    },
     // TODO [WS]: VoiceStateUpdate { channel_id: ChannelId, user_id: UserId, is_muted: bool, is_deafened: bool },
     // TODO [WS]: VoiceParticipantJoined { channel_id: ChannelId, user_id: UserId, username: String, avatar: String },
     // TODO [WS]: VoiceParticipantLeft { channel_id: ChannelId, user_id: UserId },
@@ -53,6 +63,9 @@ pub enum ServerSend {
     MessageDelete {
         channel_id: ChannelId,
         message_id: MessageId,
+    },
+    ServerOnline {
+        server_id: ServerId,
     },
     JoinChannel {
         channel_id: ChannelId,

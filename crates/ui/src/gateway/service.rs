@@ -6,7 +6,7 @@ use gilvave_core::{
         ws::ServerSend,
     },
     error::{ErrorCode, ErrorInfo},
-    ids::{ChannelId, MessageId},
+    ids::{ChannelId, MessageId, ServerId},
     settings::BASE_WS_URL,
 };
 use std::sync::{
@@ -16,7 +16,7 @@ use std::sync::{
 use ws_stream_wasm::{WsMessage, WsMeta};
 
 use crate::{
-    gateway::handler::{dispatch_gateway_event, GatewayEvent, handle},
+    gateway::handler::{GatewayEvent, dispatch_gateway_event, handle},
     utils::invoke_command,
 };
 
@@ -66,6 +66,22 @@ impl WsService {
         match sender_ptr.as_ref() {
             Some(sender) => sender
                 .unbounded_send(ServerSend::LeftChannel { channel_id })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
+
+    pub async fn server_online(server_id: ServerId) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] server_online called: server_id={server_id}").into(),
+        );
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::ServerOnline { server_id })
                 .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
             None => Err(ErrorInfo::from_code(
                 ErrorCode::GatewayNotInitialized,
@@ -335,10 +351,15 @@ impl WsService {
 
                         let heartbeat_task = async move {
                             loop {
-                                gloo_timers::future::sleep(core::time::Duration::from_secs(20)).await;
-                                if heartbeat_sender.unbounded_send(ServerSend::Heartbeat).is_err() {
+                                gloo_timers::future::sleep(core::time::Duration::from_secs(20))
+                                    .await;
+                                if heartbeat_sender
+                                    .unbounded_send(ServerSend::Heartbeat)
+                                    .is_err()
+                                {
                                     web_sys::console::warn_1(
-                                        &"[WS SERVICE] heartbeat sender failed, connection broken".into(),
+                                        &"[WS SERVICE] heartbeat sender failed, connection broken"
+                                            .into(),
                                     );
                                     break;
                                 }

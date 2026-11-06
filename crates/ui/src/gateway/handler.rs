@@ -3,7 +3,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use gilvave_core::{
     dto::{messages::MessageView, ws::ServerRecieve},
-    ids::{ChannelId, MessageId},
+    ids::{ChannelId, MessageId, ServerId, UserId},
 };
 
 #[derive(Clone, Debug)]
@@ -18,6 +18,16 @@ pub enum GatewayEvent {
     },
     ChannelHistoryBefore(Vec<MessageView>),
     ChannelHistoryAfter(Vec<MessageView>),
+    ServerOnline {
+        server_id: ServerId,
+        online_users: Vec<UserId>,
+    },
+    UserOnline {
+        user_id: UserId,
+    },
+    UserOffline {
+        user_id: UserId,
+    },
 }
 
 static SUBSCRIBERS: LazyLock<Arc<Mutex<Vec<UnboundedSender<GatewayEvent>>>>> =
@@ -105,6 +115,30 @@ pub async fn handle(text: &str) {
                     .into(),
                 );
                 dispatch_gateway_event(GatewayEvent::ChannelHistoryAfter(messages));
+            }
+            ServerRecieve::ServerOnline {
+                server_id,
+                online_users,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] ServerOnline received for server_id={server_id}, count={}",
+                        online_users.len()
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::ServerOnline {
+                    server_id,
+                    online_users,
+                });
+            }
+            ServerRecieve::UserOnline { user_id } => {
+                web_sys::console::log_1(&format!("[WS] UserOnline received: {user_id}").into());
+                dispatch_gateway_event(GatewayEvent::UserOnline { user_id });
+            }
+            ServerRecieve::UserOffline { user_id } => {
+                web_sys::console::log_1(&format!("[WS] UserOffline received: {user_id}").into());
+                dispatch_gateway_event(GatewayEvent::UserOffline { user_id });
             }
         },
         Err(e) => {

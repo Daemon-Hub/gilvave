@@ -254,6 +254,61 @@ fn test_ws_server_send_variants() {
     };
     let json = serde_json::to_string(&send_hist).unwrap();
     assert!(json.contains("CHANNEL_HISTORY_BEFORE"));
+
+    let s_id = ServerId::default();
+    let send_online = ServerSend::ServerOnline { server_id: s_id };
+    let json = serde_json::to_string(&send_online).unwrap();
+    assert!(json.contains("SERVER_ONLINE"));
+    let parsed: ServerSend = serde_json::from_str(&json).unwrap();
+    match parsed {
+        ServerSend::ServerOnline { server_id } => assert_eq!(server_id, s_id),
+        _ => panic!("Expected ServerOnline"),
+    }
+}
+
+#[test]
+fn test_ws_server_receive_online_variants() {
+    let s_id = ServerId::default();
+    let u_id = UserId::default();
+
+    // ServerOnline
+    let evt = ServerRecieve::ServerOnline {
+        server_id: s_id,
+        online_users: vec![u_id],
+    };
+    let json = serde_json::to_string(&evt).unwrap();
+    assert!(json.contains("SERVER_ONLINE"));
+    let parsed: ServerRecieve = serde_json::from_str(&json).unwrap();
+    match parsed {
+        ServerRecieve::ServerOnline {
+            server_id,
+            online_users,
+        } => {
+            assert_eq!(server_id, s_id);
+            assert_eq!(online_users, vec![u_id]);
+        }
+        _ => panic!("Expected ServerOnline"),
+    }
+
+    // UserOnline
+    let evt_online = ServerRecieve::UserOnline { user_id: u_id };
+    let json = serde_json::to_string(&evt_online).unwrap();
+    assert!(json.contains("USER_ONLINE"));
+    let parsed: ServerRecieve = serde_json::from_str(&json).unwrap();
+    match parsed {
+        ServerRecieve::UserOnline { user_id } => assert_eq!(user_id, u_id),
+        _ => panic!("Expected UserOnline"),
+    }
+
+    // UserOffline
+    let evt_offline = ServerRecieve::UserOffline { user_id: u_id };
+    let json = serde_json::to_string(&evt_offline).unwrap();
+    assert!(json.contains("USER_OFFLINE"));
+    let parsed: ServerRecieve = serde_json::from_str(&json).unwrap();
+    match parsed {
+        ServerRecieve::UserOffline { user_id } => assert_eq!(user_id, u_id),
+        _ => panic!("Expected UserOffline"),
+    }
 }
 
 #[test]

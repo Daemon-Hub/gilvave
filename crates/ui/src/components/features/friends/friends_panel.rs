@@ -1,25 +1,20 @@
 use super::{
-    add_friend_tab::view_add_friend, all_friends_tab::view_all_friends,
-    blocked_tab::view_blocked, requests_tab::view_requests,
+    add_friend_tab::view_add_friend, all_friends_tab::view_all_friends, blocked_tab::view_blocked,
+    requests_tab::view_requests,
 };
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use gilvave_core::{
-    dto::users::friends::{
-        BlockedUserView, FriendRequestsList, SendFriendRequest,
-    },
+    dto::users::friends::{BlockedUserView, FriendRequestsList, SendFriendRequest},
     ids::UserId,
 };
 
 use crate::{
     components::{
         common::{HomeTab, UiModalContext, UserProfileContext},
-        ui::icons::{
-            CloseSmallIcon, RefreshCwIcon, UserPlusIcon, UsersIcon,
-        },
+        ui::icons::{CloseSmallIcon, RefreshCwIcon, UserPlusIcon, UsersIcon},
     },
     http::api::Api,
-    
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
@@ -82,13 +77,17 @@ pub fn FriendsPanel() -> View {
         spawn_local_scoped(async move {
             match Api::remove_friend(friend_id).await {
                 Ok(()) => {
-                    action_message
-                        .set(Some((false, "Пользователь удалён из списка друзей".to_string())));
+                    action_message.set(Some((
+                        false,
+                        "Пользователь удалён из списка друзей".to_string(),
+                    )));
                     friends.update(|list| list.retain(|f| f.id != friend_id));
                 }
                 Err(err) => {
-                    action_message
-                        .set(Some((true, format!("Ошибка удаления из друзей: {}", err.1))));
+                    action_message.set(Some((
+                        true,
+                        format!("Ошибка удаления из друзей: {}", err.1),
+                    )));
                 }
             }
         });
@@ -98,16 +97,20 @@ pub fn FriendsPanel() -> View {
         spawn_local_scoped(async move {
             match Api::block_user(user_id).await {
                 Ok(()) => {
-                    action_message
-                        .set(Some((false, "Пользователь успешно заблокирован".to_string())));
+                    action_message.set(Some((
+                        false,
+                        "Пользователь успешно заблокирован".to_string(),
+                    )));
                     friends.update(|list| list.retain(|f| f.id != user_id));
                     if let Ok(b) = Api::get_blocked_users().await {
                         blocked.set(b);
                     }
                 }
                 Err(err) => {
-                    action_message
-                        .set(Some((true, format!("Ошибка блокировки пользователя: {}", err.1))));
+                    action_message.set(Some((
+                        true,
+                        format!("Ошибка блокировки пользователя: {}", err.1),
+                    )));
                 }
             }
         });
@@ -126,8 +129,7 @@ pub fn FriendsPanel() -> View {
                     }
                 }
                 Err(err) => {
-                    action_message
-                        .set(Some((true, format!("Ошибка принятия запроса: {}", err.1))));
+                    action_message.set(Some((true, format!("Ошибка принятия запроса: {}", err.1))));
                 }
             }
         });
@@ -154,13 +156,14 @@ pub fn FriendsPanel() -> View {
         spawn_local_scoped(async move {
             match Api::unblock_user(user_id).await {
                 Ok(()) => {
-                    action_message
-                        .set(Some((false, "Пользователь успешно разблокирован".to_string())));
+                    action_message.set(Some((
+                        false,
+                        "Пользователь успешно разблокирован".to_string(),
+                    )));
                     blocked.update(|list| list.retain(|b| b.id != user_id));
                 }
                 Err(err) => {
-                    action_message
-                        .set(Some((true, format!("Ошибка разблокировки: {}", err.1))));
+                    action_message.set(Some((true, format!("Ошибка разблокировки: {}", err.1))));
                 }
             }
         });
@@ -169,7 +172,11 @@ pub fn FriendsPanel() -> View {
     let on_send_request_submit = move || {
         let raw = add_friend_input.get_clone();
         let trimmed = raw.trim();
-        let name = trimmed.strip_prefix('@').unwrap_or(trimmed).trim().to_string();
+        let name = trimmed
+            .strip_prefix('@')
+            .unwrap_or(trimmed)
+            .trim()
+            .to_string();
         if name.is_empty() {
             return;
         }
@@ -191,8 +198,10 @@ pub fn FriendsPanel() -> View {
                     }
                 }
                 Err(err) => {
-                    add_friend_result
-                        .set(Some((true, format!("Не удалось отправить запрос: {}", err.1))));
+                    add_friend_result.set(Some((
+                        true,
+                        format!("Не удалось отправить запрос: {}", err.1),
+                    )));
                 }
             }
         });
@@ -369,5 +378,3 @@ pub fn FriendsPanel() -> View {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-views
 // ─────────────────────────────────────────────────────────────────────────────
-
-

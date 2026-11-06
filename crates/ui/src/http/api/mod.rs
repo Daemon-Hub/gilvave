@@ -158,7 +158,8 @@ impl Api {
             let _guard = REFRESH_MUTEX.lock().await;
             let current_token = Self::fetch_access_token().await;
             if !current_token.is_empty() && current_token != auth_token.unwrap_or_default() {
-                return Self::send_multipart_once(method, url, form_data, Some(&current_token)).await;
+                return Self::send_multipart_once(method, url, form_data, Some(&current_token))
+                    .await;
             }
             if Box::pin(Self::update_tokens()).await.is_ok() {
                 let new_token = Self::fetch_access_token().await;

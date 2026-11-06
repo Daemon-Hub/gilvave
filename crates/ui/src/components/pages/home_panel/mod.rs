@@ -13,8 +13,8 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 use gilvave_core::dto::{
     messages::MessageView,
     servers::{
-        channels::{ChannelType, ChannelView},
         MemberView, Server, ServerSmallPart,
+        channels::{ChannelType, ChannelView},
     },
 };
 
@@ -22,11 +22,11 @@ use crate::{
     cache::CacheService,
     components::{
         common::{
-            classes, is_mobile_device, load_close_to_tray, load_show_greeting,
-            load_show_quick_actions, load_windowed_mode, save_close_to_tray, save_show_greeting,
-            save_show_quick_actions, save_windowed_mode, AppTheme, ChannelContext,
-            CreateServerContext, CreateServerOrigin, CustomTheme, EmojiPack, HomeTab, ModalView, OverviewTab,
-            ScreenWrapper, ServerContext, UiModalContext, UserProfileContext,
+            AppTheme, ChannelContext, CreateServerContext, CreateServerOrigin, CustomTheme,
+            EmojiPack, HomeTab, ModalView, OverviewTab, ScreenWrapper, ServerContext,
+            UiModalContext, UserProfileContext, classes, is_mobile_device, load_close_to_tray,
+            load_show_greeting, load_show_quick_actions, load_windowed_mode, save_close_to_tray,
+            save_show_greeting, save_show_quick_actions, save_windowed_mode,
         },
         features::{
             channels::{
@@ -146,8 +146,10 @@ pub fn HomePanel() -> View {
         if crate::utils::is_tauri() {
             wasm_bindgen_futures::spawn_local(async move {
                 let _ = crate::utils::invoke_command(
-                    gilvave_core::dto::command::CommandArgs::SetCloseToTray { enabled: close_to_tray }
-                        .to_json(),
+                    gilvave_core::dto::command::CommandArgs::SetCloseToTray {
+                        enabled: close_to_tray,
+                    }
+                    .to_json(),
                 )
                 .await;
             });
@@ -158,6 +160,9 @@ pub fn HomePanel() -> View {
         current: create_signal::<Option<Server>>(None),
         list: create_signal::<Vec<ServerSmallPart>>(vec![]),
         members: create_signal::<Vec<MemberView>>(vec![]),
+        online_users: create_signal::<std::collections::HashSet<gilvave_core::ids::UserId>>(
+            std::collections::HashSet::new(),
+        ),
     };
     provide_context(server_context);
 
@@ -175,7 +180,10 @@ pub fn HomePanel() -> View {
             ws_started = true;
 
             // 1. Instant 0ms cache restore from localStorage & SQLite
-            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+            if let Some(storage) = web_sys::window()
+                .and_then(|w| w.local_storage().ok())
+                .flatten()
+            {
                 if let Ok(Some(name)) = storage.get_item("gilvave_cached_username") {
                     user_profile.username.set(name);
                 }
@@ -188,7 +196,9 @@ pub fn HomePanel() -> View {
                 if let Ok(Some(id_str)) = storage.get_item("gilvave_cached_user_id")
                     && let Ok(uuid) = gilvave_core::uuid::Uuid::parse_str(&id_str)
                 {
-                    user_profile.user_id.set(Some(gilvave_core::ids::UserId::from(uuid)));
+                    user_profile
+                        .user_id
+                        .set(Some(gilvave_core::ids::UserId::from(uuid)));
                 }
             }
 
@@ -211,7 +221,8 @@ pub fn HomePanel() -> View {
 
                 if !servers_synced && server_context.list.with(|l| l.is_empty()) {
                     for delay_sec in [1, 2, 3, 5] {
-                        gloo_timers::future::sleep(core::time::Duration::from_secs(delay_sec)).await;
+                        gloo_timers::future::sleep(core::time::Duration::from_secs(delay_sec))
+                            .await;
                         if !server_context.list.with(|l| l.is_empty()) {
                             break;
                         }
@@ -231,12 +242,42 @@ pub fn HomePanel() -> View {
             spawn_local_scoped(async move {
                 use futures_util::StreamExt;
                 while let Some(event) = gw_rx.next().await {
-                    if matches!(event, crate::gateway::handler::GatewayEvent::Connected) {
-                        web_sys::console::log_1(
-                            &"[HOME_PANEL] Gateway connected -> syncing servers & profile".into(),
-                        );
-                        sync_servers_to_context(server_context).await;
-                        sync_profile_to_context(user_profile).await;
+                    match event {
+                        crate::gateway::handler::GatewayEvent::Connected => {
+                            web_sys::console::log_1(
+                                &"[HOME_PANEL] Gateway connected -> syncing servers & profile"
+                                    .into(),
+                            );
+                            sync_servers_to_context(server_context).await;
+                            sync_profile_to_context(user_profile).await;
+                            if let Some(srv) = server_context.current.get_clone() {
+                                let _ = WsService::server_online(srv.id).await;
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::ServerOnline {
+                            server_id,
+                            online_users,
+                        } => {
+                            let is_current = server_context
+                                .current
+                                .with(|c| c.as_ref().map(|s| s.id) == Some(server_id));
+                            if is_current {
+                                server_context
+                                    .online_users
+                                    .set(online_users.into_iter().collect());
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::UserOnline { user_id } => {
+                            server_context.online_users.update(|set| {
+                                set.insert(user_id);
+                            });
+                        }
+                        crate::gateway::handler::GatewayEvent::UserOffline { user_id } => {
+                            server_context.online_users.update(|set| {
+                                set.remove(&user_id);
+                            });
+                        }
+                        _ => {}
                     }
                 }
             });
@@ -254,6 +295,7 @@ pub fn HomePanel() -> View {
         }
         let context = use_context::<ServerContext>();
         context.current.set(None);
+        context.online_users.set(std::collections::HashSet::new());
         let m_ctx = use_context::<UiModalContext>();
         m_ctx.selected_dm_name.set(None);
     };
@@ -556,7 +598,10 @@ async fn sync_profile_to_context(user_profile: UserProfileContext) -> bool {
         user_profile.avatar.set(avatar.clone());
         user_profile.bio.set(bio.clone());
 
-        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+        if let Some(storage) = web_sys::window()
+            .and_then(|w| w.local_storage().ok())
+            .flatten()
+        {
             let _ = storage.set_item("gilvave_cached_user_id", &user.id.to_string());
             let _ = storage.set_item("gilvave_cached_username", &user.username);
             let _ = storage.set_item("gilvave_cached_avatar", &avatar);
@@ -571,4 +616,3 @@ async fn sync_profile_to_context(user_profile: UserProfileContext) -> bool {
         false
     }
 }
-
