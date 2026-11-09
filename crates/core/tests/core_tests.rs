@@ -131,6 +131,7 @@ fn test_all_command_args_variants_to_json() {
                 forwarded_from: None,
                 created_at: OffsetDateTime::now_utc(),
                 is_pending: false,
+                is_failed: false,
             },
         },
         CommandArgs::UpdateCachedMessage {
@@ -153,17 +154,22 @@ fn test_all_command_args_variants_to_json() {
         CommandArgs::SaveCachedFile {
             file_id: "test-id".to_string(),
             filename: "test.pdf".to_string(),
-            data: vec![1, 2, 3],
+            download_url: Some("http://localhost:3000/files/test-id".to_string()),
         },
         CommandArgs::OpenFile {
             file_id: "test-id".to_string(),
             filename: "test.pdf".to_string(),
-            data: Some(vec![1, 2, 3]),
+            download_url: Some("http://localhost:3000/files/test-id".to_string()),
         },
         CommandArgs::OpenFile {
             file_id: "test-id".to_string(),
             filename: "test.pdf".to_string(),
-            data: None,
+            download_url: None,
+        },
+        CommandArgs::SaveFileToDownloads {
+            file_id: "test-id".to_string(),
+            filename: "test.pdf".to_string(),
+            download_url: Some("http://localhost:3000/files/test-id".to_string()),
         },
     ];
 
@@ -209,6 +215,7 @@ fn test_ws_server_receive_variants() {
         forwarded_from: None,
         created_at: now,
         is_pending: false,
+        is_failed: false,
     };
 
     let msg_new = ServerRecieve::MessageNew(message_view.clone());

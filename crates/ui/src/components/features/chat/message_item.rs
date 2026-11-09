@@ -57,6 +57,9 @@ pub fn MessageItem(
     if message_view.is_pending {
         class_list.push_str(" is-pending");
     }
+    if message_view.is_failed {
+        class_list.push_str(" is-failed");
+    }
 
     let user_profile = use_context::<UserProfileContext>();
     let modal_context = use_context::<UiModalContext>();
@@ -67,12 +70,29 @@ pub fn MessageItem(
             && message_view.author_id == user_profile.user_id.get());
 
     let render_status = move || {
-        if message_view.is_pending {
+        if message_view.is_failed {
+            view! {
+                span(class="message-status is-failed", title="Не удалось отправить") {
+                    svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2.5", stroke-linecap="round", stroke-linejoin="round") {
+                        circle(cx="12", cy="12", r="10")
+                        line(x1="12", y1="8", x2="12", y2="12")
+                        line(x1="12", y1="16", x2="12.01", y2="16")
+                    }
+                    span(class="message-failed-label") { "Не удалось отправить" }
+                }
+            }
+        } else if message_view.is_pending {
             view! {
                 span(class="message-status is-sending", title="Отправляется...") {
-                    svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
-                        circle(cx="12", cy="12", r="10")
-                        polyline(points="12 6 12 12 16 14")
+                    svg(class="spin-loader-icon", viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2.5", stroke-linecap="round", stroke-linejoin="round") {
+                        line(x1="12", y1="2", x2="12", y2="6")
+                        line(x1="12", y1="18", x2="12", y2="22")
+                        line(x1="4.93", y1="4.93", x2="7.76", y2="7.76")
+                        line(x1="16.24", y1="16.24", x2="19.07", y2="19.07")
+                        line(x1="2", y1="12", x2="6", y2="12")
+                        line(x1="18", y1="12", x2="22", y2="12")
+                        line(x1="4.93", y1="19.07", x2="7.76", y2="16.24")
+                        line(x1="16.24", y1="7.76", x2="19.07", y2="4.93")
                     }
                 }
             }
@@ -298,15 +318,40 @@ pub fn MessageItem(
                 (reply_view)
                 (header_node)
                 div(class="message-bubble", on:click=on_bubble_click) {
-                    div(class="message-markdown-content") {
-                        (move || {
-                            let default_pack = modal_context.emoji_pack.get_untracked();
-                            let html_str = displayed_text.with(|text| render_chat_markdown(text, default_pack));
+                    (move || {
+                        let default_pack = modal_context.emoji_pack.get_untracked();
+                        let (clean_text, attachments) = displayed_text.with(|text| {
+                            crate::components::common::media::extract_message_media_and_text(text)
+                        });
+
+                        let text_node = if !clean_text.is_empty() {
+                            let html_str = render_chat_markdown(&clean_text, default_pack);
                             let el = sycamore::web::tags::div()
+                                .class("message-markdown-content")
                                 .dangerously_set_inner_html(std::borrow::Cow::Owned(html_str));
                             View::from(el)
-                        })
-                    }
+                        } else {
+                            view! {}
+                        };
+
+                        let attachments_node = if !attachments.is_empty() {
+                            view! {
+                                super::attachments::MessageAttachmentsView(
+                                    attachments=attachments,
+                                    modal_ctx=modal_context,
+                                    is_pending=message_view.is_pending,
+                                    is_failed=message_view.is_failed,
+                                )
+                            }
+                        } else {
+                            view! {}
+                        };
+
+                        view! {
+                            (text_node)
+                            (attachments_node)
+                        }
+                    })
                     (if is_long {
                         let toggle_label = move || {
                             if is_expanded.get() {

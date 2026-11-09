@@ -53,6 +53,7 @@ mod tests {
             forwarded_from: None,
             created_at: now + time::Duration::seconds(2),
             is_pending: false,
+            is_failed: false,
         };
 
         let msg2 = MessageView {
@@ -66,6 +67,7 @@ mod tests {
             forwarded_from: None,
             created_at: now + time::Duration::seconds(5),
             is_pending: false,
+            is_failed: false,
         };
 
         // Save individual
@@ -96,6 +98,7 @@ mod tests {
             forwarded_from: None,
             created_at: now,
             is_pending: false,
+            is_failed: false,
         };
 
         // Server batch contains msg3 and msg2 (msg1 was deleted on server)

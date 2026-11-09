@@ -66,6 +66,7 @@ cargo clippy --workspace
 ## Development Standards
 
 - **Rust Best Practices & Deep-Dive References**: Adhere to `rust-best-practices` and `rust-review`. On architectural decisions, public API designs, trait design, and refactoring, automatically consult the nested reference guides in `C:\Users\KIM\.gemini\config\skills\rust-best-practices\references/` (`rust-api-guidelines.md`, `effective-rust.md`, `rust-design-patterns.md`, `microsoft-rust-guidelines.md`, `google-rust-style-guide.md`).
+- **Anti-Slop Standards**: Adhere to all global `antislop*` skills (`antislop`, `antislop-code`, `antislop-copywriting`, `antislop-human`, `antislop-layoutmobile`, `antislop-ui`). No generic AI-slop comments, zero em dashes in copy (`—`), WCAG AA contrast, true responsive layout, accessible semantics, purposeful visual choices, and zero hardcoded colors.
 - **Invariants**: Idiomatic Rust (no `.unwrap()` in production paths), type-driven design, zero-cost abstractions (borrowed views `&str`, `&[T]` in signatures), zero hardcoded colors in SCSS, lint-clean code (`clippy` and `rustfmt`).
 
 ---
@@ -112,6 +113,7 @@ crates/ui/src/
       channels/             — Channel list (text/voice), collapsible accordion groups,
                               voice_channel_area/ (header, welcome_card, room_dock, mod.rs), create channel modal
       chat/                 — Modular chat architecture: messages_area/ (enriched, feed, header, mod.rs),
+                              attachments.rs (native Sycamore attachments: gallery, inline & fullscreen video theater, file cards),
                               chat_input_area/ (send_message, action_islands, attach_menu, emoji_picker, mod.rs),
                               chat_scroll (date dividers, position retention & unread anchoring),
                               emoji_search (multi-language emoji keyword mapper),
@@ -211,16 +213,13 @@ crates/ui/src/
     - Previous day: `"Вчера, 20 сентября"`
     - Current year: `"18 сентября, четверг"`
     - Older years: `"15 мая 2024 г."`
-- **Scroll Position Retention & Unread Messages Divider (`messages_area.rs`, `_messages-area.scss`)**:
-  - Automatically tracks the user's last read message ID and timestamp (`gilvave_last_read_id_{channel_id}`, `gilvave_last_read_ts_{channel_id}`) in `localStorage` when reaching the bottom or sending a message.
-  - Automatically initializes a baseline watermark when a channel is opened for the first time without prior history, and synchronizes the watermark when switching channels or tapping the `< Каналы` back button on mobile/tablet.
-  - When opening a channel (on desktop or mobile):
-    - If unread messages exist since the last visit, an unread divider (`.chat-unread-divider` with `.unread-badge` `"Непрочитанные сообщения"`) is inserted between the last read and first unread message.
-    - Fully theme-reactive: styled using `--gradient-unread-badge`, `--shadow-unread-badge`, `--color-text-on-accent`, and `--color-white-alpha-18` across Advanced, Standard, Light, and Custom themes with zero hardcoded colors.
-    - The chat automatically scrolls via `request_animation_frame` (with a single-frame layout retry) to anchor at the unread divider (`marker_top - 60px`), allowing the user to view previously read messages above and catch up on unread messages below.
-    - If all messages have been read (or initial open with no unreads), the chat scrolls to the very bottom (eliminating the bug where mobile clients opened at the very top).
-    - When new messages arrive via `ChannelHistoryBefore` (e.g. after reconnecting from offline or fetching from server), the unread marker is dynamically resolved and anchored instead of forcibly throwing the user to the bottom.
-    - Global message caching: incoming `ServerRecieve::MessageNew` is immediately persisted to SQLite cache even if the user is in another channel or browsing the channel list.
+- **Deterministic 3-Scenario Scroll Position & Unread Retention (`chat_scroll.rs`, `messages_area.rs`, `_messages-area.scss`)**:
+  - Automatically manages channel scroll state across 3 canonical scenarios with `overflow-anchor: none;` and `position: relative;`:
+    1. **Scenario 1 (Caught Up / Latest)**: If the user was at the bottom when leaving and no unread messages arrived (or initial open), the chat anchors directly at the bottom (`scroll_height - client_height`) with multi-frame rAF verification.
+    2. **Scenario 2 (New Unread Messages)**: If the user was at the bottom but new messages arrived while away, the chat anchors directly at the `.chat-unread-divider` (`[data-unread-marker]`), displaying the last read message above and unread messages below.
+    3. **Scenario 3 (History Reading Anchor)**: If the user manually scrolled up to read older messages and left, the chat records the exact top-visible message (`data-message-id`) and pixel offset, restoring the user to that exact reading position upon return, regardless of new messages arriving at the bottom.
+  - Automatically updates read watermark and scroll state when scrolling to bottom, switching channels, or tapping back.
+  - Global message caching: incoming `ServerRecieve::MessageNew` is immediately persisted to SQLite cache even if the user is in another channel or browsing the channel list.
 - **Avatar Fallback**:
   - For the current user's messages, avatars are retrieved directly from `UserProfileContext.avatar` (with fallback to `ServerContext.members`).
   - For other members, avatars are retrieved from `ServerContext.members`. If unavailable, a circular initial placeholder is rendered with an author-based color.

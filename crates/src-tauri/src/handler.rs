@@ -262,80 +262,185 @@ pub async fn handle_command(
                 CommandResult::Ok(CommandResponse::SyncCachedChannels)
             }
         }
-        CommandArgs::SaveCachedFile {
-            file_id,
-            filename,
-            data,
-        } => {
-            let cache_dir = std::env::temp_dir()
-                .join("Gilvave")
-                .join("cached_files")
-                .join(&file_id);
-            if let Err(e) = std::fs::create_dir_all(&cache_dir) {
-                return Ok(CommandResult::Error(ErrorInfo::from_code(
-                    ErrorCode::CommandExecutionFailed,
-                    format!("Failed to create cache dir: {e}"),
-                )));
-            }
-            let file_path = cache_dir.join(&filename);
-            if let Err(e) = std::fs::write(&file_path, &data) {
-                return Ok(CommandResult::Error(ErrorInfo::from_code(
-                    ErrorCode::CommandExecutionFailed,
-                    format!("Failed to write cached file: {e}"),
-                )));
-            }
+        CommandArgs::SaveCachedFile { .. } => {
             CommandResult::Ok(CommandResponse::SaveCachedFile)
         }
         CommandArgs::OpenFile {
             file_id,
             filename,
-            data,
+            download_url,
         } => {
-            let cache_dir = std::env::temp_dir()
-                .join("Gilvave")
-                .join("cached_files")
-                .join(&file_id);
-            let file_path = cache_dir.join(&filename);
+            #[cfg(not(target_os = "android"))]
+            let primary_dir = get_desktop_downloads_dir(&window);
+            #[cfg(target_os = "android")]
+            let primary_dir = get_android_downloads_dir();
 
-            if let Some(bytes) = data {
-                if let Err(e) = std::fs::create_dir_all(&cache_dir) {
-                    return Ok(CommandResult::Error(ErrorInfo::from_code(
-                        ErrorCode::CommandExecutionFailed,
-                        format!("Failed to create cache dir: {e}"),
-                    )));
+            let file_path = primary_dir.join(&filename);
+
+            let token = {
+                let db_lock = db.lock().await;
+                if let Some(ref conn) = *db_lock {
+                    match crate::database::get_token(conn, "access_token") {
+                        Ok(Some(t)) if !t.is_empty() => t,
+                        _ => get_access_token(),
+                    }
+                } else {
+                    get_access_token()
                 }
-                if let Err(e) = std::fs::write(&file_path, &bytes) {
-                    return Ok(CommandResult::Error(ErrorInfo::from_code(
-                        ErrorCode::CommandExecutionFailed,
-                        format!("Failed to write cached file: {e}"),
-                    )));
-                }
-            } else if !file_path.exists() {
+            };
+
+            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await {
                 return Ok(CommandResult::Error(ErrorInfo::from_code(
-                    ErrorCode::NotFound,
-                    format!("File not found in local cache: {}", file_path.display()),
+                    ErrorCode::CommandExecutionFailed,
+                    format!("Failed to open file: {e}"),
                 )));
             }
 
             use tauri_plugin_opener::OpenerExt;
             let path_str = file_path.display().to_string();
-            let mut opened = window.app_handle().opener().open_path(&path_str, None::<&str>).is_ok();
+            let opened = window.app_handle().opener().open_path(&path_str, None::<&str>).is_ok();
             if !opened {
                 tracing::warn!("opener open_path failed, using system fallback");
                 #[cfg(target_os = "windows")]
                 {
-                    opened = std::process::Command::new("explorer")
-                        .arg(&file_path)
-                        .spawn()
-                        .is_ok();
-                    if !opened {
-                        let _ = std::process::Command::new("powershell")
-                            .args(["-NoProfile", "-NonInteractive", "-Command", "Start-Process", "-FilePath", &format!("\"{}\"", path_str)])
-                            .spawn();
-                    }
+                    use std::os::windows::process::CommandExt;
+                    const CREATE_NO_WINDOW: u32 = 0x08000000;
+                    let _ = std::process::Command::new("cmd")
+                        .args(["/C", "start", "", &path_str])
+                        .creation_flags(CREATE_NO_WINDOW)
+                        .spawn();
                 }
             }
             CommandResult::Ok(CommandResponse::OpenFile)
         }
+        CommandArgs::SaveFileToDownloads {
+            file_id,
+            filename,
+            download_url,
+        } => {
+            #[cfg(not(target_os = "android"))]
+            let target_dir = get_desktop_downloads_dir(&window);
+            #[cfg(target_os = "android")]
+            let target_dir = get_android_downloads_dir();
+
+            let file_path = target_dir.join(&filename);
+
+            let token = {
+                let db_lock = db.lock().await;
+                if let Some(ref conn) = *db_lock {
+                    match crate::database::get_token(conn, "access_token") {
+                        Ok(Some(t)) if !t.is_empty() => t,
+                        _ => get_access_token(),
+                    }
+                } else {
+                    get_access_token()
+                }
+            };
+
+            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await {
+                return Ok(CommandResult::Error(ErrorInfo::from_code(
+                    ErrorCode::CommandExecutionFailed,
+                    format!("Failed to save to downloads: {e}"),
+                )));
+            }
+
+            CommandResult::Ok(CommandResponse::SaveFileToDownloads(file_path.display().to_string()))
+        }
     })
+}
+
+#[cfg(not(target_os = "android"))]
+fn get_desktop_downloads_dir(window: &tauri::WebviewWindow) -> std::path::PathBuf {
+    use tauri::Manager;
+    if let Ok(dl) = window.path().download_dir() {
+        return dl.join("Gilvave");
+    }
+    if let Ok(userprofile) = std::env::var("USERPROFILE") {
+        return std::path::PathBuf::from(userprofile).join("Downloads").join("Gilvave");
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        return std::path::PathBuf::from(home).join("Downloads").join("Gilvave");
+    }
+    std::env::temp_dir().join("Gilvave").join("Downloads")
+}
+
+#[cfg(target_os = "android")]
+fn get_android_downloads_dir() -> std::path::PathBuf {
+    let p_downloads = std::path::PathBuf::from("/sdcard/Downloads/Gilvave");
+    let p_download = std::path::PathBuf::from("/sdcard/Download/Gilvave");
+    let p_storage = std::path::PathBuf::from("/storage/emulated/0/Download/Gilvave");
+
+    if p_downloads.exists() || std::path::Path::new("/sdcard/Downloads").exists() {
+        p_downloads
+    } else if p_download.exists() || std::path::Path::new("/sdcard/Download").exists() {
+        p_download
+    } else if std::path::Path::new("/storage/emulated/0/Download").exists() {
+        p_storage
+    } else {
+        p_downloads
+    }
+}
+
+
+async fn ensure_file_downloaded(
+    target_path: &std::path::Path,
+    file_id: &str,
+    download_url: Option<String>,
+    token: &str,
+) -> Result<(), String> {
+    if target_path.is_file() && std::fs::metadata(target_path).map(|m| m.len() > 0).unwrap_or(false) {
+        return Ok(());
+    }
+
+    if let Some(parent) = target_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
+    let url = download_url.unwrap_or_else(|| {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id)
+    });
+
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err(format!("Invalid download URL: {url}"));
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    let mut req = client.get(&url);
+    if !token.is_empty() {
+        req = req.header("Authorization", format!("Bearer {token}"));
+    }
+
+    let resp = req.send().await.map_err(|e| format!("Network error: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("Server returned HTTP {}", resp.status()));
+    }
+
+    use futures_util::StreamExt;
+    use std::io::Write;
+
+    let filename = target_path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
+    let temp_path = target_path.with_file_name(format!(".tmp_{}_{}", file_id, filename));
+    let mut file = std::fs::File::create(&temp_path)
+        .map_err(|e| format!("Failed to create temp file: {e}"))?;
+
+    let mut stream = resp.bytes_stream();
+    while let Some(chunk_res) = stream.next().await {
+        let chunk = chunk_res.map_err(|e| format!("Error streaming chunk: {e}"))?;
+        file.write_all(&chunk)
+            .map_err(|e| format!("Error writing chunk to disk: {e}"))?;
+    }
+    file.flush()
+        .map_err(|e| format!("Error flushing file: {e}"))?;
+    drop(file);
+
+    if let Err(_e) = std::fs::rename(&temp_path, target_path) {
+        let _ = std::fs::copy(&temp_path, target_path);
+        let _ = std::fs::remove_file(&temp_path);
+    }
+
+    Ok(())
 }

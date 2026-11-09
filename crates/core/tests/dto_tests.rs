@@ -420,6 +420,7 @@ fn test_message_view_serialization() {
         forwarded_from: None,
         created_at: now,
         is_pending: false,
+        is_failed: false,
     };
 
     let json = serde_json::to_string(&msg).unwrap();
@@ -459,6 +460,7 @@ fn test_message_view_reply_and_forward() {
         forwarded_from: Some(fwd_json),
         created_at: now,
         is_pending: false,
+        is_failed: false,
     };
 
     let json = serde_json::to_string(&msg).unwrap();

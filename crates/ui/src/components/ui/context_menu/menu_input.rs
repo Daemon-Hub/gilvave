@@ -95,7 +95,7 @@ pub(crate) fn build_input_menu(
         icon: "select_all",
         shortcut: Some("Ctrl+A"),
         danger: false,
-        separator_above: true,
+        separator_above: !items.is_empty(),
         on_click: Rc::new(move || {
             select_all_in_target_element(&target_for_sel);
         }),

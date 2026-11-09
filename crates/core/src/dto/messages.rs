@@ -34,6 +34,8 @@ pub struct MessageView {
     pub created_at: OffsetDateTime,
     #[serde(default)]
     pub is_pending: bool,
+    #[serde(default)]
+    pub is_failed: bool,
 }
 
 impl MessageView {

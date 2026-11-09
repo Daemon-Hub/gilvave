@@ -1,5 +1,6 @@
 //! Logic for sending, updating, and dispatching channel messages with deferred attachment uploads.
 
+use futures_util::future::join_all;
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
@@ -52,126 +53,320 @@ pub(crate) fn send_channel_message(
     let editing = modal_context.editing_message.get_clone();
     let replying = modal_context.replying_to.get_clone();
 
-    spawn_local_scoped(async move {
-        let mut final_content = raw_text.trim().to_string();
+    // 1. Редактирование существующего сообщения
+    if let Some(edit_msg) = editing {
+        spawn_local_scoped(async move {
+            let mut final_content = raw_text.trim().to_string();
 
-        // 1. Deferred upload of pending attachments (only executed when Send is clicked!)
-        if !attachments.is_empty() {
-            modal_context.is_uploading_attachment.set(true);
-            let mut uploaded_snippets = Vec::with_capacity(attachments.len());
-            let mut upload_err: Option<String> = None;
+            if !attachments.is_empty() {
+                modal_context.is_uploading_attachment.set(true);
 
-            for att in &attachments {
-                if let Some(existing_url) = &att.existing_url {
-                    // Already on server (retained during message edit)
-                    if att.is_previewable {
-                        uploaded_snippets.push(format!("![{}]({})", att.name, existing_url));
-                    } else if let Some(fid) = att.existing_file_id {
-                        uploaded_snippets.push(format!("[{}](file:{})", att.name, fid));
-                    } else {
-                        uploaded_snippets.push(format!("[{}]({})", att.name, existing_url));
+                let upload_futures = attachments.iter().map(|att| {
+                    let att = att.clone();
+                    async move {
+                        if let Some(existing_url) = &att.existing_url {
+                            if att.is_previewable {
+                                Ok(format!("![{}]({})", att.name, existing_url))
+                            } else if let Some(fid) = att.existing_file_id {
+                                Ok(format!("[{}](file:{})", att.name, fid))
+                            } else {
+                                Ok(format!("[{}]({})", att.name, existing_url))
+                            }
+                        } else if let Some(file) = &att.file {
+                            match crate::http::api::Api::upload_file(file).await {
+                                Ok(res) => {
+                                    let file_url = if res.url.starts_with('/') {
+                                        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
+                                    } else {
+                                        res.url
+                                    };
+                                    crate::components::common::media::cache_uploaded_file_storage(
+                                        &res.id.to_string(),
+                                        &res.name,
+                                        file,
+                                    )
+                                    .await;
+                                    if res.is_previewable {
+                                        Ok(format!("![{}]({})", res.name, file_url))
+                                    } else {
+                                        Ok(format!("[{}](file:{})", res.name, res.id))
+                                    }
+                                }
+                                Err(err) => Err(format!("Ошибка загрузки «{}»: {}", att.name, err.1)),
+                            }
+                        } else {
+                            Ok(String::new())
+                        }
                     }
-                } else if let Some(file) = &att.file {
-                    // New local file upload
-                    match crate::http::api::Api::upload_file(file).await {
-                        Ok(res) => {
-                            let file_url = if res.url.starts_with('/') {
-                                format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
-                            } else {
-                                res.url
-                            };
+                });
 
-                            // Transparently cache the uploaded file locally so the user never has to re-download it
-                            crate::components::common::media::cache_uploaded_file_storage(
-                                &res.id.to_string(),
-                                &res.name,
-                                file,
-                            )
-                            .await;
+                let results = join_all(upload_futures).await;
+                modal_context.is_uploading_attachment.set(false);
 
-                            if res.is_previewable {
-                                uploaded_snippets.push(format!("![{}]({})", res.name, file_url));
-                            } else {
-                                uploaded_snippets.push(format!("[{}](file:{})", res.name, res.id));
+                let mut uploaded_snippets = Vec::with_capacity(results.len());
+                let mut upload_err: Option<String> = None;
+                for res in results {
+                    match res {
+                        Ok(snip) if !snip.is_empty() => uploaded_snippets.push(snip),
+                        Ok(_) => {}
+                        Err(err) => {
+                            if upload_err.is_none() {
+                                upload_err = Some(err);
                             }
                         }
-                        Err(err) => {
-                            upload_err = Some(format!("Ошибка загрузки «{}»: {}", att.name, err.1));
-                            break;
+                    }
+                }
+
+                if let Some(err_msg) = upload_err {
+                    crate::components::ui::context_menu::clipboard::show_toast(
+                        &modal_context,
+                        true,
+                        err_msg,
+                    );
+                    return;
+                }
+
+                if !uploaded_snippets.is_empty() {
+                    let snippets_block = uploaded_snippets.join("\n\n");
+                    if final_content.is_empty() {
+                        final_content = snippets_block;
+                    } else {
+                        final_content = format!("{final_content}\n\n{snippets_block}");
+                    }
+                }
+
+                for att in &attachments {
+                    att.revoke();
+                }
+                modal_context.pending_attachments.set(Vec::new());
+            }
+
+            let sanitized = match gilvave_core::validation::validate_message(&final_content) {
+                Ok(s) => s,
+                Err(e) => {
+                    web_sys::console::warn_1(&format!("[MESSAGES_AREA] edit validation failed: {e}").into());
+                    return;
+                }
+            };
+
+            let _ = WsService::message_update(edit_msg.channel_id, edit_msg.id, sanitized).await;
+            modal_context.editing_message.set(None);
+            draft_message.set(String::new());
+        });
+        return;
+    }
+
+    // 2. Отправка нового сообщения (оптимистичный UI с мгновенным появлением в чате)
+    let optimistic_id = MessageId::default();
+    let reply_to = replying.as_ref().map(|r| r.id);
+    modal_context.replying_to.set(None);
+
+    let mut optimistic_snippets = Vec::with_capacity(attachments.len());
+    for att in &attachments {
+        let att_url = att.preview_url.as_deref().unwrap_or("");
+        if let Some(existing_url) = &att.existing_url {
+            if att.is_previewable {
+                optimistic_snippets.push(format!("![{}]({})", att.name, existing_url));
+            } else if let Some(fid) = att.existing_file_id {
+                optimistic_snippets.push(format!("[{}](file:{})", att.name, fid));
+            } else {
+                optimistic_snippets.push(format!("[{}]({})", att.name, existing_url));
+            }
+        } else if att.is_previewable {
+            optimistic_snippets.push(format!("![{}]({})", att.name, att_url));
+        } else {
+            optimistic_snippets.push(format!("[{}]({})", att.name, att_url));
+        }
+    }
+
+    let mut optimistic_content = raw_text.trim().to_string();
+    if !optimistic_snippets.is_empty() {
+        let snippets_block = optimistic_snippets.join("\n\n");
+        if optimistic_content.is_empty() {
+            optimistic_content = snippets_block;
+        } else {
+            optimistic_content = format!("{optimistic_content}\n\n{snippets_block}");
+        }
+    }
+
+    let optimistic_msg = gilvave_core::dto::messages::MessageView {
+        id: optimistic_id,
+        channel_id,
+        author_id: _user_profile.user_id.get(),
+        author_name: _user_profile.username.get_clone(),
+        content: optimistic_content,
+        edited: false,
+        reply_to_id: reply_to,
+        forwarded_from: None,
+        created_at: time::OffsetDateTime::now_utc(),
+        is_pending: true,
+        is_failed: false,
+    };
+
+    // Мгновенно добавляем сообщение в чат
+    channel_context.messages.update(|list| {
+        list.push(optimistic_msg);
+    });
+
+    // Мгновенно очищаем поле ввода и список прикрепленных файлов
+    draft_message.set(String::new());
+    modal_context.pending_attachments.set(Vec::new());
+
+    // Мгновенно синхронизируем DOM поле ввода
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        if let Some(doc) = window.document() {
+            if let Ok(Some(editor)) = doc.query_selector(".chat-input") {
+                editor.set_text_content(Some(""));
+                let _ = editor.set_attribute("data-empty", "true");
+            }
+        }
+    }
+
+    // Прокручиваем к новому сообщению с поддержкой rAF после пересчета высоты DOM
+    if let Some(node) = container.as_ref().and_then(|c| c.try_get()) {
+        let el = node.unchecked_into::<HtmlElement>();
+        el.set_scroll_top(el.scroll_height());
+        #[cfg(target_arch = "wasm32")]
+        if let Some(w) = web_sys::window() {
+            let el_clone = el.clone();
+            let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
+                el_clone.set_scroll_top(el_clone.scroll_height());
+            });
+            let _ = w.request_animation_frame(cb.as_ref().unchecked_ref());
+        }
+    }
+
+    let ch_ctx = channel_context;
+    let m_ctx = modal_context;
+    spawn_local_scoped(async move {
+        // Уступаем квант времени (20 мс) браузеру для отрисовки оптимистичного сообщения и спинеров загрузки
+        gloo_timers::future::sleep(core::time::Duration::from_millis(20)).await;
+
+        let mut uploaded_snippets = Vec::with_capacity(attachments.len());
+        let mut upload_err: Option<String> = None;
+
+        if !attachments.is_empty() {
+            m_ctx.is_uploading_attachment.set(true);
+
+            // Параллельная загрузка всех прикрепленных файлов без последовательного ожидания
+            let upload_futures = attachments.iter().map(|att| {
+                let att = att.clone();
+                async move {
+                    if let Some(existing_url) = &att.existing_url {
+                        if att.is_previewable {
+                            Ok(format!("![{}]({})", att.name, existing_url))
+                        } else if let Some(fid) = att.existing_file_id {
+                            Ok(format!("[{}](file:{})", att.name, fid))
+                        } else {
+                            Ok(format!("[{}]({})", att.name, existing_url))
+                        }
+                    } else if let Some(file) = &att.file {
+                        match crate::http::api::Api::upload_file(file).await {
+                            Ok(res) => {
+                                let file_url = if res.url.starts_with('/') {
+                                    format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
+                                } else {
+                                    res.url
+                                };
+
+                                crate::components::common::media::cache_uploaded_file_storage(
+                                    &res.id.to_string(),
+                                    &res.name,
+                                    file,
+                                )
+                                .await;
+
+                                if res.is_previewable {
+                                    Ok(format!("![{}]({})", res.name, file_url))
+                                } else {
+                                    Ok(format!("[{}](file:{})", res.name, res.id))
+                                }
+                            }
+                            Err(err) => Err(format!("Ошибка загрузки «{}»: {}", att.name, err.1)),
+                        }
+                    } else {
+                        Ok(String::new())
+                    }
+                }
+            });
+
+            let results = join_all(upload_futures).await;
+            m_ctx.is_uploading_attachment.set(false);
+
+            for res in results {
+                match res {
+                    Ok(snippet) => {
+                        if !snippet.is_empty() {
+                            uploaded_snippets.push(snippet);
+                        }
+                    }
+                    Err(err) => {
+                        if upload_err.is_none() {
+                            upload_err = Some(err);
                         }
                     }
                 }
             }
 
-            modal_context.is_uploading_attachment.set(false);
-
             if let Some(err_msg) = upload_err {
+                ch_ctx.messages.update(|list| {
+                    if let Some(m) = list.iter_mut().find(|m| m.id == optimistic_id) {
+                        m.is_pending = false;
+                        m.is_failed = true;
+                    }
+                });
                 crate::components::ui::context_menu::clipboard::show_toast(
-                    &modal_context,
+                    &m_ctx,
                     true,
                     err_msg,
                 );
                 return;
             }
 
-            // All attachments uploaded successfully — format combined content
-            if !uploaded_snippets.is_empty() {
-                let snippets_block = uploaded_snippets.join("\n\n");
-                if final_content.is_empty() {
-                    final_content = snippets_block;
-                } else {
-                    final_content = format!("{final_content}\n\n{snippets_block}");
-                }
-            }
-
-            // Clean up blob URLs
             for att in &attachments {
                 att.revoke();
             }
-            modal_context.pending_attachments.set(Vec::new());
         }
 
-        // Validate final combined content
+        let mut final_content = raw_text.trim().to_string();
+        if !uploaded_snippets.is_empty() {
+            let snippets_block = uploaded_snippets.join("\n\n");
+            if final_content.is_empty() {
+                final_content = snippets_block;
+            } else {
+                final_content = format!("{final_content}\n\n{snippets_block}");
+            }
+        }
+
         let sanitized = match gilvave_core::validation::validate_message(&final_content) {
             Ok(s) => s,
             Err(e) => {
-                web_sys::console::warn_1(&format!("[MESSAGES_AREA] on_submit validation failed: {e}").into());
+                web_sys::console::warn_1(&format!("[MESSAGES_AREA] validation failed: {e}").into());
+                ch_ctx.messages.update(|list| {
+                    if let Some(m) = list.iter_mut().find(|m| m.id == optimistic_id) {
+                        m.is_pending = false;
+                        m.is_failed = true;
+                    }
+                });
                 return;
             }
         };
 
-        if let Some(edit_msg) = editing {
-            web_sys::console::log_1(
-                &format!("[MESSAGES_AREA] invoking MessageUpdate for {}", edit_msg.id).into(),
-            );
-            let res = WsService::message_update(edit_msg.channel_id, edit_msg.id, sanitized).await;
-            web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageUpdate res: {res:?}").into());
-            modal_context.editing_message.set(None);
-        } else {
-            let reply_to = replying.as_ref().map(|r| r.id);
-            modal_context.replying_to.set(None);
+        save_channel_last_read(
+            channel_id,
+            MessageId::default(),
+            time::OffsetDateTime::now_utc().unix_timestamp(),
+        );
 
-            save_channel_last_read(
-                channel_id,
-                MessageId::default(),
-                time::OffsetDateTime::now_utc().unix_timestamp(),
-            );
-
-            web_sys::console::log_1(
-                &format!(
-                    "[MESSAGES_AREA] invoking MessageCreate for {channel_id} with reply_to={reply_to:?}"
-                )
-                .into(),
-            );
-            let res = WsService::message_create(channel_id, sanitized, reply_to, None).await;
-            web_sys::console::log_1(&format!("[MESSAGES_AREA] MessageCreate res: {res:?}").into());
-
-            if let Some(node) = container.as_ref().and_then(|c| c.try_get()) {
-                let el = node.unchecked_into::<HtmlElement>();
-                el.set_scroll_top(el.scroll_height());
-            }
+        let res = WsService::message_create(channel_id, sanitized, reply_to, None).await;
+        if res.is_err() {
+            ch_ctx.messages.update(|list| {
+                if let Some(m) = list.iter_mut().find(|m| m.id == optimistic_id) {
+                    m.is_pending = false;
+                    m.is_failed = true;
+                }
+            });
         }
-
-        draft_message.set(String::new());
     });
 }

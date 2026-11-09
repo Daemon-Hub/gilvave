@@ -15,7 +15,11 @@ pub(crate) fn setup_android_back_button(
 ) {
     if let Some(window) = web_sys::window() {
         let on_android_back = Closure::<dyn Fn() -> bool>::new(move || {
-            // Priority 0: Lightbox photo viewer
+            // Priority 0: Lightbox photo viewer & Fullscreen video player
+            if modal_ctx.active_fullscreen_video.with(|v| v.is_some()) {
+                modal_ctx.active_fullscreen_video.set(None);
+                return true;
+            }
             if modal_ctx.lightbox_image.with(|img| img.is_some()) {
                 modal_ctx.lightbox_image.set(None);
                 return true;

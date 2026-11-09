@@ -44,6 +44,7 @@ pub(crate) fn row_to_message_view(row: &rusqlite::Row<'_>) -> rusqlite::Result<M
         forwarded_from,
         created_at,
         is_pending: pending_num != 0,
+        is_failed: false,
     })
 }
 

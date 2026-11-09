@@ -32,9 +32,13 @@ impl ContextMenuContext {
         }
     }
 
-    pub fn show(&self, x: i32, y: i32, items: Vec<ContextMenuItem>) {
+    pub fn show(&self, x: i32, y: i32, mut items: Vec<ContextMenuItem>) {
         if items.is_empty() {
             return;
+        }
+        // Первый элемент контекстного меню никогда не должен иметь разделитель сверху
+        if let Some(first) = items.first_mut() {
+            first.separator_above = false;
         }
         self.items.set(items);
         self.x.set(x);

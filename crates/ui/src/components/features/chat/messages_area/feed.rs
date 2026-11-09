@@ -27,6 +27,7 @@ where
                     hash_str(&em.message.content),
                     em.message.edited,
                     em.message.is_pending,
+                    em.message.is_failed,
                     em.message.reply_to_id,
                     em.is_first,
                     em.is_last,

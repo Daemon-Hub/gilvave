@@ -1,3 +1,4 @@
+pub mod attachments;
 pub mod chat_input_area;
 pub mod chat_scroll;
 pub mod emoji_search;

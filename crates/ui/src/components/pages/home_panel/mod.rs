@@ -95,6 +95,7 @@ pub fn HomePanel() -> View {
         server_overview_tab: create_signal(OverviewTab::Saved),
         toast_message: create_signal(None),
         lightbox_image: create_signal(None),
+        active_fullscreen_video: create_signal(None),
         pending_attachments: create_signal(Vec::new()),
         is_uploading_attachment: create_signal(false),
     };
@@ -524,6 +525,13 @@ pub fn HomePanel() -> View {
                         CloseSmallIcon()
                     }
                 }
+            }
+        } else {
+            view! {}
+        })
+        (if let Some(active) = ui_modal_context.active_fullscreen_video.get_clone() {
+            view! {
+                crate::components::features::chat::attachments::FullscreenVideoModal(active=active)
             }
         } else {
             view! {}

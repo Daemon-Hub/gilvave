@@ -135,6 +135,12 @@
         height: 1px;
         background: $color-border-subtle;
         margin: 4px 6px;
+
+        &:first-child,
+        &:last-child,
+        & + .context-menu-separator {
+            display: none;
+        }
     }
 }
 

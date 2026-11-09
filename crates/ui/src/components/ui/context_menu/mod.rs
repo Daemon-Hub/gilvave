@@ -121,7 +121,7 @@ pub fn AppContextMenu() -> View {
                     if item.danger {
                         btn_class.push_str(" is-danger");
                     }
-                    let sep_view = if item.separator_above {
+                    let sep_view = if item.separator_above && idx > 0 {
                         view! { div(class="context-menu-separator") }
                     } else {
                         view! {}

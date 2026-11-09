@@ -62,6 +62,7 @@ pub fn handle_global_context_menu(
             if let Ok(Some(msg_el)) = el.closest("[data-message-id]") {
                 let items = build_message_menu(
                     &msg_el,
+                    &el,
                     &selected_text,
                     modal_ctx,
                     channel_ctx,
@@ -132,7 +133,7 @@ pub fn handle_global_context_menu(
         icon: "devtools",
         shortcut: None,
         danger: false,
-        separator_above: true,
+        separator_above: !items.is_empty(),
         on_click: Rc::new(|| {
             #[cfg(target_arch = "wasm32")]
             wasm_bindgen_futures::spawn_local(async {
@@ -147,7 +148,7 @@ pub fn handle_global_context_menu(
         icon: "refresh",
         shortcut: Some("Ctrl+R"),
         danger: false,
-        separator_above: true,
+        separator_above: false,
         on_click: Rc::new(|| {
             let _ = js_sys::eval("window.location.reload()");
         }),

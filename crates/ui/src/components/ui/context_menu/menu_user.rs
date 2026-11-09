@@ -124,7 +124,7 @@ pub(crate) fn build_user_menu(
                 icon: "trash",
                 shortcut: None,
                 danger: true,
-                separator_above: true,
+                separator_above: !items.is_empty(),
                 on_click: Rc::new(move || {
                     #[cfg(target_arch = "wasm32")]
                     {
@@ -169,7 +169,7 @@ pub(crate) fn build_user_menu(
             icon: "copy",
             shortcut: None,
             danger: false,
-            separator_above: true,
+            separator_above: !items.is_empty(),
             on_click: Rc::new(move || copy_to_clipboard(&n_copy)),
         });
     }
@@ -180,7 +180,7 @@ pub(crate) fn build_user_menu(
         icon: "info",
         shortcut: None,
         danger: false,
-        separator_above: u_name.is_empty(),
+        separator_above: u_name.is_empty() && !items.is_empty(),
         on_click: Rc::new(move || copy_to_clipboard(&id_copy)),
     });
 
@@ -205,7 +205,7 @@ pub(crate) fn build_user_menu(
                 icon: "reply",
                 shortcut: None,
                 danger: false,
-                separator_above: true,
+                separator_above: !items.is_empty(),
                 on_click: Rc::new(move || {
                     editing_sig.set(None);
                     replying_sig.set(Some(target_msg.clone()));

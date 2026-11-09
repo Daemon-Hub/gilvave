@@ -153,6 +153,9 @@ async fn handle_command_web(args: Value) -> CommandResult {
         CommandArgs::OpenFile { .. } => {
             CommandResult::Ok(CommandResponse::OpenFile)
         }
+        CommandArgs::SaveFileToDownloads { filename, .. } => {
+            CommandResult::Ok(CommandResponse::SaveFileToDownloads(filename))
+        }
     }
 }
 
@@ -210,6 +213,7 @@ mod tests {
             forwarded_from: None,
             created_at: OffsetDateTime::now_utc(),
             is_pending: false,
+            is_failed: false,
         };
         let payload_json = serde_json::to_value(&view).unwrap();
         let event_json = serde_json::json!({

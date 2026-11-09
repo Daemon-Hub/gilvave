@@ -18,6 +18,7 @@ use gilvave_core::{
 #[allow(dead_code)]
 pub(crate) fn build_message_menu(
     msg_el: &Element,
+    clicked_el: &Element,
     selected_text: &str,
     modal_ctx: Option<&UiModalContext>,
     channel_ctx: Option<&ChannelContext>,
@@ -70,6 +71,7 @@ pub(crate) fn build_message_menu(
         forwarded_from: None,
         created_at: time::OffsetDateTime::now_utc(),
         is_pending: false,
+        is_failed: false,
     };
 
     // 1) Ответить (Reply)
@@ -193,7 +195,7 @@ pub(crate) fn build_message_menu(
                     icon: "user_plus",
                     shortcut: None,
                     danger: false,
-                    separator_above: true,
+                    separator_above: !items.is_empty(),
                     on_click: Rc::new(move || {
                         #[cfg(target_arch = "wasm32")]
                         {
@@ -242,7 +244,7 @@ pub(crate) fn build_message_menu(
                     icon: "message",
                     shortcut: None,
                     danger: false,
-                    separator_above: true,
+                    separator_above: !items.is_empty(),
                     on_click: Rc::new(move || {
                         if let Some(sc) = s_ctx.as_ref() {
                             sc.current.set(None);
@@ -256,7 +258,68 @@ pub(crate) fn build_message_menu(
             }
         }
 
-    // 5) Копировать текст
+    // 5) Сохранить в загрузки (если кликнули по файлу или в сообщении есть вложение)
+    let target_file = if let Ok(Some(file_el)) = clicked_el.closest(".chat-message-file") {
+        let f_name = file_el.get_attribute("data-filename").unwrap_or_default();
+        let f_id = file_el.get_attribute("data-file-id").unwrap_or_default();
+        let f_url = file_el.get_attribute("data-file-url").unwrap_or_default();
+        if !f_name.is_empty() {
+            Some((f_name, f_id, f_url))
+        } else {
+            None
+        }
+    } else {
+        let (_, atts) = crate::components::common::media::extract_message_media_and_text(&msg_content);
+        atts.into_iter().next().map(|a| match a {
+            crate::components::common::media::ParsedAttachment::File { name, file_id, url } => {
+                (name, file_id.map(|id| id.to_string()).unwrap_or_default(), url)
+            }
+            crate::components::common::media::ParsedAttachment::Video { name, url } => {
+                (name, String::new(), url)
+            }
+            crate::components::common::media::ParsedAttachment::Image { name, url } => {
+                (name, String::new(), url)
+            }
+        })
+    };
+
+    #[allow(unused_variables)]
+    if let Some((f_name, f_id, f_url)) = target_file {
+        #[allow(unused_variables)]
+        let m_ctx_opt = modal_ctx.cloned();
+        items.push(ContextMenuItem {
+            label: "Сохранить в загрузки".to_string(),
+            icon: "download",
+            shortcut: None,
+            danger: false,
+            separator_above: !items.is_empty(),
+            on_click: Rc::new(move || {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let m_ctx = m_ctx_opt.clone();
+                    let fid = f_id.clone();
+                    let fname = f_name.clone();
+                    let furl = f_url.clone();
+                    wasm_bindgen_futures::spawn_local(async move {
+                        match crate::components::common::media::save_file_to_downloads_async(&fid, &fname, &furl).await {
+                            Ok(_) => {
+                                if let Some(m) = m_ctx.as_ref() {
+                                    show_toast(m, false, format!("Файл «{fname}» сохранён в Загрузки"));
+                                }
+                            }
+                            Err(err) => {
+                                if let Some(m) = m_ctx.as_ref() {
+                                    show_toast(m, true, format!("Не удалось сохранить файл: {err}"));
+                                }
+                            }
+                        }
+                    });
+                }
+            }),
+        });
+    }
+
+    // 6) Копировать текст
     let text_to_copy = if !selected_text.is_empty() {
         selected_text.to_string()
     } else {
@@ -269,7 +332,7 @@ pub(crate) fn build_message_menu(
         icon: "copy",
         shortcut: Some("Ctrl+C"),
         danger: false,
-        separator_above: true,
+        separator_above: !items.is_empty(),
         on_click: Rc::new(move || copy_to_clipboard(&t_copy)),
     });
 
@@ -307,7 +370,7 @@ pub(crate) fn build_message_menu(
             icon: "trash",
             shortcut: None,
             danger: true,
-            separator_above: true,
+            separator_above: !items.is_empty(),
             on_click: Rc::new(move || {
                 if let Some(c_ctx) = c_ctx_opt {
                     c_ctx.messages.update(|list| list.retain(|m| m.id != m_id));

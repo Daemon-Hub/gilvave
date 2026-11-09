@@ -38,18 +38,39 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // 1. Transparent file caching (/files/*)
+  // 1. Transparent file caching (/files/*) with HTTP Range support for media seeking
   if (url.pathname.startsWith('/files/')) {
     event.respondWith(
       caches.open(FILES_CACHE_NAME).then(async (cache) => {
-        const cached = await cache.match(request);
+        const rangeHeader = request.headers.get('range');
+        const cached = await cache.match(request, { ignoreSearch: true });
+
+        if (cached && rangeHeader) {
+          const blob = await cached.blob();
+          const total = blob.size;
+          const parts = rangeHeader.replace(/bytes=/, '').split('-');
+          const start = parseInt(parts[0], 10) || 0;
+          const end = parts[1] ? parseInt(parts[1], 10) : total - 1;
+          const chunk = blob.slice(start, end + 1);
+          return new Response(chunk, {
+            status: 206,
+            statusText: 'Partial Content',
+            headers: {
+              'Content-Range': `bytes ${start}-${end}/${total}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': String(chunk.size),
+              'Content-Type': cached.headers.get('Content-Type') || 'video/mp4',
+            },
+          });
+        }
+
         if (cached) {
           return cached;
         }
 
         try {
           const response = await fetch(request);
-          if (response && response.ok) {
+          if (response && response.ok && !rangeHeader) {
             cache.put(request, response.clone());
           }
           return response;

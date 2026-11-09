@@ -118,6 +118,13 @@ pub(crate) fn MenuIcon(name: &'static str) -> View {
                 line(x1="12", y1="8", x2="12.01", y2="8")
             }
         },
+        "download" => view! {
+            svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
+                path(d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")
+                polyline(points="7 10 12 15 17 10")
+                line(x1="12", y1="15", x2="12", y2="3")
+            }
+        },
         "upload" => view! {
             svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
                 path(d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4")

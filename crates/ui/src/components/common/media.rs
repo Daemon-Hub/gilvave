@@ -171,11 +171,7 @@ impl PendingAttachment {
         let is_image = mime.starts_with("image/");
         let is_video = mime.starts_with("video/");
         let is_previewable = is_image || is_video;
-        let preview_url = if is_previewable {
-            web_sys::Url::create_object_url_with_blob(&file).ok()
-        } else {
-            None
-        };
+        let preview_url = web_sys::Url::create_object_url_with_blob(&file).ok();
         let id = gilvave_core::ids::FileId::default().to_string();
 
         Self {
@@ -198,11 +194,7 @@ impl PendingAttachment {
         is_video: bool,
         file_id: Option<gilvave_core::ids::FileId>,
     ) -> Self {
-        let preview_url = if is_previewable {
-            Some(url.clone())
-        } else {
-            None
-        };
+        let preview_url = Some(url.clone());
         let id = file_id
             .map(|f| f.to_string())
             .unwrap_or_else(|| gilvave_core::ids::FileId::default().to_string());
@@ -297,6 +289,106 @@ pub fn parse_file_id_from_url(url: &str) -> Option<gilvave_core::ids::FileId> {
     None
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ParsedAttachment {
+    Image {
+        name: String,
+        url: String,
+    },
+    Video {
+        name: String,
+        url: String,
+    },
+    File {
+        name: String,
+        file_id: Option<gilvave_core::ids::FileId>,
+        url: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ActiveFullscreenVideo {
+    pub url: String,
+    pub title: String,
+    pub initial_time: f64,
+}
+
+/// Извлечение вложений и чистого текста из сообщения для нативного отображения
+pub fn extract_message_media_and_text(content: &str) -> (String, Vec<ParsedAttachment>) {
+    let mut attachments = Vec::new();
+    let mut clean_text = String::with_capacity(content.len());
+    let mut remaining = content;
+
+    while !remaining.is_empty() {
+        // 1. Изображение или видео: ![alt](url)
+        if remaining.starts_with("![")
+            && let Some(close_bracket) = remaining.find("](")
+        {
+            let alt = &remaining[2..close_bracket];
+            let after = &remaining[close_bracket + 2..];
+            if let Some(close_paren) = after.find(')') {
+                let url = &after[..close_paren];
+                if is_video_source(url, alt) {
+                    attachments.push(ParsedAttachment::Video {
+                        name: alt.to_string(),
+                        url: url.to_string(),
+                    });
+                } else {
+                    attachments.push(ParsedAttachment::Image {
+                        name: alt.to_string(),
+                        url: url.to_string(),
+                    });
+                }
+                remaining = &after[close_paren + 1..];
+                continue;
+            }
+        }
+
+        // 2. Файловая ссылка: [name](file:id) или [name](http.../files/id)
+        if remaining.starts_with('[')
+            && let Some(close_bracket) = remaining.find("](")
+        {
+            let name = &remaining[1..close_bracket];
+            let after = &remaining[close_bracket + 2..];
+            if let Some(close_paren) = after.find(')') {
+                let link = &after[..close_paren];
+                if link.starts_with("file:")
+                    || link.starts_with("file_id:")
+                    || link.contains("/files/")
+                    || link.starts_with("blob:")
+                {
+                    let file_id = parse_file_id_from_url(link);
+                    let download_url = if let Some(fid) = link.strip_prefix("file:") {
+                        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+                    } else if let Some(fid) = link.strip_prefix("file_id:") {
+                        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+                    } else if link.starts_with("http://") || link.starts_with("https://") || link.starts_with("blob:") {
+                        link.to_string()
+                    } else {
+                        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, link)
+                    };
+                    attachments.push(ParsedAttachment::File {
+                        name: name.to_string(),
+                        file_id,
+                        url: download_url,
+                    });
+                    remaining = &after[close_paren + 1..];
+                    continue;
+                }
+            }
+        }
+
+        let next_char = match remaining.chars().next() {
+            Some(c) => c,
+            None => break,
+        };
+        clean_text.push(next_char);
+        remaining = &remaining[next_char.len_utf8()..];
+    }
+
+    (clean_text.trim().to_string(), attachments)
+}
+
 /// Извлечение вложений из текста Markdown при редактировании сообщения
 pub fn extract_attachments_from_markdown(content: &str) -> (String, Vec<PendingAttachment>) {
     let mut attachments = Vec::new();
@@ -352,7 +444,10 @@ pub fn extract_attachments_from_markdown(content: &str) -> (String, Vec<PendingA
             }
         }
 
-        let next_char = remaining.chars().next().unwrap();
+        let next_char = match remaining.chars().next() {
+            Some(c) => c,
+            None => break,
+        };
         clean_text.push(next_char);
         remaining = &remaining[next_char.len_utf8()..];
     }
@@ -398,26 +493,10 @@ pub fn is_file_cached(file_id: &str) -> bool {
 
 /// Кэширование загруженного пользователем файла в локальное хранилище
 #[cfg(target_arch = "wasm32")]
-pub async fn cache_uploaded_file_storage(file_id: &str, file_name: &str, file: &web_sys::File) {
+pub async fn cache_uploaded_file_storage(file_id: &str, _file_name: &str, file: &web_sys::File) {
     mark_file_cached(file_id);
 
-    // 1. В Desktop (Tauri) — немедленно сохраняем файл на диск в кэш
-    let ab_prom = file.array_buffer();
-    if let Ok(ab_val) = wasm_bindgen_futures::JsFuture::from(ab_prom).await {
-        let u8_arr = js_sys::Uint8Array::new(&ab_val);
-        let bytes = u8_arr.to_vec();
-
-        if crate::utils::is_tauri() {
-            let cmd = gilvave_core::dto::command::CommandArgs::SaveCachedFile {
-                file_id: file_id.to_string(),
-                filename: file_name.to_string(),
-                data: bytes,
-            };
-            let _ = crate::utils::invoke_command(cmd.to_json()).await;
-        }
-    }
-
-    // 2. В Web / CacheStorage
+    // В Web / CacheStorage сохраняем блоб в фоновом кэше браузера без блокирующих сериализаций
     let Some(window) = web_sys::window() else { return; };
     let Ok(caches_val) = js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("caches")) else { return; };
     if caches_val.is_undefined() || caches_val.is_null() { return; }
@@ -454,150 +533,101 @@ pub async fn cache_uploaded_file_storage(file_id: &str, file_name: &str, file: &
     }
 }
 
-/// Открытие сохранённого файла из кэша (или загрузка и кэширование при первом открытии)
+/// Открытие файла (в Desktop нативно через ОС opener, в Web через браузер)
 #[cfg(target_arch = "wasm32")]
 pub async fn open_file_card_async(file_id: &str, filename: &str, url: &str) {
-    use wasm_bindgen::JsCast;
-
-    let Some(window) = web_sys::window() else { return; };
-
-    // 1. В Desktop — проверяем, есть ли уже файл на диске в кэше
     if crate::utils::is_tauri() {
-        let check_cmd = gilvave_core::dto::command::CommandArgs::OpenFile {
+        let download_url = if url.starts_with("http://") || url.starts_with("https://") {
+            Some(url.to_string())
+        } else if !file_id.is_empty() {
+            Some(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id))
+        } else {
+            None
+        };
+
+        let cmd = gilvave_core::dto::command::CommandArgs::OpenFile {
             file_id: file_id.to_string(),
             filename: filename.to_string(),
-            data: None,
+            download_url,
         };
-        let res = crate::utils::invoke_command(check_cmd.to_json()).await;
+        let res = crate::utils::invoke_command(cmd.to_json()).await;
         if res.is_ok() {
-            return;
-        }
-    }
-
-    // 2. Пытаемся получить Blob из CacheStorage ('gilvave-files-v1')
-    let mut blob_opt: Option<web_sys::Blob> = None;
-
-    if let Ok(caches_val) = js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("caches")) {
-        if !caches_val.is_undefined() && !caches_val.is_null() {
-            if let Ok(open_val) = js_sys::Reflect::get(&caches_val, &wasm_bindgen::JsValue::from_str("open")) {
-                if let Ok(open_fn) = open_val.dyn_into::<js_sys::Function>() {
-                    if let Ok(promise) = js_sys::Reflect::apply(
-                        &open_fn,
-                        &caches_val,
-                        &js_sys::Array::of1(&wasm_bindgen::JsValue::from_str("gilvave-files-v1")),
-                    ) {
-                        if let Ok(cache_js) = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(promise)).await {
-                            if let Ok(match_val) = js_sys::Reflect::get(&cache_js, &wasm_bindgen::JsValue::from_str("match")) {
-                                if let Ok(match_fn) = match_val.dyn_into::<js_sys::Function>() {
-                                    let rel_url = format!("/files/{file_id}");
-                                    if let Ok(p1) = js_sys::Reflect::apply(&match_fn, &cache_js, &js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(&rel_url))) {
-                                        if let Ok(resp_val) = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(p1)).await {
-                                            if !resp_val.is_undefined() && !resp_val.is_null() {
-                                                if let Ok(resp) = resp_val.dyn_into::<web_sys::Response>() {
-                                                    if let Ok(blob_prom) = resp.blob() {
-                                                        if let Ok(b_val) = wasm_bindgen_futures::JsFuture::from(blob_prom).await {
-                                                            blob_opt = b_val.dyn_into::<web_sys::Blob>().ok();
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if blob_opt.is_none() && !url.is_empty() {
-                                        if let Ok(p2) = js_sys::Reflect::apply(&match_fn, &cache_js, &js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(url))) {
-                                            if let Ok(resp_val) = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(p2)).await {
-                                                if !resp_val.is_undefined() && !resp_val.is_null() {
-                                                    if let Ok(resp) = resp_val.dyn_into::<web_sys::Response>() {
-                                                        if let Ok(blob_prom) = resp.blob() {
-                                                            if let Ok(b_val) = wasm_bindgen_futures::JsFuture::from(blob_prom).await {
-                                                                blob_opt = b_val.dyn_into::<web_sys::Blob>().ok();
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // 3. Если файл ещё не в кэше, скачиваем один раз с авторизацией и кэшируем
-    let blob = match blob_opt {
-        Some(b) => b,
-        None => {
-            if url.is_empty() { return; }
-            let opts = web_sys::RequestInit::new();
-            opts.set_method("GET");
-            opts.set_credentials(web_sys::RequestCredentials::Include);
-
-            if let Ok(headers) = web_sys::Headers::new() {
-                let token = crate::http::api::Api::fetch_access_token().await;
-                if !token.is_empty() {
-                    let _ = headers.set("Authorization", &format!("Bearer {token}"));
-                }
-                opts.set_headers(&headers);
-            }
-
-            let Ok(req) = web_sys::Request::new_with_str_and_init(url, &opts) else { return; };
-            let resp_prom = window.fetch_with_request(&req);
-            let Ok(resp_val) = wasm_bindgen_futures::JsFuture::from(resp_prom).await else { return; };
-            let Ok(resp) = resp_val.dyn_into::<web_sys::Response>() else { return; };
-            if !resp.ok() { return; }
-            let Ok(blob_prom) = resp.blob() else { return; };
-            let Ok(b_val) = wasm_bindgen_futures::JsFuture::from(blob_prom).await else { return; };
-            let Ok(b) = b_val.dyn_into::<web_sys::Blob>() else { return; };
-
-            if let Ok(caches_val) = js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("caches")) {
-                if !caches_val.is_undefined() && !caches_val.is_null() {
-                    if let Ok(open_val) = js_sys::Reflect::get(&caches_val, &wasm_bindgen::JsValue::from_str("open")) {
-                        if let Ok(open_fn) = open_val.dyn_into::<js_sys::Function>() {
-                            if let Ok(promise) = js_sys::Reflect::apply(
-                                &open_fn,
-                                &caches_val,
-                                &js_sys::Array::of1(&wasm_bindgen::JsValue::from_str("gilvave-files-v1")),
-                            ) {
-                                if let Ok(cache_js) = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(promise)).await {
-                                    if let Ok(put_val) = js_sys::Reflect::get(&cache_js, &wasm_bindgen::JsValue::from_str("put")) {
-                                        if let Ok(put_fn) = put_val.dyn_into::<js_sys::Function>() {
-                                            if let Ok(resp_to_cache) = web_sys::Response::new_with_opt_blob(Some(b.as_ref())) {
-                                                let rel_url = format!("/files/{file_id}");
-                                                let _ = js_sys::Reflect::apply(&put_fn, &cache_js, &js_sys::Array::of2(&wasm_bindgen::JsValue::from_str(&rel_url), &resp_to_cache));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             mark_file_cached(file_id);
-            b
         }
-    };
-
-    // 4. Открываем файл: в Desktop — нативным приложением через ОС opener, в Web — локальным Blob URL
-    if crate::utils::is_tauri() {
-        let ab_prom = blob.array_buffer();
-        if let Ok(ab_val) = wasm_bindgen_futures::JsFuture::from(ab_prom).await {
-            let u8_arr = js_sys::Uint8Array::new(&ab_val);
-            let bytes = u8_arr.to_vec();
-            let cmd = gilvave_core::dto::command::CommandArgs::OpenFile {
-                file_id: file_id.to_string(),
-                filename: filename.to_string(),
-                data: Some(bytes),
-            };
-            let _ = crate::utils::invoke_command(cmd.to_json()).await;
-        }
-    } else if let Ok(blob_url) = web_sys::Url::create_object_url_with_blob(&blob) {
-        let _ = window.open_with_url_and_target(&blob_url, "_blank");
+        return;
     }
+
+    // В обычном браузере (Web)
+    let Some(window) = web_sys::window() else { return; };
+    let target_url = if url.starts_with("http://") || url.starts_with("https://") || url.starts_with("blob:") {
+        url.to_string()
+    } else if !file_id.is_empty() {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id)
+    } else {
+        return;
+    };
+    let _ = window.open_with_url_and_target(&target_url, "_blank");
+}
+
+
+/// Сохранение файла в системную папку Загрузки
+#[cfg(target_arch = "wasm32")]
+pub async fn save_file_to_downloads_async(file_id: &str, filename: &str, url: &str) -> Result<String, String> {
+    use wasm_bindgen::JsCast;
+
+    if crate::utils::is_tauri() {
+        let download_url = if url.starts_with("http://") || url.starts_with("https://") {
+            Some(url.to_string())
+        } else if !file_id.is_empty() {
+            Some(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id))
+        } else {
+            None
+        };
+
+        let cmd = gilvave_core::dto::command::CommandArgs::SaveFileToDownloads {
+            file_id: file_id.to_string(),
+            filename: filename.to_string(),
+            download_url,
+        };
+        let res = crate::utils::invoke_command(cmd.to_json()).await;
+        match res {
+            gilvave_core::dto::command::CommandResult::Ok(gilvave_core::dto::command::CommandResponse::SaveFileToDownloads(p)) => {
+                mark_file_cached(file_id);
+                Ok(p)
+            }
+            gilvave_core::dto::command::CommandResult::Error(err) => Err(err.message().to_string()),
+            _ => Ok(filename.to_string()),
+        }
+    } else {
+        let window = web_sys::window().ok_or_else(|| "No window".to_string())?;
+        let document = window.document().ok_or_else(|| "No document".to_string())?;
+        let dl_url = if url.starts_with("http://") || url.starts_with("https://") || url.starts_with("blob:") {
+            url.to_string()
+        } else if !file_id.is_empty() {
+            format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id)
+        } else {
+            return Err("Empty URL".to_string());
+        };
+
+        let a = document.create_element("a").map_err(|e| format!("{e:?}"))?;
+        let _ = a.set_attribute("href", &dl_url);
+        let _ = a.set_attribute("download", filename);
+        let _ = a.set_attribute("style", "display: none;");
+        if let Some(body) = document.body() {
+            let _ = body.append_child(&a);
+            if let Ok(html_a) = a.clone().dyn_into::<web_sys::HtmlElement>() {
+                html_a.click();
+            }
+            let _ = body.remove_child(&a);
+        }
+        Ok(filename.to_string())
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+pub async fn save_file_to_downloads_async(_file_id: &str, _filename: &str, _url: &str) -> Result<String, String> {
+    Ok(String::new())
 }
 
 #[cfg(not(target_arch = "wasm32"))]

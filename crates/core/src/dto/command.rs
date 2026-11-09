@@ -66,12 +66,17 @@ pub enum CommandArgs {
     SaveCachedFile {
         file_id: String,
         filename: String,
-        data: Vec<u8>,
+        download_url: Option<String>,
     },
     OpenFile {
         file_id: String,
         filename: String,
-        data: Option<Vec<u8>>,
+        download_url: Option<String>,
+    },
+    SaveFileToDownloads {
+        file_id: String,
+        filename: String,
+        download_url: Option<String>,
     },
 }
 
@@ -107,6 +112,7 @@ pub enum CommandResponse {
     SyncCachedChannels,
     SaveCachedFile,
     OpenFile,
+    SaveFileToDownloads(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
