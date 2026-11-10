@@ -83,6 +83,20 @@ pub(crate) fn setup_android_back_button(
             // Already at the top-level list: do not consume, allow Android to exit/minimize
             false
         });
+        let on_esc_key = Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
+            if e.key() == "Escape" {
+                if modal_ctx.active_fullscreen_video.with(|v| v.is_some()) {
+                    modal_ctx.active_fullscreen_video.set(None);
+                    return;
+                }
+                if modal_ctx.lightbox_image.with(|img| img.is_some()) {
+                    modal_ctx.lightbox_image.set(None);
+                }
+            }
+        });
+        let _ = window.add_event_listener_with_callback("keydown", on_esc_key.as_ref().unchecked_ref());
+        on_esc_key.forget();
+
         let _ = js_sys::Reflect::set(
             &window,
             &wasm_bindgen::JsValue::from_str("__onAndroidBackPressed"),

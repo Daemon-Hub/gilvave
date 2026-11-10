@@ -14,7 +14,7 @@ use self::feed::MessagesFeed;
 use self::header::ChannelHeader;
 use super::chat_input_area::send_channel_message;
 use super::chat_scroll::{
-    apply_channel_scroll_anchor, determine_channel_target_scroll,
+    determine_channel_target_scroll,
     execute_initial_scroll_restoration, find_top_visible_message,
     get_channel_last_read, save_channel_scroll_state,
     ChannelScrollAnchor,
@@ -57,6 +57,8 @@ pub fn MessagesArea() -> View {
     let saved_read_marker = create_signal::<Option<(Option<MessageId>, Option<i64>)>>(None);
     let active_target_anchor = create_signal::<Option<ChannelScrollAnchor>>(None);
     let prev_channel_id = create_signal::<Option<ChannelId>>(None);
+    let is_loading_history = create_signal::<bool>(false);
+    let has_more_before = create_signal::<bool>(true);
 
     let on_scroll = move |event: Event| {
         let el: HtmlElement = match event.current_target() {
@@ -70,7 +72,7 @@ pub fn MessagesArea() -> View {
         let sh = el.scroll_height();
         let ch = el.client_height();
 
-        let is_top = top <= 0;
+        let is_top = top <= 20;
         let is_bottom = (sh - ch - top).abs() <= SCROLL_THRESHOLD;
 
         let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id)) else {
@@ -103,17 +105,20 @@ pub fn MessagesArea() -> View {
             }
         }
 
-        if is_top {
-            console_log!("top message");
+        if is_top && !is_loading_history.get() && has_more_before.get() {
+            console_log!("fetching older channel history before...");
+            is_loading_history.set(true);
             spawn_local_scoped(async move {
                 let Some(ch_id) = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id))
                 else {
+                    is_loading_history.set(false);
                     return;
                 };
                 let Some(first_dt) = channel_context
                     .messages
                     .with(|m| m.first().map(|msg| msg.created_at))
                 else {
+                    is_loading_history.set(false);
                     return;
                 };
                 let _ = WsService::channel_history_before(ch_id, first_dt).await;
@@ -168,6 +173,8 @@ pub fn MessagesArea() -> View {
         initial_scroll_performed.set(false);
         unread_marker_id.set(None);
         active_target_anchor.set(None);
+        is_loading_history.set(false);
+        has_more_before.set(true);
 
         let saved = cur.as_ref().and_then(|ch| get_channel_last_read(ch.id));
         saved_read_marker.set(saved);
@@ -311,13 +318,16 @@ pub fn MessagesArea() -> View {
                         )
                         .into(),
                     );
+                    is_loading_history.set(false);
+                    if messages.is_empty() {
+                        has_more_before.set(false);
+                    }
                     let Some(node) = container.try_get() else {
                         continue;
                     };
                     let el = node.unchecked_into::<HtmlElement>();
                     let old_scroll_top = el.scroll_top();
                     let old_scroll_height = el.scroll_height();
-                    let old_client_height = el.client_height();
                     let was_empty = channel_context.messages.with(|m| m.is_empty());
                     let has_initial_scroll = initial_scroll_performed.get();
 
@@ -396,31 +406,12 @@ pub fn MessagesArea() -> View {
                         active_target_anchor.set(Some(target_anchor.clone()));
                         execute_initial_scroll_restoration(el.clone(), target_anchor);
                         initial_scroll_performed.set(true);
-                    } else if let Some(target_anchor) = active_target_anchor.get_clone() {
-                        match &target_anchor {
-                            ChannelScrollAnchor::Bottom => {
-                                const SCROLL_THRESHOLD: i32 = 50;
-                                let is_bottom = (old_scroll_height - old_client_height - old_scroll_top).abs() <= SCROLL_THRESHOLD;
-                                if is_bottom {
-                                    let el_clone = el.clone();
-                                    queue_microtask(move || {
-                                        el_clone.set_scroll_top(el_clone.scroll_height());
-                                    });
-                                }
-                            }
-                            ChannelScrollAnchor::UnreadMarker(_) | ChannelScrollAnchor::Message { .. } => {
-                                let el_clone = el.clone();
-                                let anchor_clone = target_anchor.clone();
-                                queue_microtask(move || {
-                                    apply_channel_scroll_anchor(&el_clone, &anchor_clone);
-                                });
-                            }
-                        }
                     } else {
+                        let el_clone = el.clone();
                         queue_microtask(move || {
-                            let delta = el.scroll_height() - old_scroll_height;
+                            let delta = el_clone.scroll_height() - old_scroll_height;
                             if delta > 0 {
-                                el.set_scroll_top(old_scroll_top + delta);
+                                el_clone.set_scroll_top(old_scroll_top + delta);
                             }
                         });
                     }

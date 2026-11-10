@@ -1,0 +1,269 @@
+@use 'palette' as *;
+@use 'tokens' as *;
+
+// ─── Default Theme (:root = Advanced Cosmic Icon Palette) ────────────────────
+:root {
+    --color-bg-page: #{$raw-adv-bg-page};
+    --color-bg-page-mid: #{$raw-adv-bg-page-mid};
+    --color-bg-page-end: #{$raw-adv-bg-page-end};
+    --color-bg-page-overlay: #{rgba($raw-adv-bg-page, 0.7)};
+
+    --color-icon-cyan: #{$raw-icon-cyan};
+    --color-icon-cyan-bright: #{$raw-icon-cyan-bright};
+    --color-icon-blue: #{$raw-icon-blue};
+    --color-icon-slate-arc: #{$raw-icon-slate-arc};
+    --color-icon-violet: #{$raw-icon-violet};
+    --color-icon-magenta: #{$raw-icon-magenta};
+    --color-icon-coral: #{$raw-icon-coral};
+    --color-icon-orange: #{$raw-icon-orange};
+    --color-icon-amber: #{$raw-icon-amber};
+    --color-icon-spark: #{$raw-icon-spark};
+
+    --color-bg-container: #{$raw-adv-bg-container};
+    --color-bg-container-dark: #{$raw-adv-bg-container-dark};
+    --color-bg-glass: rgba(21, 25, 43, 0.95);
+    --color-bg-input: #{$raw-adv-bg-input};
+    --color-bg-input-focus: #{$raw-adv-bg-input-focus};
+    --color-bg-social: #{$raw-adv-bg-social};
+    --color-bg-message: #{$raw-adv-bg-message};
+
+    --color-bg-panel: #{$raw-adv-bg-panel};
+    --color-bg-panel-dark: #{$raw-adv-bg-panel-dark};
+    --color-bg-panel-footer: #{$raw-adv-bg-panel-footer};
+    --color-bg-panel-darkest: #{$raw-adv-bg-panel-darkest};
+    --color-bg-panel-darkest-hover: #{$raw-adv-bg-panel-darkest-hover};
+    --color-bg-panel-hover: #{$raw-adv-bg-panel-hover};
+    --color-bg-panel-active: #{$raw-adv-bg-panel-active};
+    --color-bg-input-panel: #{$raw-adv-bg-input-panel};
+    --color-bg-input-panel-focus: #{$raw-adv-bg-input-panel-focus};
+
+    --color-border: #{$raw-adv-border};
+    --color-border-header: #{$raw-adv-border-header};
+    --color-border-subtle: #{$raw-adv-border-subtle};
+    --color-border-panel: #{$raw-adv-border-panel};
+    --color-border-container: #{rgba($raw-icon-slate-arc, 0.55)};
+    --color-border-bubble: #{rgba($raw-icon-slate-arc, 0.42)};
+    --color-border-bubble-hover: #{rgba($raw-icon-cyan, 0.28)};
+    --color-border-input-panel: #{rgba($raw-icon-slate-arc, 0.38)};
+    --color-border-input-focus: #{rgba($raw-icon-cyan, 0.5)};
+    --color-border-slate-arc: #{rgba($raw-icon-slate-arc, 0.45)};
+
+    --color-primary: #{$raw-adv-primary};
+    --color-primary-hover: #{$raw-adv-primary-hover};
+    --color-primary-light: #{$raw-adv-primary-light};
+    --color-primary-lighter: #{$raw-adv-primary-lighter};
+    --color-primary-end: #{$raw-adv-primary-end};
+    --color-primary-end-light: #{$raw-adv-primary-end-light};
+    --color-primary-dark: #{$raw-adv-primary-dark};
+    --color-primary-blue: #{$raw-adv-primary-blue};
+
+    --color-primary-alpha-14: #{rgba($raw-adv-primary, 0.14)};
+    --color-primary-alpha-15: #{rgba($raw-adv-primary, 0.15)};
+    --color-primary-alpha-16: #{rgba($raw-adv-primary, 0.16)};
+    --color-primary-alpha-20: #{rgba($raw-adv-primary, 0.20)};
+    --color-primary-alpha-24: #{rgba($raw-adv-primary, 0.24)};
+    --color-primary-alpha-25: #{rgba($raw-adv-primary, 0.25)};
+    --color-primary-alpha-28: #{rgba($raw-adv-primary, 0.28)};
+    --color-primary-alpha-30: #{rgba($raw-adv-primary, 0.30)};
+    --color-primary-alpha-32: #{rgba($raw-adv-primary, 0.32)};
+    --color-primary-alpha-38: #{rgba($raw-adv-primary, 0.38)};
+    --color-primary-alpha-40: #{rgba($raw-adv-primary, 0.40)};
+    --color-primary-alpha-45: #{rgba($raw-adv-primary, 0.45)};
+    --color-primary-alpha-50: #{rgba($raw-adv-primary, 0.50)};
+    --color-primary-end-alpha-15: #{rgba($raw-adv-primary-end, 0.15)};
+    --color-primary-end-alpha-25: #{rgba($raw-adv-primary-end, 0.25)};
+    --color-primary-end-alpha-30: #{rgba($raw-adv-primary-end, 0.30)};
+
+    --color-text-heading: #{$raw-adv-text-heading};
+    --color-text-label: #{$raw-adv-text-label};
+    --color-text-muted: #{$raw-adv-text-muted};
+    --color-text-dim: #{$raw-adv-text-dim};
+    --color-text-social: #{$raw-adv-text-social};
+    --color-text-white: #{$raw-adv-text-white};
+    --color-text-on-accent: #ffffff;
+    --color-text-tab: #{$raw-adv-text-label};
+    --color-text-channel: #{$raw-adv-text-channel};
+    --color-text-member: #{$raw-adv-text-member};
+    --color-text-chat: #{$raw-adv-text-chat};
+    --color-text-author: #{$raw-icon-cyan-bright};
+    --color-text-author-hover: #{$raw-icon-amber};
+    --color-text-date-badge: #{$raw-icon-cyan-bright};
+
+    --color-error: #{$raw-adv-error};
+    --color-error-alpha-15: #{rgba($raw-adv-error, 0.15)};
+    --color-success: #{$raw-adv-success};
+    --color-success-alpha-20: #{rgba($raw-adv-success, 0.2)};
+    --color-danger: #{$raw-adv-danger};
+    --color-danger-hover: #{$raw-adv-danger-hover};
+    --color-danger-light: #{$raw-adv-danger-light};
+    --color-danger-alpha-08: #{rgba($raw-adv-danger, 0.08)};
+    --color-danger-alpha-15: #{rgba($raw-adv-danger, 0.15)};
+    --color-danger-alpha-18: #{rgba($raw-adv-danger, 0.18)};
+    --color-danger-alpha-40: #{rgba($raw-adv-danger, 0.40)};
+    --color-danger-alpha-75: #{rgba($raw-adv-danger, 0.75)};
+    --color-bg-danger-float: rgba(42, 16, 26, 0.96);
+
+    --color-status-online: #{$raw-adv-status-online};
+    --color-status-idle: #{$raw-adv-status-idle};
+    --color-status-dnd: #{$raw-adv-status-dnd};
+    --color-status-offline: #{$raw-adv-status-offline};
+
+    --color-white-alpha-03: rgba(255, 255, 255, 0.03);
+    --color-white-alpha-04: rgba(255, 255, 255, 0.04);
+    --color-white-alpha-05: rgba(255, 255, 255, 0.05);
+    --color-white-alpha-06: rgba(255, 255, 255, 0.06);
+    --color-white-alpha-07: rgba(255, 255, 255, 0.07);
+    --color-white-alpha-08: rgba(255, 255, 255, 0.08);
+    --color-white-alpha-10: rgba(255, 255, 255, 0.10);
+    --color-white-alpha-12: rgba(255, 255, 255, 0.12);
+    --color-white-alpha-14: rgba(255, 255, 255, 0.14);
+    --color-white-alpha-15: rgba(255, 255, 255, 0.15);
+    --color-white-alpha-16: rgba(255, 255, 255, 0.16);
+    --color-white-alpha-18: rgba(255, 255, 255, 0.18);
+    --color-white-alpha-20: rgba(255, 255, 255, 0.20);
+    --color-white-alpha-22: rgba(255, 255, 255, 0.22);
+    --color-white-alpha-35: rgba(255, 255, 255, 0.35);
+    --color-white-alpha-60: rgba(255, 255, 255, 0.60);
+
+    --color-black: #000000;
+    --color-black-alpha-15: rgba(0, 0, 0, 0.15);
+    --color-black-alpha-20: rgba(0, 0, 0, 0.20);
+    --color-black-alpha-22: rgba(0, 0, 0, 0.22);
+    --color-black-alpha-24: rgba(0, 0, 0, 0.24);
+    --color-black-alpha-25: rgba(0, 0, 0, 0.25);
+    --color-black-alpha-35: rgba(0, 0, 0, 0.35);
+    --color-black-alpha-50: rgba(0, 0, 0, 0.50);
+    --color-black-alpha-60: rgba(0, 0, 0, 0.60);
+    --color-black-alpha-72: rgba(10, 11, 16, 0.72);
+    --color-black-alpha-75: rgba(0, 0, 0, 0.75);
+    --color-black-alpha-85: rgba(0, 0, 0, 0.85);
+
+    --color-server-new-bg: #{rgba($raw-icon-slate-arc, 0.32)};
+    --color-server-new-border: #{rgba($raw-icon-cyan, 0.45)};
+    --color-server-new-text: #{$raw-icon-cyan-bright};
+    --color-server-new-hover-bg: linear-gradient(135deg, #{rgba($raw-icon-cyan, 0.22)}, #{rgba($raw-icon-amber, 0.18)});
+    --color-server-new-hover-border: #{$raw-icon-amber};
+    --color-server-new-hover-text: #{$raw-icon-spark};
+    --shadow-server-new-hover: 0 0 0 2px #{rgba($raw-icon-amber, 0.55)}, 0 0 14px #{rgba($raw-icon-orange, 0.4)};
+
+    --color-channel-add-hover-text: #{$raw-icon-amber};
+    --color-channel-add-hover-bg: #{rgba($raw-icon-orange, 0.16)};
+    --color-channel-hash: #{$raw-icon-cyan};
+    --color-channel-hash-hover: #{$raw-icon-cyan-bright};
+    --color-channel-hash-active: #{$raw-icon-cyan};
+    --shadow-channel-active: inset 2px 0 0 #{$raw-icon-cyan};
+    --shadow-channel-hash-glow: 0 0 10px #{rgba($raw-icon-cyan, 0.35)};
+
+    --color-char-counter-bg: rgba(19, 23, 38, 0.95);
+    --color-char-counter-border: #{rgba($raw-icon-amber, 0.45)};
+    --color-char-counter-text: #{$raw-icon-spark};
+    --shadow-char-counter: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 10px #{rgba($raw-icon-orange, 0.2)};
+
+    --color-read-more-border: #{rgba($raw-icon-amber, 0.38)};
+    --color-read-more-text: #{$raw-icon-amber};
+    --color-read-more-hover-border: #{rgba($raw-icon-amber, 0.65)};
+    --color-read-more-hover-text: #{$raw-icon-spark};
+
+    --color-editor-badge-border: #{rgba($raw-icon-amber, 0.4)};
+    --color-editor-badge-text: #{$raw-icon-amber};
+    --color-editor-counter-bg: #{rgba($raw-icon-slate-arc, 0.35)};
+    --color-editor-counter-text: #{$raw-icon-cyan-bright};
+
+    --gradient-pill-hover: linear-gradient(180deg, #{$raw-icon-cyan-bright}, #{$raw-icon-blue});
+    --gradient-pill-active: linear-gradient(180deg, #{$raw-icon-spark} 0%, #{$raw-icon-amber} 28%, #{$raw-icon-orange} 68%, #{$raw-icon-coral} 100%);
+    --filter-pill-active: drop-shadow(0 0 6px #{rgba($raw-icon-orange, 0.7)});
+    --gradient-home-btn: linear-gradient(135deg, #{$raw-icon-cyan} 0%, #{$raw-icon-blue} 35%, #{$raw-icon-violet} 70%, #{$raw-icon-magenta} 100%);
+    --gradient-home-btn-ring: linear-gradient(135deg, #{rgba($raw-icon-cyan, 0.95)}, #{rgba($raw-icon-violet, 0.95)}, #{rgba($raw-icon-coral, 0.95)}, #{rgba($raw-icon-amber, 0.95)});
+    --shadow-home-btn-hover: 0 0 0 3px #{rgba($raw-icon-cyan, 0.65)}, 0 0 18px #{rgba($raw-icon-violet, 0.45)};
+    --shadow-home-btn-active: 0 0 0 2.5px #{$raw-icon-amber}, 0 0 20px #{rgba($raw-icon-orange, 0.45)};
+    --color-home-badge-border: #{$raw-icon-amber};
+    --color-home-badge-border-hover: #{$raw-icon-spark};
+    --shadow-home-badge: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px #{rgba($raw-icon-orange, 0.35)};
+    --shadow-home-badge-hover: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 12px #{rgba($raw-icon-amber, 0.75)};
+
+    --gradient-server-icon: linear-gradient(135deg, #{$raw-icon-blue}, #{$raw-icon-violet}, #{$raw-icon-magenta});
+    --shadow-server-icon-hover: 0 0 0 2.5px #{$raw-icon-cyan}, 0 0 14px #{rgba($raw-icon-cyan, 0.4)};
+    --shadow-server-icon-active: 0 0 0 2.5px #{$raw-icon-amber}, 0 0 16px #{rgba($raw-icon-orange, 0.42)};
+    --color-server-separator-stop-1: #{rgba($raw-icon-cyan, 0.75)};
+    --color-server-separator-stop-2: #{rgba($raw-icon-violet, 0.85)};
+    --color-server-separator-stop-3: #{rgba($raw-icon-orange, 0.75)};
+    --color-server-flap-stop-1: #0e7490;
+    --color-server-flap-stop-2: #3730a3;
+    --color-server-flap-stop-3: #78350f;
+    --color-server-flap-stroke: #3b1124;
+    --color-server-peel-glow: rgba(245, 158, 11, 0.8);
+    --color-server-peel-glow-ambient: rgba(236, 72, 153, 0.45);
+    --gradient-server-separator: linear-gradient(90deg, var(--color-server-separator-stop-1), var(--color-server-separator-stop-2), var(--color-server-separator-stop-3));
+    --gradient-channel-active: linear-gradient(90deg, #{rgba($raw-icon-cyan, 0.18)} 0%, #{rgba($raw-icon-blue, 0.12)} 100%);
+    --gradient-footer-top-line: linear-gradient(90deg, transparent 0%, #{rgba($raw-icon-cyan, 0.5)} 25%, #{rgba($raw-icon-violet, 0.55)} 55%, #{rgba($raw-icon-orange, 0.5)} 85%, transparent 100%);
+    --gradient-date-divider: linear-gradient(90deg, transparent 0%, #{rgba($raw-icon-cyan, 0.35)} 22%, #{rgba($raw-icon-violet, 0.45)} 50%, #{rgba($raw-icon-orange, 0.35)} 78%, transparent 100%);
+    --gradient-message-avatar: linear-gradient(135deg, #{$raw-icon-blue}, #{$raw-icon-violet}, #{$raw-icon-coral});
+    --gradient-read-more: linear-gradient(135deg, #{rgba($raw-icon-orange, 0.16)}, #{rgba($raw-icon-coral, 0.16)});
+    --gradient-read-more-hover: linear-gradient(135deg, #{rgba($raw-icon-orange, 0.28)}, #{rgba($raw-icon-coral, 0.28)});
+    --gradient-send-btn: linear-gradient(135deg, #{$raw-icon-blue} 0%, #{$raw-icon-violet} 48%, #{$raw-icon-coral} 100%);
+    --shadow-send-btn: 0 2px 10px #{rgba($raw-icon-violet, 0.4)};
+    --shadow-send-btn-hover: 0 4px 16px #{rgba($raw-icon-coral, 0.5)};
+    --gradient-editor-badge: linear-gradient(135deg, #{rgba($raw-icon-orange, 0.2)}, #{rgba($raw-icon-coral, 0.2)});
+    --gradient-unread-badge: linear-gradient(135deg, #{$raw-icon-coral} 0%, #{$raw-icon-orange} 100%);
+    --shadow-unread-badge: 0 2px 8px #{rgba($raw-icon-coral, 0.45)};
+    --gradient-group-icon: linear-gradient(135deg, #{$raw-icon-cyan}, #{$raw-icon-blue}, #{$raw-icon-violet});
+    --gradient-hero-banner: linear-gradient(135deg, #{rgba($raw-icon-cyan, 0.18)} 0%, #{rgba($raw-icon-blue, 0.22)} 32%, #{rgba($raw-icon-violet, 0.22)} 68%, #{rgba($raw-icon-orange, 0.18)} 100%);
+    --color-hero-banner-border: #{rgba($raw-icon-cyan, 0.28)};
+    --shadow-hero-banner: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px #{rgba($raw-icon-orange, 0.08)} inset;
+    --filter-hero-decor: drop-shadow(0 0 12px #{rgba($raw-icon-amber, 0.45)});
+    --gradient-banner-default: linear-gradient(135deg, #{rgba($raw-adv-primary, 0.6)}, #{rgba($raw-icon-blue, 0.6)});
+    --gradient-server-banner: linear-gradient(135deg, #{$raw-adv-bg-panel-dark}, #{$raw-adv-bg-panel});
+    --gradient-body-main:
+        radial-gradient(circle at 16% 18%, #{rgba($raw-icon-cyan, 0.16)} 0%, transparent 42%),
+        radial-gradient(circle at 84% 16%, #{rgba($raw-icon-violet, 0.18)} 0%, transparent 45%),
+        radial-gradient(circle at 24% 82%, #{rgba($raw-icon-blue, 0.16)} 0%, transparent 48%),
+        radial-gradient(circle at 78% 80%, #{rgba($raw-icon-magenta, 0.15)} 0%, transparent 44%),
+        radial-gradient(circle at 50% 48%, #{rgba($raw-icon-amber, 0.08)} 0%, transparent 40%),
+        linear-gradient(135deg, #{$raw-adv-bg-page} 0%, #{$raw-adv-bg-page-mid} 50%, #{$raw-adv-bg-page-end} 100%);
+    --gradient-body-before: none;
+    --gradient-body-after: none;
+    --gradient-aurora-orb-1: radial-gradient(circle, #{$raw-icon-cyan} 0%, #{$raw-icon-blue} 40%, transparent 70%);
+    --gradient-aurora-orb-2: radial-gradient(circle, #{$raw-icon-violet} 0%, #{$raw-icon-magenta} 45%, transparent 70%);
+    --gradient-aurora-orb-3: radial-gradient(circle, #{$raw-icon-amber} 0%, #{$raw-icon-coral} 40%, transparent 70%);
+
+    --gradient-voice-btn: linear-gradient(135deg, #{$raw-icon-cyan} 0%, #{$raw-icon-blue} 50%, #{$raw-icon-violet} 100%);
+    --shadow-voice-btn: 0 6px 24px #{rgba($raw-icon-blue, 0.4)};
+    --shadow-voice-btn-hover: 0 8px 30px #{rgba($raw-icon-violet, 0.5)};
+    --gradient-voice-radar: linear-gradient(135deg, #{$raw-icon-cyan}, #{$raw-icon-blue}, #{$raw-icon-violet});
+    --shadow-voice-radar: 0 4px 20px #{rgba($raw-icon-blue, 0.35)};
+    --color-voice-ring: #{rgba($raw-icon-cyan, 0.35)};
+
+    --color-quick-join-border: #{rgba($raw-icon-cyan, 0.55)};
+    --shadow-quick-join: 0 6px 20px #{rgba($raw-icon-cyan, 0.14)};
+    --color-quick-join-text: #{$raw-icon-cyan-bright};
+
+    --color-quick-create-border: #{rgba($raw-icon-coral, 0.55)};
+    --shadow-quick-create: 0 6px 20px #{rgba($raw-icon-coral, 0.14)};
+    --color-quick-create-text: #{$raw-icon-coral};
+
+    --color-quick-settings-border: #{rgba($raw-icon-amber, 0.55)};
+    --shadow-quick-settings: 0 6px 20px #{rgba($raw-icon-amber, 0.14)};
+    --color-quick-settings-text: #{$raw-icon-amber};
+
+    --color-quick-dms-border: #{rgba($raw-icon-magenta, 0.55)};
+    --shadow-quick-dms: 0 6px 20px #{rgba($raw-icon-magenta, 0.14)};
+    --color-quick-dms-text: #{$raw-icon-magenta};
+
+    --shadow-container: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #{rgba($raw-icon-cyan, 0.08)} inset;
+    --shadow-input-focus: 0 0 0 3px #{rgba($raw-icon-cyan, 0.18)};
+    --shadow-submit-hover: 0 5px 20px #{rgba($raw-adv-primary, 0.4)};
+    --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.6);
+    --shadow-floating-private: 0 0 30px rgba(124, 58, 237, 0.5), 0 0 60px rgba(124, 58, 237, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    --shadow-floating-public: 0 0 30px rgba(37, 99, 235, 0.6), 0 0 70px rgba(37, 99, 235, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    --shadow-spinner-1: 0 0 12px 2px rgba(167, 139, 250, 0.6);
+    --shadow-spinner-2: 0 0 12px 2px rgba(192, 132, 252, 0.5);
+    --shadow-spinner-3: 0 0 14px 3px rgba(167, 139, 250, 0.8);
+    --shadow-spinner-core: 0 0 20px 4px rgba(167, 139, 250, 0.5), 0 0 40px 8px rgba(167, 139, 250, 0.2);
+
+    --sidebar-width-server: #{$sidebar-width-server};
+    --sidebar-width-channel: #{$sidebar-width-channel};
+    --panel-width-members: #{$panel-width-members};
+    --header-height-app: #{$header-height-app};
+    --header-height-channel: #{$header-height-channel};
+}

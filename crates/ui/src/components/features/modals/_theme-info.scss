@@ -1,0 +1,198 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.theme-preview-card {
+    .theme-card-info {
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+
+        .theme-card-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .theme-card-name {
+            font-size: 15px;
+            font-weight: $font-weight-bold;
+            color: $color-text-white;
+        }
+
+        .theme-card-badge {
+            font-size: 10.5px;
+            font-weight: $font-weight-bold;
+            padding: 2px 7px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+
+            &.advanced-badge {
+                background: $mockup-adv-badge-bg;
+                color: $raw-icon-amber;
+                border: 1px solid $mockup-adv-badge-border;
+            }
+
+            &.standard-badge {
+                background: $mockup-std-badge-bg;
+                color: $raw-std-primary-light;
+                border: 1px solid $mockup-std-badge-border;
+            }
+
+            &.light-badge {
+                background: $mockup-light-badge-bg;
+                color: $raw-light-primary;
+                border: 1px solid $mockup-light-badge-border;
+            }
+
+            &.custom-badge {
+                background: $preview-badge-bg;
+                color: $preview-primary;
+                border: 1px solid $preview-badge-border;
+                text-transform: none;
+            }
+        }
+
+        .theme-active-check {
+            margin-left: auto;
+            font-size: 11.5px;
+            font-weight: $font-weight-bold;
+            color: $color-status-online;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.5;
+            }
+        }
+
+        .theme-card-desc {
+            font-size: 12px;
+            color: $color-text-label;
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        .theme-swatches {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+
+            .swatch {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                border: 1px solid $color-white-alpha-22;
+                box-shadow: 0 1px 3px $color-black-alpha-35;
+
+                &.adv-1 { background: $raw-adv-bg-panel-darkest; }
+                &.adv-2 { background: $raw-adv-bg-panel; }
+                &.adv-3 { background: $raw-icon-cyan; }
+                &.adv-4 { background: $raw-icon-violet; }
+                &.adv-5 { background: $raw-icon-coral; }
+                &.adv-6 { background: $raw-icon-orange; }
+                &.adv-7 { background: $raw-icon-amber; }
+
+                &.std-1 { background: $raw-std-bg-panel-darkest; }
+                &.std-2 { background: $raw-std-bg-panel-dark; }
+                &.std-3 { background: $raw-std-bg-panel; }
+                &.std-4 { background: $raw-std-bg-panel-active; }
+                &.std-5 { background: $raw-std-primary; }
+                &.std-6 { background: $raw-std-primary-end; }
+                &.std-7 { background: $raw-std-status-online; }
+
+                &.light-1 { background: $raw-light-bg-panel-darkest; }
+                &.light-2 { background: $raw-light-bg-panel-dark; }
+                &.light-3 { background: $raw-light-bg-panel; }
+                &.light-4 { background: $raw-light-bg-panel-active; }
+                &.light-5 { background: $raw-light-primary; }
+                &.light-6 { background: $raw-light-primary-end; }
+                &.light-7 { background: $raw-light-status-online; }
+
+                &.custom-1 { background: $preview-bg-sidebar; }
+                &.custom-2 { background: $preview-bg-channels; }
+                &.custom-3 { background: $preview-bg-chat; }
+                &.custom-4 { background: $preview-primary; }
+                &.custom-5 { background: $preview-primary-end; }
+                &.custom-6 { background: $preview-accent; }
+                &.custom-7 { background: $preview-online; }
+            }
+        }
+
+        .theme-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid $color-white-alpha-06;
+
+            .theme-card-btn {
+                flex: 1;
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: 11.5px;
+                font-weight: $font-weight-semibold;
+                background: $color-white-alpha-06;
+                border: 1px solid $color-white-alpha-10;
+                color: $color-text-heading;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+                svg {
+                    width: 13px;
+                    height: 13px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-width: 2.2;
+                    flex-shrink: 0;
+                }
+
+                &:hover {
+                    background: $color-bg-panel-hover;
+                    border-color: $color-primary-alpha-45;
+                    color: $color-primary;
+                }
+
+                &.install {
+                    background: $color-primary-alpha-20;
+                    border-color: $color-primary-alpha-45;
+                    color: $color-primary;
+
+                    &:hover {
+                        background: $color-primary;
+                        border-color: $color-primary;
+                        color: $color-text-on-accent;
+                    }
+                }
+
+                &.delete {
+                    flex: 0 0 auto;
+                    color: $color-danger;
+                    border-color: $color-danger-alpha-40;
+                    background: $color-danger-alpha-08;
+
+                    &:hover {
+                        background: $color-danger;
+                        color: $color-text-on-accent;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Theme Catalog Modal (Separate Window like JoinServerModal) ───────────────

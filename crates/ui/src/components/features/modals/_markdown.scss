@@ -1,0 +1,238 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.markdown-rendered-view {
+    color: $color-text-chat;
+    font-size: $font-size-sm;
+    line-height: 1.6;
+
+    h1, h2, h3, h4, h5, h6 {
+        color: $color-text-white;
+        font-weight: $font-weight-bold;
+        margin-top: 1.25em;
+        margin-bottom: 0.5em;
+        line-height: 1.3;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    h1 {
+        font-size: 1.35rem;
+        border-bottom: 1px solid $color-border-subtle;
+        padding-bottom: 6px;
+    }
+
+    h2 {
+        font-size: 1.15rem;
+        border-bottom: 1px solid $color-border-subtle;
+        padding-bottom: 4px;
+        color: $color-icon-cyan;
+    }
+
+    h3 {
+        font-size: 1rem;
+        color: $color-primary-light;
+    }
+
+    h4 {
+        font-size: 0.9rem;
+    }
+
+    p {
+        margin: 0 0 0.85em 0;
+    }
+
+    strong {
+        color: $color-text-white;
+        font-weight: $font-weight-bold;
+    }
+
+    em {
+        font-style: italic;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid $color-border-subtle;
+        margin: 1.2em 0;
+    }
+
+    ul, ol {
+        margin: 0 0 0.85em 0;
+        padding-left: 20px;
+
+        li {
+            margin-bottom: 4px;
+        }
+    }
+
+    blockquote {
+        margin: 0 0 0.85em 0;
+        padding: 6px 12px;
+        border-left: 3px solid $color-primary;
+        background: $color-primary-alpha-14;
+        border-radius: 0 $radius-xs $radius-xs 0;
+        color: $color-text-muted;
+    }
+
+    code {
+        font-family: 'Consolas', 'JetBrains Mono', monospace;
+        font-size: 0.88em;
+        background: $color-bg-input;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-xs;
+        padding: 2px 5px;
+        color: $color-icon-cyan;
+    }
+
+    pre {
+        background: $color-bg-input;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        padding: 10px 12px;
+        overflow-x: auto;
+        margin: 0 0 0.85em 0;
+        @include scrollbar(5px, $color-white-alpha-18);
+
+        code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            font-size: 12px;
+            color: $color-text-chat;
+            display: block;
+        }
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 1em 0;
+        font-size: $font-size-xs;
+
+        th, td {
+            border: 1px solid $color-border;
+            padding: 7px 10px;
+            text-align: left;
+        }
+
+        th {
+            background: $color-bg-panel;
+            color: $color-text-white;
+            font-weight: $font-weight-bold;
+        }
+
+        tr:nth-child(even) td {
+            background: $color-white-alpha-03;
+        }
+    }
+
+    a {
+        color: $color-icon-cyan;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: $color-primary-light;
+        }
+    }
+
+    details {
+        margin: 1em 0;
+        background: $color-bg-input;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        overflow: hidden;
+
+        summary {
+            padding: 10px 14px;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-white;
+            background: $color-bg-panel-dark;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease;
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-icon-cyan;
+            }
+
+            &:focus {
+                outline: none;
+            }
+        }
+
+        &[open] {
+            summary {
+                border-bottom: 1px solid $color-border-subtle;
+            }
+        }
+
+        .details-body, p {
+            padding: 12px 14px;
+            margin: 0;
+        }
+
+        table {
+            border: none;
+            margin: 0;
+            width: 100%;
+        }
+    }
+}
+
+
+// ─── Shared Buttons ───────────────────────────────────────────────────────────
+.danger-btn {
+    background: $color-danger-alpha-15;
+    border: 1px solid $color-danger-alpha-40;
+    color: $color-danger;
+    padding: 8px 16px;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+
+    &:hover {
+        background: $color-danger;
+        color: $color-text-white;
+        transform: scale(1.02);
+    }
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: $radius-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s, background 0.15s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+    }
+
+    &:hover {
+        color: $color-primary;
+        background: $color-white-alpha-06;
+    }
+}
+
+
+// ─── Forward Message Modal ──────────────────────────────────────────────────

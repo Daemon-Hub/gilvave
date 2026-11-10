@@ -1,0 +1,85 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.message-editor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: $color-black-alpha-72;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.message-editor-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    max-width: 100%;
+    position: relative;
+    box-sizing: border-box;
+
+    @include respond-to(md) {
+        flex-direction: column;
+        width: 100%;
+    }
+}
+
+@keyframes editorSideEmojiFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.editor-side-emoji-panel {
+    display: flex;
+    flex-shrink: 0;
+    animation: editorSideEmojiFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+    .chat-emoji-modal {
+        position: static !important;
+        bottom: auto !important;
+        right: auto !important;
+        width: 360px;
+        height: min(620px, 84vh);
+        max-height: 84vh;
+        border-radius: 18px;
+        box-shadow:
+            0 24px 64px $color-black-alpha-75,
+            0 0 0 1px $color-white-alpha-05 inset;
+        border: 1px solid $color-primary-alpha-32;
+        background: $color-bg-panel-dark;
+
+        @include respond-to(md) {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: min(360px, 92vw) !important;
+            height: min(520px, 75vh) !important;
+            z-index: 1001 !important;
+        }
+
+        &.is-expanded {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: min(860px, 94vw) !important;
+            height: min(640px, 86vh) !important;
+            z-index: 1002 !important;
+        }
+    }
+}

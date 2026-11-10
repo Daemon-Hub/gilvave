@@ -1,0 +1,218 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.input-area {
+
+    // ── Кнопка развертывания редактора (в правом верхнем углу, видна с 7-й строки или при ползунке) ──
+    .chat-expand-btn {
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        z-index: 3;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        border: none;
+        background: $color-white-alpha-04;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: scale(0.8);
+        transition:
+            opacity 0.16s ease,
+            visibility 0.16s ease,
+            transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+            background 0.15s ease;
+
+        &.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        img {
+            width: 16px;
+            height: 16px;
+            display: block;
+            filter: brightness(0) invert(0.72);
+            transition: filter 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background: $color-primary-alpha-24;
+
+            img {
+                filter: brightness(0) invert(1);
+                transform: scale(1.08);
+            }
+        }
+
+        &:active {
+            transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
+        }
+    }
+
+    // ── Всплывающее меню вложений над иконкой скрепки (слева внизу) ──
+    .chat-attach-menu {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        z-index: 40;
+        min-width: 205px;
+        padding: 6px;
+        border-radius: $radius-md;
+        background: $color-bg-container;
+        border: 1px solid $color-border-container;
+        box-shadow: 0 12px 32px $color-black-alpha-60;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        animation: editorModalFadeIn 0.16s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+        .chat-attach-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 9px 12px;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            color: $color-text-heading;
+            font-size: 13.5px;
+            font-weight: $font-weight-medium;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease;
+
+            .attach-item-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                    fill: none;
+                    stroke: currentColor;
+                    stroke-width: 2;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
+                }
+
+                &.media {
+                    background: $color-primary-alpha-20;
+                    color: $color-icon-cyan;
+                }
+
+                &.file {
+                    background: $color-primary-end-alpha-15;
+                    color: $color-primary-end;
+                }
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-white;
+            }
+
+            &:active {
+                transform: scale(0.98);
+            }
+        }
+    }
+
+@keyframes emojiExpandedFadeIn {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 10px)) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+    // ── Модальное окно выбора эмодзи над иконкой эмодзи (справа внизу) ──
+    .chat-emoji-modal {
+        position: absolute;
+        bottom: calc(100% + 10px);
+        right: 0;
+        z-index: 45;
+
+        @include respond-to(md) {
+            position: fixed;
+            left: 8px;
+            right: 8px;
+            bottom: 68px;
+            width: auto;
+            max-width: calc(100vw - 16px);
+            height: 330px;
+            max-height: 52vh;
+            margin: 0 auto;
+        }
+    }
+
+    .send-btn {
+        position: relative;
+        z-index: 35;
+        width: 42px;
+        height: 42px;
+        border-radius: $radius-md;
+        background: $gradient-send-btn;
+        color: $color-text-on-accent;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: transform 0.1s ease, box-shadow 0.2s ease, filter 0.15s ease;
+        box-shadow: $shadow-send-btn;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            pointer-events: none;
+        }
+
+        &:hover {
+            filter: brightness(1.1);
+            transform: scale(1.04);
+            box-shadow: $shadow-send-btn-hover;
+        }
+
+        &:active {
+            transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
+        }
+    }
+}

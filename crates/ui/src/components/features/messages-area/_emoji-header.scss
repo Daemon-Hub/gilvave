@@ -1,0 +1,253 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.chat-emoji-modal {
+    z-index: 45;
+    width: 350px;
+    max-width: calc(100vw - 20px);
+    height: 390px;
+    border-radius: $radius-lg;
+    background: $color-bg-container;
+    border: 1px solid $color-border-container;
+    box-shadow: 0 16px 48px $color-black-alpha-60;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    animation: editorModalFadeIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    box-sizing: border-box;
+
+
+
+    .emoji-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px 8px;
+        border-bottom: 1px solid $color-border-subtle;
+        flex-shrink: 0;
+
+        .emoji-modal-title {
+            font-size: 14px;
+            font-weight: $font-weight-bold;
+            color: $color-text-white;
+        }
+
+        .emoji-modal-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .emoji-expand-toggle-btn,
+        .emoji-close-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: $radius-sm;
+            background: $color-white-alpha-08;
+            border: 1px solid $color-white-alpha-08;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease, color 0.15s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            color: $color-text-muted;
+
+            img {
+                width: 16px;
+                height: 16px;
+                display: block;
+                filter: brightness(0) invert(0.82);
+                transition: filter 0.15s ease, transform 0.15s ease;
+                pointer-events: none;
+            }
+
+            svg {
+                width: 16px;
+                height: 16px;
+                display: block;
+                stroke: currentColor;
+                pointer-events: none;
+            }
+
+            &:hover {
+                background: $color-primary-alpha-24;
+                border-color: $color-primary-alpha-45;
+                color: $color-text-white;
+
+                img {
+                    filter: brightness(0) invert(1);
+                    transform: scale(1.1);
+                }
+            }
+
+            &:active {
+                transform: scale(0.92);
+            }
+        }
+
+        .emoji-close-btn:hover {
+            background: $color-danger-alpha-18;
+            border-color: $color-danger-alpha-40;
+            color: $color-danger;
+        }
+    }
+
+    .emoji-modal-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin: 10px 12px 6px;
+        flex-shrink: 0;
+
+        .emoji-search-icon {
+            position: absolute;
+            left: 11px;
+            width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-muted;
+            pointer-events: none;
+
+            svg {
+                width: 14px;
+                height: 14px;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2.2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border-radius: $radius-sm;
+            background: $color-bg-input;
+            border: 1px solid $color-border;
+            color: $color-text-heading;
+            font-size: 12.5px;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+            &:focus {
+                border-color: $color-primary;
+                box-shadow: $shadow-input-focus;
+            }
+
+            &::placeholder {
+                color: $color-text-muted;
+            }
+        }
+    }
+
+    .emoji-pack-selector {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px 6px;
+        flex-shrink: 0;
+        user-select: none;
+        -webkit-user-select: none;
+
+        .emoji-pack-btn {
+            flex: 1;
+            padding: 5px 6px;
+            border-radius: $radius-sm;
+            background: $color-bg-input;
+            border: 1px solid $color-border;
+            color: $color-text-label;
+            font-size: 11.5px;
+            font-weight: $font-weight-medium;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            outline: none;
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                border-color: $color-border-input-focus;
+                color: $color-text-white;
+            }
+
+            &.active {
+                background: $color-primary-alpha-15;
+                border-color: $color-primary;
+                color: $color-icon-cyan;
+                font-weight: $font-weight-bold;
+                box-shadow: 0 2px 8px $color-primary-alpha-15;
+            }
+
+            .emoji-pack-badge {
+                font-size: 12px;
+                line-height: 1;
+            }
+        }
+    }
+
+    .emoji-category-tabs {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 4px 10px 8px;
+        border-bottom: 1px solid $color-border-subtle;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-shrink: 0;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: pan-x;
+        @include scrollbar(3px, $color-white-alpha-10);
+
+        .emoji-cat-btn {
+            padding: 4px 7px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: $color-text-label;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            img {
+                width: 18px;
+                height: 18px;
+                object-fit: contain;
+                display: block;
+                pointer-events: none;
+                user-select: none;
+            }
+
+            &:hover {
+                background: $color-white-alpha-08;
+                color: $color-text-white;
+            }
+
+            &.active {
+                background: $color-primary-alpha-20;
+                border-color: $color-primary-alpha-45;
+                color: $color-text-white;
+            }
+        }
+    }
+}

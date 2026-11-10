@@ -1,0 +1,78 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Область сообщений ────────────────────────────────────────────────────────────
+.messages-area {
+    flex: 1;
+    @include flex-col;
+    background: $color-bg-panel;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+}
+
+// ─── Верхняя панель чата с кнопкой «назад» (мобильная) и именем канала ─────────
+.chat-header {
+    height: 48px;
+    background: $color-bg-panel;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid $color-white-alpha-06;
+    flex-shrink: 0;
+    gap: 12px;
+    z-index: 2;
+
+    .chat-back-btn {
+        display: none; // по умолчанию скрыта на десктопе/планшете
+        align-items: center;
+        gap: 6px;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        color: $color-text-heading;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: $radius-md;
+        transition: background 0.15s ease, color 0.15s ease;
+
+        svg {
+            stroke: currentColor;
+            flex-shrink: 0;
+        }
+
+        &:hover {
+            background: $color-white-alpha-12;
+            color: $color-text-white;
+        }
+
+        &:active {
+            transform: scale(0.96);
+        }
+
+        // Отображается только на мобильных (< 768px)
+        @include respond-to(md) {
+            display: flex;
+        }
+    }
+
+    .chat-header-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        color: $color-text-heading;
+
+        .channel-hash {
+            color: $color-channel-hash;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: $shadow-channel-hash-glow;
+        }
+    }
+}
+
+// ─── Прокручиваемый список сообщений ──────────────────────────────────────────

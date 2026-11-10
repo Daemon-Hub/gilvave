@@ -1,0 +1,254 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+// ─── Add Friend Pane ────────────────────────────────────────────────────────
+.add-friend-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.add-friend-hero-box {
+    background: $color-bg-panel;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    @include respond-to(sm) {
+        padding: 16px;
+    }
+
+    .add-friend-title {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-bold;
+        color: $color-text-heading;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+
+    .add-friend-desc {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        margin: 0;
+        line-height: 1.4;
+    }
+}
+
+.add-friend-input-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    background: $color-bg-input-panel;
+    border: 1px solid $color-border-input-panel;
+    border-radius: $radius-sm;
+    padding: 6px 8px 6px 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    @include respond-to(sm) {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px;
+    }
+
+    input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: $color-text-heading;
+        font-size: $font-size-sm;
+        outline: none;
+
+        &::placeholder {
+            color: $color-text-muted;
+        }
+    }
+
+    .add-friend-submit-btn {
+        padding: 9px 18px;
+        border-radius: $radius-sm;
+        background: $color-primary;
+        color: $color-text-white;
+        border: none;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-bold;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, transform 0.1s ease;
+
+        &:hover {
+            background: $color-primary-hover;
+            transform: scale(1.02);
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
+
+    &:focus-within {
+        border-color: $color-primary;
+        box-shadow: 0 0 0 2px $color-primary-alpha-20;
+    }
+}
+
+.add-friend-status-box {
+    margin-top: 4px;
+    padding: 8px 12px;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+
+    &.success {
+        background: $color-success-alpha-20;
+        border: 1px solid $color-success;
+        color: $color-text-heading;
+    }
+
+    &.error {
+        background: $color-danger-alpha-15;
+        border: 1px solid $color-danger;
+        color: $color-text-heading;
+    }
+}
+
+.add-friend-guide-card {
+    background: $color-white-alpha-04;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .guide-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: $color-text-heading;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            color: $color-primary-light;
+        }
+
+        h4 {
+            font-size: $font-size-sm;
+            font-weight: $font-weight-semibold;
+            margin: 0;
+        }
+    }
+
+    .guide-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: $font-size-xs;
+            color: $color-text-muted;
+
+            .step-num {
+                width: 20px;
+                height: 20px;
+                border-radius: $radius-full;
+                background: $color-white-alpha-10;
+                color: $color-text-heading;
+                font-weight: $font-weight-bold;
+                font-size: 11px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .step-text {
+                flex: 1;
+            }
+        }
+    }
+}
+
+// ─── Global Floating Toast Notification ─────────────────────────────────────
+.global-toast-notification {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: $radius-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    backdrop-filter: blur(12px);
+    box-shadow: $shadow-panel;
+    animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    max-width: min(420px, calc(100vw - 32px));
+
+    &.success {
+        background: $color-bg-panel;
+        border: 1px solid $color-success;
+        color: $color-text-heading;
+
+        .toast-text {
+            color: $color-text-heading;
+        }
+    }
+
+    &.error {
+        background: $color-bg-panel;
+        border: 1px solid $color-danger;
+        color: $color-text-heading;
+
+        .toast-text {
+            color: $color-text-heading;
+        }
+    }
+
+    .toast-close-btn {
+        background: transparent;
+        border: none;
+        color: $color-text-muted;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 2px;
+        margin-left: auto;
+        border-radius: $radius-sm;
+        transition: color 0.15s ease, background 0.15s ease;
+
+        &:hover {
+            color: $color-text-heading;
+            background: $color-white-alpha-10;
+        }
+
+        svg {
+            width: 14px;
+            height: 14px;
+        }
+    }
+}
+
+@keyframes toastSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+

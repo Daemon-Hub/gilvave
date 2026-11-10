@@ -68,6 +68,11 @@ pub enum CommandArgs {
         filename: String,
         download_url: Option<String>,
     },
+    GetCachedMedia {
+        file_id: String,
+        filename: String,
+        download_url: Option<String>,
+    },
     OpenFile {
         file_id: String,
         filename: String,
@@ -111,6 +116,7 @@ pub enum CommandResponse {
     GetCachedChannels(Vec<ChannelView>),
     SyncCachedChannels,
     SaveCachedFile,
+    GetCachedMedia(Option<String>),
     OpenFile,
     SaveFileToDownloads(String),
 }

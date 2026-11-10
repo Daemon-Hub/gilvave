@@ -33,8 +33,15 @@ pub const EMOJI_GROUPS: &[(&str, &str, &str, emojis::Group)] = &[
 ];
 
 pub fn map_ru_query_to_en(ru: &str) -> &'static [&'static str] {
-    let lower = ru.trim().to_lowercase();
-    match lower.as_str() {
+    let trimmed = ru.trim();
+    let lower_buf;
+    let s = if trimmed.bytes().any(|b| b.is_ascii_uppercase()) {
+        lower_buf = trimmed.to_lowercase();
+        lower_buf.as_str()
+    } else {
+        trimmed
+    };
+    match s {
         s if s.starts_with("улыб")
             || s.starts_with("смех")
             || s.starts_with("радос")
@@ -177,22 +184,22 @@ pub fn matches_emoji_query(emoji: &emojis::Emoji, query: &str) -> bool {
     if emoji.as_str().contains(query) {
         return true;
     }
-    let name_lower = emoji.name().to_lowercase();
-    if name_lower.contains(query) {
+    let name = emoji.name();
+    if name.contains(query) {
         return true;
     }
-    let sc_lower = emoji.shortcode().map(|sc| sc.to_lowercase());
-    if let Some(ref sc) = sc_lower
+    let sc = emoji.shortcode();
+    if let Some(sc) = sc
         && sc.contains(query)
     {
         return true;
     }
     let en_keywords = map_ru_query_to_en(query);
-    for kw in en_keywords {
-        if name_lower.contains(kw) {
+    for &kw in en_keywords {
+        if name.contains(kw) {
             return true;
         }
-        if let Some(ref sc) = sc_lower
+        if let Some(sc) = sc
             && sc.contains(kw)
         {
             return true;

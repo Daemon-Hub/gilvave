@@ -1,0 +1,171 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Modal Footer Buttons ────────────────────────────────────────────────────
+.modal-footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+
+    .submit-btn,
+    .create-submit {
+        background: $gradient-send-btn;
+        box-shadow: $shadow-send-btn;
+        color: $color-text-on-accent;
+
+        &:hover {
+            filter: brightness(1.12);
+            box-shadow: $shadow-send-btn-hover;
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
+}
+
+// ─── Close Icon Button ─────────────────────────────────────────────────────────
+.modal-close-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: $color-white-alpha-08;
+    border: none;
+    color: $color-text-muted;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    flex-shrink: 0;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2.2;
+    }
+
+    &:hover {
+        background: $color-white-alpha-18;
+        color: $color-text-white;
+        transform: scale(1.05);
+    }
+}
+
+// ─── Create Channel Modal ─────────────────────────────────────────────────────
+.create-channel-modal {
+    width: 460px;
+    max-width: 92vw;
+    background: $color-bg-container;
+    border-radius: $radius-lg;
+    padding: 24px;
+    box-shadow: 0 16px 48px $color-black-alpha-50;
+
+    .channel-type-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+
+        .type-label {
+            font-size: $font-size-xs;
+            font-weight: $font-weight-bold;
+            color: $color-text-muted;
+            letter-spacing: 0.05em;
+        }
+
+        .type-option {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: $color-bg-input;
+            border-radius: $radius-md;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+
+            &:hover {
+                background: $color-bg-input-focus;
+            }
+
+            &.active {
+                background: $color-primary-alpha-15;
+                border-color: $color-primary;
+            }
+
+            .type-icon {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: $color-primary;
+                flex-shrink: 0;
+
+                svg {
+                    width: 20px;
+                    height: 20px;
+                    stroke: currentColor;
+                    fill: none;
+                    stroke-width: 2.2;
+                }
+            }
+
+            .type-info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .type-title {
+                font-size: $font-size-sm;
+                font-weight: $font-weight-semibold;
+                color: $color-text-white;
+            }
+
+            .type-desc {
+                font-size: $font-size-xs;
+                color: $color-text-muted;
+                line-height: 1.3;
+            }
+        }
+    }
+
+    .channel-name-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .channel-prefix {
+            position: absolute;
+            left: 12px;
+            color: $color-text-muted;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+            }
+        }
+
+        input {
+            padding-left: 36px;
+            width: 100%;
+        }
+    }
+}
+
+// ─── Server Settings Modal ────────────────────────────────────────────────────

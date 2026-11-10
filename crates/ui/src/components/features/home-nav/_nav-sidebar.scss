@@ -1,0 +1,223 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Home Nav Panel (DMs and Groups sidebar) ──────────────────────────────────
+.home-nav-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.home-mobile-nav-toggle {
+    display: none;
+    gap: 6px;
+    padding: 8px 10px;
+    background: $color-bg-panel-dark;
+    border-bottom: 1px solid $color-border-panel;
+
+    @include respond-to(md) {
+        display: flex;
+    }
+
+    .mobile-nav-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: $radius-sm;
+        background: $color-black-alpha-20;
+        border: 1px solid $color-white-alpha-06;
+        color: $color-text-channel;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+        svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            flex-shrink: 0;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-text-heading;
+        }
+
+        &.active {
+            background: linear-gradient(135deg, $color-primary-alpha-30, $color-primary-end-alpha-30);
+            border-color: $color-primary-alpha-50;
+            color: $color-text-heading;
+            font-weight: $font-weight-bold;
+        }
+    }
+}
+
+.home-quick-nav {
+    padding: 10px 8px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.home-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: $radius-sm;
+    color: $color-text-channel;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    user-select: none;
+
+    .nav-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+    }
+
+    .nav-title {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+    }
+
+    &:hover {
+        background: $color-bg-panel-hover;
+        color: $color-text-white;
+    }
+
+    &.active {
+        background: $color-bg-panel-active;
+        color: $color-text-white;
+    }
+}
+
+// ─── DM items ────────────────────────────────────────────────────────────────
+.dm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin: 2px 8px;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+    position: relative;
+
+    &:hover {
+        background: $color-bg-panel-hover;
+
+        .dm-name {
+            color: $color-text-white;
+        }
+    }
+
+    &.active {
+        background: $color-bg-panel-active;
+
+        .dm-name {
+            color: $color-text-white;
+        }
+    }
+
+    .dm-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        position: relative;
+        flex-shrink: 0;
+
+        img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid $color-bg-panel-dark;
+
+            &.online { background: $color-status-online; }
+            &.idle { background: $color-status-idle; }
+            &.dnd { background: $color-status-dnd; }
+            &.offline { background: $color-status-offline; }
+        }
+    }
+
+    .dm-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .dm-name {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-heading;
+        @include truncate;
+        transition: color 0.15s;
+    }
+
+    .dm-activity {
+        font-size: $font-size-xxs;
+        color: $color-text-muted;
+        @include truncate;
+    }
+
+    .unread-badge {
+        background: $gradient-unread-badge;
+        color: $color-text-white;
+        font-size: 11px;
+        font-weight: $font-weight-bold;
+        padding: 1px 6px;
+        border-radius: $radius-full;
+        box-shadow: $shadow-unread-badge;
+        flex-shrink: 0;
+    }
+
+    // Group chat items
+    &.group-item {
+        .group-icon-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: $radius-md;
+            background: $gradient-group-icon;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-white;
+            font-weight: $font-weight-bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+    }
+}
+

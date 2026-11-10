@@ -1,0 +1,227 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.chat-action-islands-bar {
+    .chat-action-island {
+        .attachment-thumb-card {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: $color-bg-input;
+            border: 1px solid $color-border-subtle;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+
+            &:hover {
+                border-color: $color-primary-alpha-50;
+                transform: translateY(-1px);
+
+                .card-detach-btn {
+                    opacity: 1;
+                }
+            }
+
+            &.video-thumb-card {
+                .thumb-video-wrapper {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                }
+
+                .thumb-play-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: $color-black-alpha-35;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.15s ease;
+
+                    .thumb-play-triangle {
+                        width: 0;
+                        height: 0;
+                        border-style: solid;
+                        border-width: 5px 0 5px 8px;
+                        border-color: transparent transparent transparent $color-text-white;
+                        filter: drop-shadow(0 2px 4px $color-black-alpha-72);
+                    }
+                }
+
+                &:hover .thumb-play-overlay {
+                    background: $color-black-alpha-15;
+                }
+            }
+
+            .thumb-media-img,
+            .thumb-media-video {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .thumb-media-placeholder,
+            .thumb-video-placeholder {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: $color-text-muted;
+                background: $color-bg-panel;
+            }
+
+            .card-detach-btn {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: $color-black-alpha-72;
+                color: $color-text-white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.12s ease, transform 0.12s ease;
+
+                svg {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                &:hover {
+                    background: $color-danger;
+                    transform: scale(1.1);
+                }
+            }
+        }
+
+        .attachment-file-card {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 44px;
+            padding: 0 24px 0 6px;
+            border-radius: 8px;
+            background: $color-bg-input;
+            border: 1px solid $color-border-subtle;
+            flex-shrink: 0;
+            max-width: 220px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+
+            &:hover {
+                border-color: $color-primary-alpha-50;
+                transform: translateY(-1px);
+
+                .card-detach-btn {
+                    opacity: 1;
+                }
+            }
+
+            .file-card-icon-badge {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                background: $color-primary-alpha-20;
+                color: $color-primary;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                font-weight: 700;
+                flex-shrink: 0;
+                user-select: none;
+            }
+
+            .file-card-details {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                min-width: 0;
+                overflow: hidden;
+
+                .file-card-name {
+                    font-size: 11px;
+                    font-weight: 500;
+                    color: $color-text-white;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .file-card-size {
+                    font-size: 9.5px;
+                    color: $color-text-muted;
+                }
+            }
+
+            .card-detach-btn {
+                position: absolute;
+                top: 3px;
+                right: 3px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: transparent;
+                color: $color-text-muted;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+
+                svg {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                &:hover {
+                    background: $color-danger-alpha-40;
+                    color: $color-danger;
+                    transform: scale(1.1);
+                }
+            }
+        }
+
+        .island-group-close-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: $color-text-muted;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            flex-shrink: 0;
+            margin-left: 2px;
+            margin-right: 2px;
+            transition: background 0.12s ease, color 0.12s ease;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke-width: 2.2;
+            }
+
+            &:hover {
+                background: $color-white-alpha-15;
+                color: $color-text-white;
+            }
+        }
+    }
+}

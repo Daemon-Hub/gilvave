@@ -1,0 +1,154 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.message {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 54px;
+    display: flex;
+    align-items: flex-start;
+    flex-shrink: 0;
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: $radius-md;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: $color-white-alpha-03;
+    }
+
+    // ── Сгруппированное сообщение (подряд от одного автора) ──
+    &.chained {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        margin-top: -2px; // прижимаем ближе друг к другу как в Telegram
+    }
+
+    // ── Аватар пользователя ──
+    .message-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: $gradient-message-avatar;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+        box-shadow: 0 2px 8px $color-black-alpha-25;
+        overflow: hidden;
+
+        span {
+            font-size: 15px;
+            font-weight: 700;
+            color: $color-text-white;
+            line-height: 1;
+            user-select: none;
+        }
+
+        .message-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+    }
+
+    // Невидимый отступ для цепочки сообщений без аватара
+    .message-avatar-spacer {
+        width: 38px;
+        flex-shrink: 0;
+    }
+
+    // ── Тело сообщения (автор + пузырь) ──
+    .message-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    // ── Заголовок (имя автора + время) ──
+    .message-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+
+        .author {
+            font-weight: 600;
+            color: $color-text-author;
+            font-size: 14px;
+            cursor: pointer;
+            @include truncate(240px);
+            display: inline-block;
+            vertical-align: bottom;
+            line-height: 1.2;
+            transition: color 0.15s ease;
+
+            &:hover {
+                text-decoration: underline;
+                color: $color-text-author-hover;
+            }
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: $color-text-muted;
+            user-select: none;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .message-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-muted;
+            vertical-align: middle;
+
+            svg {
+                width: 12px;
+                height: 12px;
+                stroke-width: 2.2;
+                flex-shrink: 0;
+            }
+
+            &.is-sending {
+                color: $color-text-muted;
+
+                svg.spin-loader-icon {
+                    animation: spin 0.8s linear infinite;
+                }
+            }
+
+            &.is-delivered {
+                color: $color-icon-cyan;
+                opacity: 0.9;
+            }
+
+            &.is-failed {
+                color: $color-danger;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+
+                svg {
+                    color: $color-danger;
+                    stroke: $color-danger;
+                }
+
+                .message-failed-label {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: $color-danger;
+                    user-select: none;
+                }
+            }
+        }
+    }
+
+    // ── Пузырь сообщения с обводкой ──
+}

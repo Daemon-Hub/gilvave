@@ -1,0 +1,297 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+// ─── Home Dashboard (Main center view) ───────────────────────────────────────
+.home-dashboard {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 28px 32px;
+    background: $color-bg-panel;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    @include scrollbar(6px, $color-white-alpha-10);
+
+    @include respond-to(sm) {
+        padding: 16px;
+        gap: 16px;
+    }
+}
+
+.home-dashboard-mobile-header {
+    display: none;
+
+    @include respond-to(md) {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2px;
+    }
+
+    .dashboard-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
+        border-radius: $radius-sm;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        color: $color-text-channel;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-text-white;
+        }
+    }
+}
+
+.home-hero-banner {
+    position: relative;
+    background: $gradient-hero-banner;
+    border: 1px solid $color-hero-banner-border;
+    border-radius: $radius-lg;
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: $shadow-hero-banner;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+
+    @include respond-to(md) {
+        padding: 16px;
+    }
+
+    @include respond-to(sm) {
+        padding: 14px;
+    }
+
+    .hero-content {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+
+        h1 {
+            font-size: 24px;
+            font-weight: $font-weight-bold;
+            color: $color-text-white;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: normal;
+
+            @include respond-to(md) {
+                font-size: 18px;
+                line-height: 1.3;
+            }
+
+            @include respond-to(sm) {
+                font-size: 16px;
+                line-height: 1.35;
+            }
+        }
+
+        p {
+            font-size: $font-size-sm;
+            color: $color-text-social;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+
+            @include respond-to(sm) {
+                font-size: $font-size-xs;
+            }
+        }
+    }
+
+    .hero-decoration {
+        font-size: 48px;
+        opacity: 0.9;
+        filter: $filter-hero-decor;
+        animation: floatDecor 3s ease-in-out infinite alternate;
+        flex-shrink: 0;
+        margin-left: 16px;
+        pointer-events: none;
+        user-select: none;
+
+        object {
+            display: block;
+            pointer-events: none;
+        }
+
+        @include respond-to(md) {
+            display: none !important;
+        }
+    }
+}
+
+@keyframes floatDecor {
+    from { transform: translateY(0px) rotate(0deg); }
+    to { transform: translateY(-8px) rotate(8deg); }
+}
+
+
+.dashboard-section-title {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    color: $color-text-muted;
+    letter-spacing: 0.05em;
+    user-select: none;
+}
+
+// ─── Quick Actions Grid ───────────────────────────────────────────────────────
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+
+    @include respond-to(md) {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+.quick-card {
+    background: $color-bg-panel-dark;
+    border: 1px solid $color-border-bubble;
+    border-radius: $radius-lg;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+
+    @include respond-to(md) {
+        padding: 14px 16px;
+        gap: 12px;
+
+        .quick-card-icon {
+            font-size: 24px;
+        }
+
+        .quick-card-title {
+            font-size: $font-size-sm;
+        }
+    }
+
+    .quick-card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: $radius-md;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: $color-white-alpha-06;
+
+        svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
+    }
+
+    .quick-card-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .quick-card-title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+        color: $color-text-heading;
+        transition: color 0.2s ease;
+    }
+
+    .quick-card-desc {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        line-height: 1.4;
+    }
+
+    .quick-card-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-text-muted;
+        transition: transform 0.2s ease, color 0.2s ease;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        background: $color-bg-panel-hover;
+        border-color: $color-primary-alpha-45;
+        box-shadow: 0 6px 20px $color-black-alpha-35;
+
+        .quick-card-title {
+            color: $color-primary-light;
+        }
+
+        .quick-card-arrow {
+            color: $color-primary-light;
+            transform: translateX(4px);
+        }
+    }
+
+    // Distinct icon palette accents per quick card
+    &.join .quick-card-icon { color: $color-icon-cyan; }
+    &.create .quick-card-icon { color: $color-icon-amber; }
+    &.settings .quick-card-icon { color: $color-primary-light; }
+    &.dms .quick-card-icon { color: $color-icon-violet; }
+
+    &.join:hover {
+        border-color: $color-quick-join-border;
+        box-shadow: $shadow-quick-join;
+        .quick-card-title, .quick-card-arrow { color: $color-quick-join-text; }
+    }
+
+    &.create:hover {
+        border-color: $color-quick-create-border;
+        box-shadow: $shadow-quick-create;
+        .quick-card-title, .quick-card-arrow { color: $color-quick-create-text; }
+    }
+
+    &.settings:hover {
+        border-color: $color-quick-settings-border;
+        box-shadow: $shadow-quick-settings;
+        .quick-card-title, .quick-card-arrow { color: $color-quick-settings-text; }
+    }
+
+    &.dms:hover {
+        border-color: $color-quick-dms-border;
+        box-shadow: $shadow-quick-dms;
+        .quick-card-title, .quick-card-arrow { color: $color-quick-dms-text; }
+    }
+}
+
+// ─── Friends Online List ──────────────────────────────────────────────────────

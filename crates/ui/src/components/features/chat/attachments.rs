@@ -1,12 +1,14 @@
 //! Native Sycamore components for message attachments: Media Gallery, Video Player, and File Cards.
 
-use sycamore::prelude::*;
+use gilvave_core::dto::command::{CommandArgs, CommandResponse, CommandResult};
+use sycamore::{futures::spawn_local_scoped, prelude::*};
 use wasm_bindgen::JsCast;
 
 use crate::components::common::{
-    media::{open_file_card_async, ActiveFullscreenVideo, ParsedAttachment},
+    media::{open_file_card_async, parse_file_id_from_url, ActiveFullscreenVideo, ParsedAttachment},
     UiModalContext,
 };
+use crate::utils::{invoke_command, is_tauri};
 
 fn format_time(secs: f64) -> String {
     if secs.is_nan() || secs.is_infinite() || secs < 0.0 {
@@ -20,6 +22,213 @@ fn format_time(secs: f64) -> String {
         format!("{h}:{m:02}:{s:02}")
     } else {
         format!("{m}:{s:02}")
+    }
+}
+
+/// Индивидуальное изображение сообщения с локальным дисковым кешированием,
+/// размытой карточкой-заглушкой и крутящимся спиннером во время загрузки.
+#[component(inline_props)]
+pub fn ChatMessageImage(
+    name: String,
+    url: String,
+    modal_ctx: UiModalContext,
+) -> View {
+    let file_id = parse_file_id_from_url(&url)
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| {
+            use std::hash::{Hash, Hasher};
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            url.hash(&mut hasher);
+            format!("{:016x}", hasher.finish())
+        });
+
+    let canonical_url = if url.starts_with("http://") || url.starts_with("https://") {
+        url.clone()
+    } else if let Some(fid) = parse_file_id_from_url(&url) {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid)
+    } else if url.starts_with('/') {
+        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, url)
+    } else {
+        url.clone()
+    };
+
+    let is_desktop = is_tauri();
+    let is_loaded = create_signal(false);
+    let is_error = create_signal(false);
+    let active_src = create_signal(if !is_desktop || url.starts_with("data:") || url.starts_with("blob:") {
+        canonical_url.clone()
+    } else {
+        String::new()
+    });
+
+    if is_desktop && !url.starts_with("data:") && !url.starts_with("blob:") {
+        let fid = file_id.clone();
+        let fname = name.clone();
+        let durl = canonical_url.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            let cmd = CommandArgs::GetCachedMedia {
+                file_id: fid.clone(),
+                filename: fname,
+                download_url: Some(durl.clone()),
+            };
+            match invoke_command(cmd.to_json()).await {
+                CommandResult::Ok(CommandResponse::GetCachedMedia(Some(data_url))) => {
+                    active_src.set(data_url);
+                }
+                _ => {
+                    // Fallback to direct HTTP URL instead of premature erroring
+                    if durl.starts_with("http://") || durl.starts_with("https://") {
+                        active_src.set(durl);
+                    } else if !fid.is_empty() {
+                        active_src.set(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid));
+                    } else {
+                        is_error.set(true);
+                    }
+                }
+            }
+        });
+    }
+
+    let on_img_load = move |_e: web_sys::Event| {
+        if !is_loaded.get_untracked() {
+            is_loaded.set(true);
+        }
+        if is_error.get_untracked() {
+            is_error.set(false);
+        }
+        #[cfg(target_arch = "wasm32")]
+        if let Some(target) = _e.current_target() {
+            if let Ok(el) = target.dyn_into::<web_sys::HtmlElement>() {
+                if let Some(closest_list) = el.closest(".messages-list").ok().flatten() {
+                    if let Ok(list_el) = closest_list.dyn_into::<web_sys::HtmlElement>() {
+                        let sh = list_el.scroll_height();
+                        let ch = list_el.client_height();
+                        let st = list_el.scroll_top();
+                        if (sh - ch - st).abs() <= 120 {
+                            list_el.set_scroll_top(sh - ch);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    let on_img_error = move |_: web_sys::ErrorEvent| {
+        if active_src.with_untracked(|s| !s.is_empty()) && !is_error.get_untracked() {
+            is_error.set(true);
+        }
+    };
+
+    let name_click = name.clone();
+    let canonical_for_click = canonical_url.clone();
+    let fid_retry = file_id.clone();
+    let on_img_click = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
+        if is_error.get_untracked() {
+            let u = canonical_for_click.clone();
+            let n = name_click.clone();
+            let fid = fid_retry.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let cmd = CommandArgs::GetCachedMedia {
+                    file_id: fid,
+                    filename: n,
+                    download_url: Some(u.clone()),
+                };
+                match invoke_command(cmd.to_json()).await {
+                    CommandResult::Ok(CommandResponse::GetCachedMedia(Some(data_url))) => {
+                        active_src.set(data_url);
+                        is_loaded.set(true);
+                        is_error.set(false);
+                    }
+                    _ => {
+                        if u.starts_with("http://") || u.starts_with("https://") {
+                            active_src.set(u);
+                        }
+                    }
+                }
+            });
+        }
+        let effective_src = active_src.with(|s| {
+            if !s.is_empty() {
+                s.clone()
+            } else {
+                canonical_for_click.clone()
+            }
+        });
+        modal_ctx
+            .lightbox_image
+            .set(Some((effective_src, name_click.clone())));
+    };
+
+    let name_display = name.clone();
+    let name_img = name.clone();
+
+    view! {
+        div(
+            class=move || {
+                if is_error.get() {
+                    "chat-media-wrapper error"
+                } else if is_loaded.get() {
+                    "chat-media-wrapper loaded"
+                } else {
+                    "chat-media-wrapper loading"
+                }
+            },
+            on:click=on_img_click,
+        ) {
+            (move || {
+                if is_error.get() {
+                    let lbl = name_display.clone();
+                    view! {
+                        div(class="chat-media-placeholder chat-media-error-card") {
+                            div(class="chat-media-error-icon") {
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    "stroke-width"="2",
+                                    "stroke-linecap"="round",
+                                    "stroke-linejoin"="round",
+                                    class="chat-media-offline-svg",
+                                ) {
+                                    rect(x="3", y="3", width="18", height="18", rx="2", ry="2")
+                                    circle(cx="8.5", cy="8.5", r="1.5")
+                                    polyline(points="21 15 16 10 5 21")
+                                    line(x1="2", y1="2", x2="22", y2="22")
+                                }
+                            }
+                            span(class="chat-media-error-title") { (lbl) }
+                            span(class="chat-media-error-badge") { "Файл недоступен офлайн" }
+                        }
+                    }
+                } else if !is_loaded.get() {
+                    view! {
+                        div(class="chat-media-placeholder chat-media-loading-card") {
+                            div(class="chat-media-spinner")
+                            span(class="chat-media-loading-text") { "Загрузка..." }
+                        }
+                    }
+                } else {
+                    view! {}
+                }
+            })
+
+            img(
+                class=move || {
+                    if is_loaded.get() {
+                        "chat-message-image loaded"
+                    } else {
+                        "chat-message-image hidden"
+                    }
+                },
+                src=move || active_src.get_clone(),
+                alt=name_img.clone(),
+                loading="lazy",
+                decoding="async",
+                on:load=on_img_load,
+                on:error=on_img_error,
+            )
+        }
     }
 }
 
@@ -71,22 +280,11 @@ pub fn MessageAttachmentsView(
                         )
                     }
                 } else {
-                    let url_click = url.clone();
-                    let name_click = name.clone();
-                    let on_img_click = move |e: web_sys::MouseEvent| {
-                        e.stop_propagation();
-                        modal_ctx
-                            .lightbox_image
-                            .set(Some((url_click.clone(), name_click.clone())));
-                    };
                     view! {
-                        img(
-                            class="chat-message-image",
-                            src=url,
-                            alt=name,
-                            loading="lazy",
-                            decoding="async",
-                            on:click=on_img_click,
+                        ChatMessageImage(
+                            name=name,
+                            url=url,
+                            modal_ctx=modal_ctx,
                         )
                     }
                 }
@@ -151,8 +349,42 @@ pub fn InlineVideoPlayer(
     let current_time = create_signal(0.0f64);
     let duration = create_signal(0.0f64);
 
+    let is_video_loading = create_signal(true);
+    let is_video_error = create_signal(false);
+    let active_video_src = create_signal(url.clone());
+
+    let video_file_id = parse_file_id_from_url(&url)
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| {
+            use std::hash::{Hash, Hasher};
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            url.hash(&mut hasher);
+            format!("{:016x}", hasher.finish())
+        });
+
+    let vid_url_fetch = url.clone();
+    let vid_name_fetch = title.clone();
+    let vid_fid_fetch = video_file_id.clone();
+    spawn_local_scoped(async move {
+        if is_tauri() {
+            let cmd = CommandArgs::GetCachedMedia {
+                file_id: vid_fid_fetch,
+                filename: vid_name_fetch,
+                download_url: Some(vid_url_fetch),
+            };
+            if let CommandResult::Ok(CommandResponse::GetCachedMedia(Some(data_url))) =
+                invoke_command(cmd.to_json()).await
+            {
+                active_video_src.set(data_url);
+                is_video_loading.set(false);
+                is_video_error.set(false);
+            }
+        }
+    });
+
     let url_for_fs = url.clone();
     let title_for_fs = title.clone();
+    let title_for_error = title.clone();
 
     let toggle_play = move || {
         if let Some(video) = video_ref
@@ -279,7 +511,7 @@ pub fn InlineVideoPlayer(
                 video(
                     ref=video_ref,
                     class="chat-custom-video",
-                    src=url,
+                    src=active_video_src.get_clone(),
                     preload="auto",
                     playsinline=true,
                     on:play=move |_| is_playing.set(true),
@@ -310,6 +542,10 @@ pub fn InlineVideoPlayer(
                             }
                         }
                     },
+                    on:loadeddata=move |_| {
+                        is_video_loading.set(false);
+                        is_video_error.set(false);
+                    },
                     on:durationchange=move |_| {
                         if let Some(v) = video_ref
                             .try_get()
@@ -322,6 +558,8 @@ pub fn InlineVideoPlayer(
                         }
                     },
                     on:canplay=move |_| {
+                        is_video_loading.set(false);
+                        is_video_error.set(false);
                         if let Some(v) = video_ref
                             .try_get()
                             .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok())
@@ -332,19 +570,62 @@ pub fn InlineVideoPlayer(
                             }
                         }
                     },
-                )
-                button(
-                    r#type="button",
-                    class="video-center-play-btn",
-                    on:click=move |e: web_sys::MouseEvent| {
-                        e.stop_propagation();
-                        toggle_play();
+                    on:error=move |_| {
+                        is_video_loading.set(false);
+                        is_video_error.set(true);
                     },
-                ) {
-                    svg(class="play-icon", viewBox="0 0 24 24", fill="currentColor") {
-                        polygon(points="5 3 19 12 5 21 5 3")
+                )
+                (move || if is_video_loading.get() {
+                    view! {
+                        div(class="chat-media-placeholder chat-media-loading-card video-overlay") {
+                            div(class="chat-media-spinner")
+                            span(class="chat-media-loading-text") { "Загрузка видео..." }
+                        }
                     }
-                }
+                } else if is_video_error.get() {
+                    let vid_title = title_for_error.clone();
+                    view! {
+                        div(class="chat-media-placeholder chat-media-error-card video-overlay") {
+                            div(class="chat-media-error-icon") {
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    "stroke-width"="2",
+                                    "stroke-linecap"="round",
+                                    "stroke-linejoin"="round",
+                                    class="chat-media-offline-svg",
+                                ) {
+                                    polygon(points="23 7 16 12 23 17 23 7")
+                                    rect(x="1", y="5", width="15", height="14", rx="2", ry="2")
+                                    line(x1="1", y1="1", x2="23", y2="23")
+                                }
+                            }
+                            span(class="chat-media-error-title") { (vid_title) }
+                            span(class="chat-media-error-badge") { "Видео недоступно офлайн" }
+                        }
+                    }
+                } else {
+                    view! {}
+                })
+                (move || if !is_video_loading.get() && !is_video_error.get() {
+                    view! {
+                        button(
+                            r#type="button",
+                            class="video-center-play-btn",
+                            on:click=move |e: web_sys::MouseEvent| {
+                                e.stop_propagation();
+                                toggle_play();
+                            },
+                        ) {
+                            svg(class="play-icon", viewBox="0 0 24 24", fill="currentColor") {
+                                polygon(points="5 3 19 12 5 21 5 3")
+                            }
+                        }
+                    }
+                } else {
+                    view! {}
+                })
             }
             div(class="video-custom-controls", on:click=move |e: web_sys::MouseEvent| e.stop_propagation()) {
                 div(
@@ -392,7 +673,7 @@ pub fn InlineVideoPlayer(
                                 toggle_play();
                             },
                         ) {
-                            (if is_playing.get() {
+                            (move || if is_playing.get() {
                                 view! {
                                     svg(class="icon-pause", viewBox="0 0 24 24", fill="currentColor") {
                                         rect(x="6", y="4", width="4", height="16")
@@ -422,7 +703,7 @@ pub fn InlineVideoPlayer(
                                 toggle_mute();
                             },
                         ) {
-                            (if is_muted.get() {
+                            (move || if is_muted.get() {
                                 view! {
                                     svg(class="icon-volume-muted", viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
                                         polygon(points="11 5 6 9 2 9 2 15 6 15 11 19 11 5")
@@ -1325,7 +1606,7 @@ pub fn FullscreenVideoModal(
                                 toggle_play_btn();
                             },
                         ) {
-                            (if is_playing.get() {
+                            (move || if is_playing.get() {
                                 view! {
                                     svg(class="icon-pause", viewBox="0 0 24 24", fill="currentColor") {
                                         rect(x="6", y="4", width="4", height="16")
@@ -1359,7 +1640,7 @@ pub fn FullscreenVideoModal(
                                 }
                             },
                         ) {
-                            (if is_muted.get() {
+                            (move || if is_muted.get() {
                                 view! {
                                     svg(class="icon-volume-muted", viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="2", stroke-linecap="round", stroke-linejoin="round") {
                                         polygon(points="11 5 6 9 2 9 2 15 6 15 11 19 11 5")

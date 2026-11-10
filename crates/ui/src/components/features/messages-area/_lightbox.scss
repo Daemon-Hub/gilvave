@@ -1,0 +1,284 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.chat-image-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-black-alpha-85;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: fadeIn 0.18s ease-out;
+    padding: 24px;
+    cursor: zoom-out;
+
+    .lightbox-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+    }
+
+    .lightbox-close-btn {
+        position: absolute;
+        top: -16px;
+        right: -16px;
+        z-index: 2;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-white-alpha-15;
+        color: $color-text-white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 14px $color-black-alpha-50;
+        transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            transform: scale(1.1);
+            background: $color-danger;
+            color: $color-text-white;
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+
+        svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+        }
+    }
+
+    .lightbox-full-img,
+    .lightbox-full-video {
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: $radius-lg;
+        box-shadow: 0 10px 40px $color-black-alpha-50;
+        border: 1px solid $color-white-alpha-12;
+        user-select: none;
+        outline: none;
+    }
+
+    .lightbox-loading-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 36px 44px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border;
+        border-radius: $radius-lg;
+        box-shadow: 0 12px 40px $color-black-alpha-50;
+        text-align: center;
+        min-width: 240px;
+
+        .chat-media-spinner {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid $color-border-subtle;
+            border-top-color: $color-primary;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .lightbox-loading-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: $color-text-label;
+        }
+    }
+
+    .lightbox-error-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 32px 40px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border;
+        border-radius: $radius-lg;
+        box-shadow: 0 12px 40px $color-black-alpha-50;
+        text-align: center;
+        max-width: 420px;
+
+        .lightbox-error-icon {
+            width: 48px;
+            height: 48px;
+            color: $color-danger;
+        }
+
+        .lightbox-error-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: $color-text-heading;
+        }
+
+        .lightbox-error-sub {
+            font-size: 13px;
+            color: $color-text-muted;
+            word-break: break-all;
+        }
+    }
+}
+
+.island-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-black-alpha-72;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.15s ease-out;
+    padding: 16px;
+
+    .island-confirm-card {
+        width: 100%;
+        max-width: 380px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border;
+        border-radius: $radius-lg;
+        padding: 20px 22px;
+        box-shadow:
+            0 12px 36px $color-black-alpha-50,
+            0 0 0 1px $color-white-alpha-08;
+        animation: scaleInFast 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+
+        &.profile-logout-confirm-card {
+            max-width: 420px;
+        }
+    }
+
+    .island-confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .island-confirm-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: $radius-md;
+            background: $color-danger-alpha-15;
+            color: $color-danger;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+
+            svg {
+                width: 20px;
+                height: 20px;
+                stroke-width: 2.2;
+            }
+
+            &.danger {
+                background: $color-danger-alpha-15;
+                color: $color-danger;
+            }
+        }
+
+        .island-confirm-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: $color-text-white;
+        }
+    }
+
+    .island-confirm-desc {
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: $color-text-label;
+        margin: 0;
+    }
+
+    .island-confirm-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 4px;
+
+        .island-confirm-btn {
+            height: 36px;
+            padding: 0 16px;
+            border-radius: $radius-md;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s ease, transform 0.12s ease;
+
+            &:active {
+                transform: scale(0.97);
+            }
+
+            &.cancel-btn {
+                background: $color-bg-panel-hover;
+                color: $color-text-chat;
+                border: 1px solid $color-border-subtle;
+
+                &:hover {
+                    background: $color-bg-panel-active;
+                    color: $color-text-white;
+                }
+            }
+
+            &.danger-btn {
+                background: $color-danger;
+                color: $color-text-white;
+                box-shadow: 0 4px 12px $color-danger-alpha-40;
+
+                &:hover {
+                    background: $color-danger-hover;
+                    box-shadow: 0 6px 16px $color-danger-alpha-75;
+                }
+            }
+        }
+    }
+}
+
+// ── Fullscreen video player breakout from windowed container & containment ──
+body.has-video-fullscreen {
+    .home-panel-container {
+        transform: none !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .message-bubble,
+    .message-item,
+    .messages-scroller,
+    .messages-area,
+    .home-main-area,
+    .chat-media-attachment {
+        contain: none !important;
+        transform: none !important;
+        filter: none !important;
+        overflow: visible !important;
+    }
+}

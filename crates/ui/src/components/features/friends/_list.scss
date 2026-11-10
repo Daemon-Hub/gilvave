@@ -1,0 +1,301 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.friends-section-header {
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.05em;
+    color: $color-text-label;
+    margin-top: 4px;
+}
+
+// ─── Friend Row Items List ──────────────────────────────────────────────────
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.friend-row-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: $color-bg-panel;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+
+    &:hover {
+        background: $color-bg-panel-hover;
+        border-color: $color-border-bubble-hover;
+
+        .friend-row-actions {
+            opacity: 1;
+        }
+    }
+
+    @include respond-to(sm) {
+        padding: 8px 10px;
+        gap: 10px;
+
+        .friend-row-actions {
+            opacity: 1; // always visible on touch screens
+        }
+    }
+}
+
+.friend-avatar-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-full;
+    position: relative;
+    flex-shrink: 0;
+
+    .friend-avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: $radius-full;
+        object-fit: cover;
+        display: block;
+    }
+
+    .friend-avatar-fallback {
+        width: 100%;
+        height: 100%;
+        border-radius: $radius-full;
+        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+        color: $color-text-white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $font-weight-bold;
+        font-size: 16px;
+    }
+}
+
+.friend-main-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.friend-names-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    .friend-display-name {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-heading;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .friend-username-tag {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+    }
+}
+
+.friend-added-date {
+    font-size: 11px;
+    color: $color-text-muted;
+}
+
+.friend-blocked-tag {
+    font-size: 11px;
+    color: $color-danger;
+    font-weight: $font-weight-semibold;
+}
+
+// ─── Row Action Buttons ─────────────────────────────────────────────────────
+.friend-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+
+    .friend-action-icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: $radius-full;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        color: $color-text-channel;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        &.chat:hover {
+            background: $color-primary;
+            color: $color-text-white;
+            transform: scale(1.08);
+        }
+
+        &.block:hover {
+            background: $color-danger-alpha-40;
+            color: $color-danger-light;
+            transform: scale(1.08);
+        }
+
+        &.delete:hover {
+            background: $color-danger;
+            color: $color-text-white;
+            transform: scale(1.08);
+        }
+    }
+
+    // Request buttons
+    .request-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, transform 0.1s;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke-width: 2.2;
+        }
+
+        &.accept {
+            background: $color-success-alpha-20;
+            border: 1px solid $color-success;
+            color: $color-text-heading;
+
+            &:hover {
+                background: $color-success;
+                color: $color-text-white;
+                transform: scale(1.04);
+            }
+        }
+
+        &.decline {
+            background: $color-white-alpha-06;
+            border: 1px solid $color-white-alpha-10;
+            color: $color-text-channel;
+
+            &:hover {
+                background: $color-danger-alpha-18;
+                border-color: $color-danger;
+                color: $color-danger-light;
+            }
+        }
+    }
+
+    .unblock-btn {
+        padding: 6px 12px;
+        border-radius: $radius-sm;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        color: $color-text-heading;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+
+        &:hover {
+            background: $color-primary-alpha-20;
+            border-color: $color-primary;
+            color: $color-primary-light;
+        }
+    }
+}
+
+// ─── Empty & Loading States ─────────────────────────────────────────────────
+.friends-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 20px;
+    text-align: center;
+    gap: 8px;
+
+    .empty-icon-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: $radius-full;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-text-muted;
+        margin-bottom: 4px;
+
+        svg {
+            width: 26px;
+            height: 26px;
+        }
+    }
+
+    .empty-title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+        color: $color-text-heading;
+        margin: 0;
+    }
+
+    .empty-subtitle {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        max-width: 360px;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .empty-action-btn {
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: $radius-sm;
+        background: $color-primary;
+        color: $color-text-white;
+        border: none;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-bold;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+
+        svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        &:hover {
+            background: $color-primary-hover;
+            transform: scale(1.04);
+        }
+    }
+}
+
+.friends-loading-state {
+    padding: 32px;
+    text-align: center;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+}
+

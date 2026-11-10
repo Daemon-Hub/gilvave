@@ -1,0 +1,218 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.input-area {
+    display: flex;
+    align-items: flex-end;
+    padding: 12px 16px 16px;
+    background: $color-bg-panel;
+    flex-shrink: 0;
+    gap: 10px;
+
+    .chat-input-wrapper {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+    }
+
+    .chat-hidden-file-input {
+        display: none;
+    }
+
+    .chat-popover-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        background: transparent;
+        transition: background 0.2s ease;
+        cursor: pointer;
+
+        &.is-dimmed {
+            z-index: 999;
+            background: $color-black-alpha-60;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            animation: overlayFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            pointer-events: auto;
+        }
+    }
+
+    .chat-input {
+        flex: 1;
+        width: 100%;
+        min-height: 42px;
+        max-height: 142px;
+        line-height: 20px;
+        padding: 10px 42px 10px 42px;
+        background: $color-bg-input-panel;
+        border: 1px solid $color-border-input-panel;
+        border-radius: $radius-md;
+        color: $color-text-chat;
+        font-size: $font-size-sm;
+        font-family: inherit;
+        outline: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        word-break: break-word;
+        white-space: pre-wrap;
+        display: block;
+        cursor: text;
+        user-select: text;
+        -webkit-user-select: text;
+        @include scrollbar(5px, $color-white-alpha-22);
+        transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
+
+        &:focus {
+            background: $color-bg-input-panel-focus;
+            border-color: $color-border-input-focus;
+            box-shadow: $shadow-input-focus;
+        }
+
+        &::placeholder {
+            color: $color-text-muted;
+        }
+
+        &[contenteditable]:empty::before,
+        &[contenteditable][data-empty="true"]::before {
+            content: attr(data-placeholder);
+            color: $color-text-muted;
+            pointer-events: none;
+            display: inline-block;
+        }
+
+        .chat-inline-emoji {
+            display: inline-block;
+            width: 1.35em;
+            height: 1.35em;
+            vertical-align: -0.22em;
+            margin: 0 0.08em;
+            object-fit: contain;
+            user-select: all;
+            pointer-events: auto;
+        }
+
+        .chat-preview-image {
+            display: inline-block;
+            max-width: 110px;
+            max-height: 80px;
+            border-radius: $radius-sm;
+            object-fit: cover;
+            margin: 4px;
+            vertical-align: middle;
+            border: 1px solid $color-white-alpha-12;
+            box-shadow: 0 2px 6px $color-black-alpha-20;
+        }
+    }
+
+    // ── Иконка скрепки (всегда в левом нижнем углу внутри input) ──
+    .chat-attach-btn {
+        position: absolute;
+        bottom: 7px;
+        left: 8px;
+        z-index: 3;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        color: $color-text-muted;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+            transition: transform 0.15s ease;
+        }
+
+        &:hover,
+        &.active {
+            background: $color-primary-alpha-24;
+            color: $color-text-white;
+
+            svg {
+                transform: scale(1.08);
+            }
+        }
+
+        &:active {
+            transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
+        }
+    }
+
+    // ── Иконка эмодзи (всегда в правом нижнем углу внутри input) ──
+    .chat-emoji-btn {
+        position: absolute;
+        bottom: 7px;
+        right: 8px;
+        z-index: 3;
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        color: $color-text-muted;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+
+        svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+            transition: transform 0.15s ease;
+        }
+
+        &:hover,
+        &.active {
+            background: $color-primary-alpha-24;
+            color: $color-icon-amber;
+
+            svg {
+                transform: scale(1.08);
+            }
+        }
+
+        &:active {
+            transform: scale(0.94);
+        }
+
+        &:disabled,
+        &.is-uploading {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            filter: grayscale(0.5);
+        }
+    }
+}

@@ -1,0 +1,133 @@
+// ─── Raw Palette Constants (ONLY used inside _variables.scss & _themes.scss) ──
+// Advanced (Gilvave Cosmic Icon) raw colors
+$raw-adv-bg-page: #0b0e18;
+$raw-adv-bg-page-mid: #161b33;
+$raw-adv-bg-page-end: #121026;
+
+$raw-icon-cyan: #38bdf8;
+$raw-icon-cyan-bright: #7dd3fc;
+$raw-icon-blue: #5b6cf9;
+$raw-icon-slate-arc: #3b4b82;
+$raw-icon-violet: #a855f7;
+$raw-icon-magenta: #d946ef;
+$raw-icon-coral: #ff4d79;
+$raw-icon-orange: #ff7e47;
+$raw-icon-amber: #fbbf24;
+$raw-icon-spark: #fef08a;
+
+$raw-adv-bg-container: #15192b;
+$raw-adv-bg-container-dark: #0f1220;
+$raw-adv-bg-input: #101423;
+$raw-adv-bg-input-focus: #192036;
+$raw-adv-bg-social: #1b2238;
+$raw-adv-bg-message: rgba(13, 17, 30, 0.52);
+
+$raw-adv-bg-panel: #181d30;
+$raw-adv-bg-panel-dark: #131726;
+$raw-adv-bg-panel-footer: #0e111d;
+$raw-adv-bg-panel-darkest: #0d101c;
+$raw-adv-bg-panel-darkest-hover: #080a12;
+$raw-adv-bg-panel-hover: #212842;
+$raw-adv-bg-panel-active: #283152;
+$raw-adv-bg-input-panel: #111525;
+$raw-adv-bg-input-panel-focus: #171d32;
+
+$raw-adv-border: #2a3354;
+$raw-adv-border-header: #1f2640;
+$raw-adv-border-subtle: rgba(148, 163, 184, 0.12);
+$raw-adv-border-panel: rgba(8, 10, 18, 0.45);
+
+$raw-adv-primary: #8b5cf6;
+$raw-adv-primary-hover: #7c3aed;
+$raw-adv-primary-light: #a78bfa;
+$raw-adv-primary-lighter: #c4b5fd;
+$raw-adv-primary-end: #d946ef;
+$raw-adv-primary-end-light: #e879f9;
+$raw-adv-primary-dark: #6d28d9;
+$raw-adv-primary-blue: #38bdf8;
+
+$raw-adv-text-heading: #f1f5f9;
+$raw-adv-text-label: #94a3b8;
+$raw-adv-text-muted: #64748b;
+$raw-adv-text-dim: #475569;
+$raw-adv-text-social: #cbd5e1;
+$raw-adv-text-white: #ffffff;
+$raw-adv-text-channel: #94a3b8;
+$raw-adv-text-member: #cbd5e1;
+$raw-adv-text-chat: #e2e8f0;
+
+$raw-adv-error: #ff4d79;
+$raw-adv-success: #2dd4bf;
+$raw-adv-danger: #ff4d79;
+$raw-adv-danger-hover: #e11d48;
+$raw-adv-danger-light: #ff85a3;
+
+$raw-adv-status-online: #2dd4bf;
+$raw-adv-status-idle: #fbbf24;
+$raw-adv-status-dnd: #ff4d79;
+$raw-adv-status-offline: #64748b;
+
+// Standard (Classic Dark) raw colors for theme preview mockups & swatches
+$raw-std-bg-page: #0f0f1a;
+$raw-std-bg-page-mid: #1a1025;
+$raw-std-bg-page-end: #16213e;
+$raw-std-bg-panel-darkest: #202225;
+$raw-std-bg-panel-dark: #2f3136;
+$raw-std-bg-panel: #36393f;
+$raw-std-bg-panel-active: #40444b;
+$raw-std-primary: #a78bfa;
+$raw-std-primary-light: #c4b5fd;
+$raw-std-primary-end: #7c3aed;
+$raw-std-status-online: #43b581;
+
+// Light (Refined Azure Blue Light) raw colors for theme preview mockups & swatches
+$raw-light-bg-page: #d4e5f9;
+$raw-light-bg-panel-darkest: #d6e6f9;
+$raw-light-bg-panel-dark: #edf4fc;
+$raw-light-bg-panel: #f7faff;
+$raw-light-bg-panel-active: #cfe2fa;
+$raw-light-bg-input: #e9f2fc;
+$raw-light-primary: #1d4ed8;
+$raw-light-primary-end: #3b82f6;
+$raw-light-status-online: #10b981;
+
+// Theme preview mockup & badge tokens
+$mockup-adv-bg: linear-gradient(135deg, $raw-adv-bg-page, #1b1438, #28193d);
+$mockup-adv-dot: linear-gradient(135deg, $raw-icon-blue, $raw-icon-violet);
+$mockup-adv-dot-home: linear-gradient(135deg, $raw-icon-cyan, $raw-icon-violet, $raw-icon-coral);
+$mockup-adv-dot-home-shadow: 0 0 0 1.5px $raw-icon-amber;
+$mockup-adv-dot-plus-bg: rgba($raw-icon-slate-arc, 0.45);
+$mockup-adv-line: rgba($raw-adv-text-label, 0.22);
+$mockup-adv-line-active: linear-gradient(90deg, rgba($raw-icon-cyan, 0.45), rgba($raw-icon-blue, 0.25));
+$mockup-adv-avatar: linear-gradient(135deg, $raw-icon-blue, $raw-icon-coral);
+$mockup-adv-bubble-bg: rgba(13, 17, 30, 0.7);
+$mockup-adv-bubble-border: rgba($raw-icon-slate-arc, 0.6);
+$mockup-adv-divider: linear-gradient(90deg, transparent, $raw-icon-cyan, $raw-icon-violet, $raw-icon-orange, transparent);
+$mockup-adv-input-border: rgba($raw-icon-slate-arc, 0.5);
+$mockup-adv-send: linear-gradient(135deg, $raw-icon-blue, $raw-icon-violet, $raw-icon-coral);
+$mockup-adv-badge-bg: linear-gradient(135deg, rgba($raw-icon-cyan, 0.2), rgba($raw-icon-orange, 0.2));
+$mockup-adv-badge-border: rgba($raw-icon-amber, 0.4);
+
+$mockup-std-dot: linear-gradient(135deg, $raw-std-primary, $raw-std-primary-end);
+$mockup-std-dot-home-shadow: 0 0 0 1.5px $raw-std-primary;
+$mockup-std-badge-bg: rgba($raw-std-primary, 0.18);
+$mockup-std-badge-border: rgba($raw-std-primary, 0.35);
+
+$mockup-light-dot: linear-gradient(135deg, $raw-light-primary, $raw-light-primary-end);
+$mockup-light-dot-home-shadow: 0 0 0 1.5px $raw-light-primary;
+$mockup-light-badge-bg: rgba($raw-light-primary, 0.12);
+$mockup-light-badge-border: rgba($raw-light-primary, 0.3);
+
+// Dynamic custom theme preview tokens (populated per card via data-custom-theme)
+$preview-bg-sidebar: var(--preview-bg-sidebar);
+$preview-bg-channels: var(--preview-bg-channels);
+$preview-bg-chat: var(--preview-bg-chat);
+$preview-bg-input: var(--preview-bg-input);
+$preview-primary: var(--preview-primary);
+$preview-primary-end: var(--preview-primary-end);
+$preview-accent: var(--preview-accent);
+$preview-online: var(--preview-online);
+$preview-danger: var(--preview-danger);
+$preview-badge-bg: var(--preview-badge-bg);
+$preview-badge-border: var(--preview-badge-border);
+

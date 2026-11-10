@@ -13,10 +13,71 @@ pub enum MessageSegment {
     },
 }
 
+const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
+
+/// 256-bit lookup mask for candidate emoji/tag bytes:
+/// '<', '#', '*', '0'..='9', 0xE2, 0xE3, 0xF0.
+const CANDIDATE_BITMAP: [u64; 4] = {
+    let mut map = [0u64; 4];
+    map[0] |= 1u64 << 35; // '#'
+    map[0] |= 1u64 << 42; // '*'
+    let mut d = 48; // '0'..='9'
+    while d <= 57 {
+        map[0] |= 1u64 << d;
+        d += 1;
+    }
+    map[0] |= 1u64 << 60; // '<'
+    map[3] |= 1u64 << (226 - 192); // 0xE2
+    map[3] |= 1u64 << (227 - 192); // 0xE3
+    map[3] |= 1u64 << (240 - 192); // 0xF0
+    map
+};
+
+#[inline(always)]
+fn is_candidate_byte(b: u8) -> bool {
+    (CANDIDATE_BITMAP[(b >> 6) as usize] & (1u64 << (b & 63))) != 0
+}
+
+/// Finds the index of the first candidate emoji/tag byte using 8-byte SWAR chunks.
+#[inline(always)]
+fn find_first_candidate(bytes: &[u8]) -> usize {
+    let (chunks, rem) = bytes.as_chunks::<8>();
+    let mut offset = 0;
+
+    for chunk in chunks {
+        let b0 = is_candidate_byte(chunk[0]);
+        let b1 = is_candidate_byte(chunk[1]);
+        let b2 = is_candidate_byte(chunk[2]);
+        let b3 = is_candidate_byte(chunk[3]);
+        let b4 = is_candidate_byte(chunk[4]);
+        let b5 = is_candidate_byte(chunk[5]);
+        let b6 = is_candidate_byte(chunk[6]);
+        let b7 = is_candidate_byte(chunk[7]);
+
+        if b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7 {
+            if b0 { return offset; }
+            if b1 { return offset + 1; }
+            if b2 { return offset + 2; }
+            if b3 { return offset + 3; }
+            if b4 { return offset + 4; }
+            if b5 { return offset + 5; }
+            if b6 { return offset + 6; }
+            return offset + 7;
+        }
+        offset += 8;
+    }
+
+    for (i, &b) in rem.iter().enumerate() {
+        if is_candidate_byte(b) {
+            return offset + i;
+        }
+    }
+
+    bytes.len()
+}
+
 /// Converts a Unicode emoji sequence into its corresponding Twemoji SVG CDN URL.
 pub fn emoji_to_twemoji_url(emoji: &str) -> String {
-    use std::fmt::Write;
-
     let has_zwj = emoji.contains('\u{200D}');
     let mut url = String::with_capacity(75 + emoji.len() * 4);
     url.push_str("https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/");
@@ -29,7 +90,23 @@ pub fn emoji_to_twemoji_url(emoji: &str) -> String {
             url.push('-');
         }
         first = false;
-        let _ = write!(url, "{:x}", ch as u32);
+        let cp = ch as u32;
+        let mut buf = [0u8; 8];
+        let mut n = cp;
+        let mut pos = 8;
+        if n == 0 {
+            pos -= 1;
+            buf[pos] = b'0';
+        } else {
+            while n > 0 {
+                pos -= 1;
+                buf[pos] = HEX_DIGITS[(n & 0xF) as usize];
+                n >>= 4;
+            }
+        }
+        for &b in &buf[pos..] {
+            url.push(b as char);
+        }
     }
     url.push_str(".svg");
     url
@@ -37,8 +114,19 @@ pub fn emoji_to_twemoji_url(emoji: &str) -> String {
 
 /// Parses message text into plain text chunks and recognized emoji segments using the specified pack.
 pub fn parse_message_segments(text: &str, pack: EmojiPack) -> Vec<MessageSegment> {
-    let mut segments = Vec::new();
-    let mut current_text = String::new();
+    if text.is_empty() {
+        return Vec::new();
+    }
+
+    // Fast-path: if text contains no emoji or pack candidate bytes, return single text segment
+    let bytes = text.as_bytes();
+    let first_cand = find_first_candidate(bytes);
+    if first_cand == bytes.len() {
+        return vec![MessageSegment::Text(text.to_string())];
+    }
+
+    let mut segments = Vec::with_capacity(4);
+    let mut current_text = String::with_capacity(text.len());
     let mut remaining = text;
 
     while !remaining.is_empty() {
@@ -68,6 +156,16 @@ pub fn parse_message_segments(text: &str, pack: EmojiPack) -> Vec<MessageSegment
                 remaining = &remaining[end_idx + 1..];
                 continue;
             }
+        }
+
+        // Fast scan: consume plain-text spans that cannot contain any emoji candidates in bulk
+        let rem_bytes = remaining.as_bytes();
+        let non_candidate_len = find_first_candidate(rem_bytes);
+
+        if non_candidate_len > 0 {
+            current_text.push_str(&remaining[..non_candidate_len]);
+            remaining = &remaining[non_candidate_len..];
+            continue;
         }
 
         let Some(first_char) = remaining.chars().next() else {

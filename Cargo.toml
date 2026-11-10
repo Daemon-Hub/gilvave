@@ -28,10 +28,13 @@ time = { version = "0.3.55", features = [
     "wasm-bindgen",
 ] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
+rayon = "1.10"
 web-sys = { version = "0.3", features = [
     "HtmlSelectElement",
     "Element",
     "HtmlElement",
+    "ResizeObserver",
+    "ResizeObserverEntry",
     "Navigator",
     "Window",
     "Document",

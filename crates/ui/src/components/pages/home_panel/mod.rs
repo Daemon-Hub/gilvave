@@ -468,47 +468,47 @@ pub fn HomePanel() -> View {
             })
         }
 
-        (if is_server_settings_open.get() {
+        (move || if is_server_settings_open.get() {
             view! { ServerSettingsModal() }
         } else {
             view! {}
         })
-        (if is_create_channel_open.get() {
+        (move || if is_create_channel_open.get() {
             view! { CreateChannelModal() }
         } else {
             view! {}
         })
-        (if is_profile_settings_open.get() {
+        (move || if is_profile_settings_open.get() {
             view! { ProfileSettingsModal() }
         } else {
             view! {}
         })
-        (if is_theme_catalog_open.get() {
+        (move || if is_theme_catalog_open.get() {
             view! { ThemeCatalogModal() }
         } else {
             view! {}
         })
-        (if is_theme_json_editor_open.get() {
+        (move || if is_theme_json_editor_open.get() {
             view! { ThemeJsonEditorModal() }
         } else {
             view! {}
         })
-        (if is_message_editor_open.get() {
+        (move || if is_message_editor_open.get() {
             view! { ExpandedMessageEditorModal() }
         } else {
             view! {}
         })
-        (if is_forward_modal_open.get() {
+        (move || if is_forward_modal_open.get() {
             view! { ForwardMessageModal() }
         } else {
             view! {}
         })
-        (if is_server_overview_open.get() {
+        (move || if is_server_overview_open.get() {
             view! { ServerOverviewModal() }
         } else {
             view! {}
         })
-        (if let Some((is_err, msg)) = ui_modal_context.toast_message.get_clone() {
+        (move || if let Some((is_err, msg)) = ui_modal_context.toast_message.get_clone() {
             let alert_class = if is_err {
                 "global-toast-notification error"
             } else {
@@ -529,55 +529,161 @@ pub fn HomePanel() -> View {
         } else {
             view! {}
         })
-        (if let Some(active) = ui_modal_context.active_fullscreen_video.get_clone() {
+        (move || if let Some(active) = ui_modal_context.active_fullscreen_video.get_clone() {
             view! {
                 crate::components::features::chat::attachments::FullscreenVideoModal(active=active)
             }
         } else {
             view! {}
         })
-        (if let Some((src, alt)) = ui_modal_context.lightbox_image.get_clone() {
-            let lightbox_sig = ui_modal_context.lightbox_image;
-            let is_vid = crate::components::common::media::is_video_source(&src, &alt);
+        (move || if ui_modal_context.lightbox_image.with(|img| img.is_some()) {
             view! {
-                div(
-                    class="chat-image-lightbox-overlay",
-                    on:click=move |_| lightbox_sig.set(None),
+                ImageLightbox(lightbox_sig=ui_modal_context.lightbox_image)
+            }
+        } else {
+            view! {}
+        })
+    }
+}
+
+#[component(inline_props)]
+fn ImageLightbox(lightbox_sig: Signal<Option<(String, String)>>) -> View {
+    let Some((src, alt)) = lightbox_sig.get_clone() else {
+        return view! {};
+    };
+    let is_vid = crate::components::common::media::is_video_source(&src, &alt);
+    let canonical_url = if src.starts_with("http://") || src.starts_with("https://") {
+        src.clone()
+    } else if let Some(fid) = crate::components::common::media::parse_file_id_from_url(&src) {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid)
+    } else if src.starts_with('/') {
+        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, src)
+    } else {
+        src.clone()
+    };
+    let is_ready = src.starts_with("data:") || src.starts_with("blob:");
+    let is_remote = crate::utils::is_tauri() && !is_ready;
+    let is_loading = create_signal(is_remote);
+    let is_img_error = create_signal(false);
+    let src_sig = create_signal(if is_remote { String::new() } else { canonical_url.clone() });
+    let alt_sig = create_signal(alt.clone());
+
+    if is_remote {
+        let src_for_cache = canonical_url.clone();
+        let alt_for_cache = alt.clone();
+        let fid = crate::components::common::media::parse_file_id_from_url(&src_for_cache)
+            .map(|id| id.to_string())
+            .unwrap_or_else(|| {
+                use std::hash::{Hash, Hasher};
+                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                src_for_cache.hash(&mut hasher);
+                format!("{:016x}", hasher.finish())
+            });
+        let cmd = gilvave_core::dto::command::CommandArgs::GetCachedMedia {
+            file_id: fid,
+            filename: alt_for_cache,
+            download_url: Some(src_for_cache.clone()),
+        };
+        wasm_bindgen_futures::spawn_local(async move {
+            if let gilvave_core::dto::command::CommandResult::Ok(
+                gilvave_core::dto::command::CommandResponse::GetCachedMedia(Some(data_url)),
+            ) = crate::utils::invoke_command(cmd.to_json()).await
+            {
+                src_sig.set(data_url);
+                is_loading.set(false);
+                is_img_error.set(false);
+            } else if src_for_cache.starts_with("http://") || src_for_cache.starts_with("https://") {
+                src_sig.set(src_for_cache);
+                is_loading.set(false);
+                is_img_error.set(false);
+            } else {
+                is_loading.set(false);
+                is_img_error.set(true);
+            }
+        });
+    }
+
+    view! {
+        div(
+            class="chat-image-lightbox-overlay",
+            on:click=move |e: web_sys::MouseEvent| {
+                if let Some(target) = e.target()
+                    && let Some(current) = e.current_target()
+                    && target == current
+                {
+                    lightbox_sig.set(None);
+                }
+            },
+        ) {
+            div(class="lightbox-content", on:click=move |e: web_sys::MouseEvent| e.stop_propagation()) {
+                button(
+                    class="lightbox-close-btn",
+                    title="Закрыть (Esc)",
+                    on:click=move |e: web_sys::MouseEvent| {
+                        e.stop_propagation();
+                        lightbox_sig.set(None);
+                    },
                 ) {
-                    div(class="lightbox-content", on:click=move |e: web_sys::MouseEvent| e.stop_propagation()) {
-                        button(
-                            class="lightbox-close-btn",
-                            title="Закрыть (Esc)",
-                            on:click=move |_| lightbox_sig.set(None),
-                        ) {
-                            CloseSmallIcon()
-                        }
-                        (if is_vid {
+                    CloseSmallIcon()
+                }
+                (if is_vid {
+                    view! {
+                        video(
+                            class="lightbox-full-video",
+                            src=move || src_sig.get_clone(),
+                            title=move || alt_sig.get_clone(),
+                            controls=true,
+                            autoplay=true,
+                            playsinline=true,
+                        )
+                    }
+                } else {
+                    view! {
+                        (move || if is_loading.get() {
                             view! {
-                                video(
-                                    class="lightbox-full-video",
-                                    src=src,
-                                    title=alt,
-                                    controls=true,
-                                    autoplay=true,
-                                    playsinline=true,
-                                )
+                                div(class="lightbox-loading-box") {
+                                    div(class="chat-media-spinner")
+                                    span(class="lightbox-loading-text") { "Загрузка изображения..." }
+                                }
+                            }
+                        } else if is_img_error.get() {
+                            view! {
+                                div(class="lightbox-error-box") {
+                                    svg(
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        "stroke-width"="2",
+                                        "stroke-linecap"="round",
+                                        "stroke-linejoin"="round",
+                                        class="lightbox-error-icon",
+                                    ) {
+                                        circle(cx="12", cy="12", r="10")
+                                        line(x1="12", y1="8", x2="12", y2="12")
+                                        line(x1="12", y1="16", x2="12.01", y2="16")
+                                    }
+                                    span(class="lightbox-error-title") { "Не удалось загрузить изображение" }
+                                    span(class="lightbox-error-sub") { (alt_sig.get_clone()) }
+                                }
                             }
                         } else {
                             view! {
                                 img(
                                     class="lightbox-full-img",
-                                    src=src,
-                                    alt=alt,
+                                    src=move || src_sig.get_clone(),
+                                    alt=move || alt_sig.get_clone(),
+                                    on:error=move |_| {
+                                        if src_sig.with_untracked(|s| !s.is_empty()) {
+                                            is_img_error.set(true);
+                                        }
+                                    },
                                 )
                             }
                         })
                     }
-                }
+                })
             }
-        } else {
-            view! {}
-        })
+        }
     }
 }
 

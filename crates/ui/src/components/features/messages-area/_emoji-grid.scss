@@ -1,0 +1,218 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.chat-emoji-modal {
+
+    .emoji-modal-body {
+        flex: 1;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        touch-action: pan-y !important;
+        overscroll-behavior-x: none !important;
+        overscroll-behavior-y: contain;
+        padding: 8px 10px;
+        box-sizing: border-box;
+        @include scrollbar(5px, $color-white-alpha-18);
+
+        .emoji-grid {
+            width: 100%;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+            gap: 3px;
+            overflow-x: hidden !important;
+        }
+
+        .emoji-grid-item {
+            width: 100%;
+            min-width: 0;
+            height: 36px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-sizing: border-box;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.12s ease, transform 0.12s ease;
+            padding: 0;
+
+            img {
+                width: 24px;
+                height: 24px;
+                object-fit: contain;
+                display: block;
+                pointer-events: none;
+                user-select: none;
+            }
+
+            &:hover {
+                background: $color-white-alpha-10;
+                transform: scale(1.15);
+            }
+
+            &:active {
+                transform: scale(0.92);
+            }
+        }
+
+        .emoji-empty-state {
+            height: 100%;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-text-muted;
+            font-size: 13px;
+        }
+    }
+
+    &.is-expanded {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        bottom: auto !important;
+        right: auto !important;
+        width: min(860px, 94vw) !important;
+        height: min(640px, 86vh) !important;
+        max-width: 95vw !important;
+        max-height: 88vh !important;
+        border-radius: 18px !important;
+        z-index: 1000 !important;
+        background: $color-bg-panel-dark !important;
+        border: 1px solid $color-primary-alpha-32 !important;
+        box-shadow:
+            0 24px 64px $color-black-alpha-75,
+            0 0 0 1px $color-white-alpha-05 inset !important;
+        margin: 0 !important;
+        animation: emojiExpandedFadeIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+
+        @include respond-to(md) {
+            width: 95vw !important;
+            height: 86vh !important;
+            max-height: 86vh !important;
+        }
+
+        .emoji-modal-header {
+            padding: 16px 20px 12px;
+
+            .emoji-modal-title {
+                font-size: 16px;
+            }
+
+            .emoji-modal-actions {
+                gap: 8px;
+            }
+
+            .emoji-expand-toggle-btn,
+            .emoji-close-btn {
+                width: 34px;
+                height: 34px;
+                border-radius: 8px;
+
+                img {
+                    width: 18px;
+                    height: 18px;
+                }
+
+                svg {
+                    width: 18px;
+                    height: 18px;
+                }
+            }
+        }
+
+        .emoji-modal-search {
+            margin: 12px 18px 8px;
+
+            .emoji-search-icon {
+                left: 14px;
+
+                svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+
+            input {
+                padding: 10px 14px 10px 40px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+        }
+
+        .emoji-category-tabs {
+            padding: 6px 16px 10px;
+            gap: 6px;
+
+            .emoji-cat-btn {
+                padding: 6px 12px;
+                border-radius: 8px;
+
+                img {
+                    width: 22px;
+                    height: 22px;
+                }
+            }
+        }
+
+        .emoji-modal-body {
+            padding: 14px 18px;
+
+            .emoji-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
+                gap: 8px !important;
+
+                @include respond-to(md) {
+                    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)) !important;
+                    gap: 6px !important;
+                }
+            }
+
+            .emoji-grid-item {
+                height: 70px !important;
+                border-radius: 12px !important;
+
+                img {
+                    width: 48px !important;
+                    height: 48px !important;
+
+                    @include respond-to(md) {
+                        width: 38px !important;
+                        height: 38px !important;
+                    }
+                }
+
+                &:hover {
+                    transform: scale(1.15) !important;
+                    background: $color-white-alpha-12 !important;
+                }
+
+                &:active {
+                    transform: scale(0.95) !important;
+                }
+            }
+        }
+    }
+}
+
+
+
+
+// ─── Полноразмерное окно редактирования сообщения ─────────────────────────────
+@keyframes editorModalFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

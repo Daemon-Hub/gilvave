@@ -1,0 +1,359 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.message {
+            .chat-message-video-card {
+                display: flex;
+                flex-direction: column;
+                max-width: 480px;
+                border-radius: $radius-md;
+                overflow: hidden;
+                background: $color-bg-panel-dark;
+                border: 1px solid $color-border-subtle;
+                box-shadow: 0 4px 16px $color-black-alpha-35;
+                margin: 4px 0;
+
+                .chat-message-video {
+                    display: block;
+                    width: 100%;
+                    max-height: 320px;
+                    background: $color-black;
+                    outline: none;
+
+                    @include respond-to(sm) {
+                        max-height: 240px;
+                    }
+                }
+
+                // Фирменный кастомный видеоплеер Gilvave
+                &.custom-player {
+                    border: 1px solid $color-border;
+                    background: $color-bg-panel-dark;
+                    box-shadow: 0 6px 22px $color-black-alpha-50;
+
+                    .video-fullscreen-topbar {
+                        display: none;
+                    }
+
+                    .video-stage {
+                        position: relative;
+                        width: 100%;
+                        aspect-ratio: 16 / 9;
+                        min-height: 200px;
+                        max-height: 340px;
+                        background: $color-black;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        overflow: hidden;
+
+                        .chat-custom-video {
+                            display: block;
+                            width: 100%;
+                            max-height: 340px;
+                            object-fit: contain;
+                            outline: none;
+
+                            @include respond-to(sm) {
+                                max-height: 240px;
+                            }
+                        }
+
+                        .video-center-play-btn {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%) scale(1);
+                            width: 54px;
+                            height: 54px;
+                            border-radius: 50%;
+                            background: $color-primary;
+                            color: $color-text-white;
+                            border: none;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            box-shadow:
+                                0 0 24px $color-primary-alpha-50,
+                                0 4px 14px $color-black-alpha-50;
+                            transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.15s ease, opacity 0.2s ease;
+                            z-index: 2;
+
+                            &:hover {
+                                transform: translate(-50%, -50%) scale(1.12);
+                                background: $color-primary-hover;
+                            }
+
+                            &:active {
+                                transform: translate(-50%, -50%) scale(0.95);
+                            }
+
+                            svg.play-icon {
+                                width: 22px;
+                                height: 22px;
+                                margin-left: 3px;
+                            }
+                        }
+                    }
+
+                    &.is-playing {
+                        .video-center-play-btn {
+                            opacity: 0;
+                            pointer-events: none;
+                            transform: translate(-50%, -50%) scale(0.8);
+                        }
+
+                        .video-play-toggle {
+                            .icon-play {
+                                display: none;
+                            }
+                            .icon-pause {
+                                display: block;
+                            }
+                        }
+                    }
+
+                    &.is-paused {
+                        .video-center-play-btn {
+                            opacity: 1;
+                            pointer-events: auto;
+                            transform: translate(-50%, -50%) scale(1);
+                        }
+
+                        .video-play-toggle {
+                            .icon-play {
+                                display: block;
+                            }
+                            .icon-pause {
+                                display: none;
+                            }
+                        }
+                    }
+
+                    &.is-muted {
+                        .video-volume-toggle {
+                            .icon-volume-on {
+                                display: none;
+                            }
+                            .icon-volume-muted {
+                                display: block;
+                                color: $color-danger-light;
+                            }
+                        }
+                    }
+
+                    &:not(.is-muted) {
+                        .video-volume-toggle {
+                            .icon-volume-on {
+                                display: block;
+                            }
+                            .icon-volume-muted {
+                                display: none;
+                            }
+                        }
+                    }
+
+                    .video-custom-controls {
+                        background: $color-bg-panel-darkest;
+                        padding: 4px 10px 7px;
+                        border-top: 1px solid $color-white-alpha-08;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+
+                        .video-scrubber-track {
+                            width: 100%;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: $color-white-alpha-12;
+                            position: relative;
+                            cursor: pointer;
+                            transition: height 0.12s ease;
+
+                            &::before {
+                                content: '';
+                                position: absolute;
+                                top: -12px;
+                                bottom: -12px;
+                                left: 0;
+                                right: 0;
+                                cursor: pointer;
+                            }
+
+                            &:hover {
+                                height: 8px;
+
+                                .video-scrubber-thumb {
+                                    transform: translateY(-50%) scale(1.2);
+                                }
+                            }
+
+                            .video-scrubber-fill {
+                                height: 100%;
+                                width: 0%;
+                                border-radius: 3px;
+                                background: linear-gradient(90deg, $color-primary, $color-primary-end-light);
+                                position: relative;
+                                pointer-events: none;
+
+                                .video-scrubber-thumb {
+                                    position: absolute;
+                                    right: -5px;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    width: 10px;
+                                    height: 10px;
+                                    border-radius: 50%;
+                                    background: $color-text-white;
+                                    box-shadow: 0 0 6px $color-primary;
+                                    transition: transform 0.12s ease;
+                                }
+                            }
+                        }
+
+                        .video-controls-row {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 8px;
+
+                            .video-controls-left,
+                            .video-controls-right {
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }
+
+                            .video-btn {
+                                width: 28px;
+                                height: 28px;
+                                border-radius: $radius-sm;
+                                background: transparent;
+                                border: none;
+                                color: $color-text-chat;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                cursor: pointer;
+                                text-decoration: none;
+                                padding: 0;
+                                transition: background 0.12s ease, color 0.12s ease;
+
+                                svg {
+                                    width: 15px;
+                                    height: 15px;
+                                }
+
+                                &:hover {
+                                    background: $color-white-alpha-12;
+                                    color: $color-text-white;
+                                }
+                            }
+
+                            .video-time-display {
+                                display: flex;
+                                align-items: center;
+                                gap: 3px;
+                                font-size: 11px;
+                                font-variant-numeric: tabular-nums;
+                                color: $color-text-muted;
+                                user-select: none;
+                                margin-left: 2px;
+
+                                .video-time-current {
+                                    color: $color-text-chat;
+                                    font-weight: 600;
+                                }
+                            }
+
+                            .video-track-name {
+                                font-size: 11.5px;
+                                color: $color-text-muted;
+                                max-width: 130px;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                                margin-left: 6px;
+                                user-select: none;
+                            }
+                        }
+                    }
+
+
+                .video-card-footer {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 6px 10px;
+                    background: $color-bg-panel-darkest;
+                    border-top: 1px solid $color-white-alpha-08;
+                    gap: 8px;
+
+                    .video-card-info {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        min-width: 0;
+                        overflow: hidden;
+
+                        .video-card-icon {
+                            color: $color-primary-blue;
+                            flex-shrink: 0;
+                        }
+
+                        .video-card-name {
+                            font-size: 11.5px;
+                            font-weight: 500;
+                            color: $color-text-heading;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                    }
+
+                    .video-card-download-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 6px;
+                        background: $color-white-alpha-08;
+                        color: $color-text-white;
+                        border: none;
+                        text-decoration: none;
+                        flex-shrink: 0;
+                        transition: background 0.15s ease, transform 0.12s ease;
+
+                        &:hover {
+                            background: $color-primary;
+                            transform: scale(1.05);
+                        }
+                    }
+                }
+            }
+
+            .chat-message-video-wrapper {
+                display: block;
+                max-width: 480px;
+                margin: 6px 0;
+
+                .chat-message-video {
+                    display: block;
+                    width: 100%;
+                    max-height: 340px;
+                    border-radius: $radius-md;
+                    background: $color-bg-panel-darkest;
+                    border: 1px solid $color-white-alpha-10;
+                    box-shadow: 0 4px 16px $color-black-alpha-35;
+                    outline: none;
+
+                    @include respond-to(sm) {
+                        max-height: 260px;
+                    }
+                }
+            }
+    }
+}

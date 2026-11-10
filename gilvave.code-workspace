@@ -71,7 +71,7 @@
             },
             {
                 "label": "Tauri Build for Android aarch64",
-                "command": "cargo tauri android build --target aarch64 --apk --release",
+                "command": "cargo tauri android build --target aarch64 --apk",
                 "type": "shell",
                 "group": "build"
             },

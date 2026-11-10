@@ -25,6 +25,8 @@ time.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 rusqlite.workspace = true
+rayon.workspace = true
+base64 = "0.22"
 rusqlite_migration = { version = "2.6", features = ["from-directory"] }
 include_dir = "0.7"
 

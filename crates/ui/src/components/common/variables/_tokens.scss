@@ -1,0 +1,316 @@
+@use 'palette' as *;
+
+// ─── Theme-Reactive SCSS Variables (backed by CSS Custom Properties) ──────────
+$color-bg-page: var(--color-bg-page);
+$color-bg-page-mid: var(--color-bg-page-mid);
+$color-bg-page-end: var(--color-bg-page-end);
+$color-bg-page-overlay: var(--color-bg-page-overlay);
+
+$color-icon-cyan: var(--color-icon-cyan);
+$color-icon-cyan-bright: var(--color-icon-cyan-bright);
+$color-icon-blue: var(--color-icon-blue);
+$color-icon-slate-arc: var(--color-icon-slate-arc);
+$color-icon-violet: var(--color-icon-violet);
+$color-icon-magenta: var(--color-icon-magenta);
+$color-icon-coral: var(--color-icon-coral);
+$color-icon-orange: var(--color-icon-orange);
+$color-icon-amber: var(--color-icon-amber);
+$color-icon-spark: var(--color-icon-spark);
+
+$color-bg-container: var(--color-bg-container);
+$color-bg-container-dark: var(--color-bg-container-dark);
+$color-bg-glass: var(--color-bg-glass);
+$color-bg-input: var(--color-bg-input);
+$color-bg-input-focus: var(--color-bg-input-focus);
+$color-bg-social: var(--color-bg-social);
+$color-bg-message: var(--color-bg-message);
+
+$color-bg-panel: var(--color-bg-panel);
+$color-bg-panel-dark: var(--color-bg-panel-dark);
+$color-bg-panel-footer: var(--color-bg-panel-footer);
+$color-bg-panel-darkest: var(--color-bg-panel-darkest);
+$color-bg-panel-darkest-hover: var(--color-bg-panel-darkest-hover);
+$color-bg-panel-hover: var(--color-bg-panel-hover);
+$color-bg-panel-active: var(--color-bg-panel-active);
+$color-bg-input-panel: var(--color-bg-input-panel);
+$color-bg-input-panel-focus: var(--color-bg-input-panel-focus);
+
+$color-border: var(--color-border);
+$color-border-header: var(--color-border-header);
+$color-border-subtle: var(--color-border-subtle);
+$color-border-panel: var(--color-border-panel);
+$color-border-container: var(--color-border-container);
+$color-border-bubble: var(--color-border-bubble);
+$color-border-bubble-hover: var(--color-border-bubble-hover);
+$color-border-input-panel: var(--color-border-input-panel);
+$color-border-input-focus: var(--color-border-input-focus);
+$color-border-slate-arc: var(--color-border-slate-arc);
+
+$color-primary: var(--color-primary);
+$color-primary-hover: var(--color-primary-hover);
+$color-primary-light: var(--color-primary-light);
+$color-primary-lighter: var(--color-primary-lighter);
+$color-primary-end: var(--color-primary-end);
+$color-primary-end-light: var(--color-primary-end-light);
+$color-primary-dark: var(--color-primary-dark);
+$color-primary-blue: var(--color-primary-blue);
+
+$color-primary-alpha-14: var(--color-primary-alpha-14);
+$color-primary-alpha-15: var(--color-primary-alpha-15);
+$color-primary-alpha-16: var(--color-primary-alpha-16);
+$color-primary-alpha-20: var(--color-primary-alpha-20);
+$color-primary-alpha-24: var(--color-primary-alpha-24);
+$color-primary-alpha-25: var(--color-primary-alpha-25);
+$color-primary-alpha-28: var(--color-primary-alpha-28);
+$color-primary-alpha-30: var(--color-primary-alpha-30);
+$color-primary-alpha-32: var(--color-primary-alpha-32);
+$color-primary-alpha-38: var(--color-primary-alpha-38);
+$color-primary-alpha-40: var(--color-primary-alpha-40);
+$color-primary-alpha-45: var(--color-primary-alpha-45);
+$color-primary-alpha-50: var(--color-primary-alpha-50);
+$color-primary-end-alpha-15: var(--color-primary-end-alpha-15);
+$color-primary-end-alpha-25: var(--color-primary-end-alpha-25);
+$color-primary-end-alpha-30: var(--color-primary-end-alpha-30);
+
+$color-text-heading: var(--color-text-heading);
+$color-text-label: var(--color-text-label);
+$color-text-muted: var(--color-text-muted);
+$color-text-dim: var(--color-text-dim);
+$color-text-social: var(--color-text-social);
+$color-text-white: var(--color-text-white);
+$color-text-on-accent: var(--color-text-on-accent);
+$color-text-tab: var(--color-text-tab);
+$color-text-channel: var(--color-text-channel);
+$color-text-member: var(--color-text-member);
+$color-text-chat: var(--color-text-chat);
+$color-text-author: var(--color-text-author);
+$color-text-author-hover: var(--color-text-author-hover);
+$color-text-date-badge: var(--color-text-date-badge);
+
+$color-error: var(--color-error);
+$color-error-alpha-15: var(--color-error-alpha-15);
+$color-success: var(--color-success);
+$color-success-alpha-20: var(--color-success-alpha-20);
+$color-danger: var(--color-danger);
+$color-danger-hover: var(--color-danger-hover);
+$color-danger-light: var(--color-danger-light);
+$color-danger-alpha-08: var(--color-danger-alpha-08);
+$color-danger-alpha-15: var(--color-danger-alpha-15);
+$color-danger-alpha-18: var(--color-danger-alpha-18);
+$color-danger-alpha-40: var(--color-danger-alpha-40);
+$color-danger-alpha-75: var(--color-danger-alpha-75);
+$color-bg-danger-float: var(--color-bg-danger-float);
+
+$color-status-online: var(--color-status-online);
+$color-status-idle: var(--color-status-idle);
+$color-status-dnd: var(--color-status-dnd);
+$color-status-offline: var(--color-status-offline);
+
+// Neutral translucent tokens
+$color-white-alpha-03: var(--color-white-alpha-03);
+$color-white-alpha-04: var(--color-white-alpha-04);
+$color-white-alpha-05: var(--color-white-alpha-05);
+$color-white-alpha-06: var(--color-white-alpha-06);
+$color-white-alpha-07: var(--color-white-alpha-07);
+$color-white-alpha-08: var(--color-white-alpha-08);
+$color-white-alpha-10: var(--color-white-alpha-10);
+$color-white-alpha-12: var(--color-white-alpha-12);
+$color-white-alpha-14: var(--color-white-alpha-14);
+$color-white-alpha-15: var(--color-white-alpha-15);
+$color-white-alpha-16: var(--color-white-alpha-16);
+$color-white-alpha-18: var(--color-white-alpha-18);
+$color-white-alpha-20: var(--color-white-alpha-20);
+$color-white-alpha-22: var(--color-white-alpha-22);
+$color-white-alpha-35: var(--color-white-alpha-35);
+$color-white-alpha-60: var(--color-white-alpha-60);
+
+$color-black: var(--color-black);
+$color-black-alpha-15: var(--color-black-alpha-15);
+$color-black-alpha-20: var(--color-black-alpha-20);
+$color-black-alpha-22: var(--color-black-alpha-22);
+$color-black-alpha-24: var(--color-black-alpha-24);
+$color-black-alpha-25: var(--color-black-alpha-25);
+$color-black-alpha-35: var(--color-black-alpha-35);
+$color-black-alpha-50: var(--color-black-alpha-50);
+$color-black-alpha-60: var(--color-black-alpha-60);
+$color-black-alpha-72: var(--color-black-alpha-72);
+$color-black-alpha-75: var(--color-black-alpha-75);
+$color-black-alpha-85: var(--color-black-alpha-85);
+
+// Component-specific theme tokens
+$color-server-new-bg: var(--color-server-new-bg);
+$color-server-new-border: var(--color-server-new-border);
+$color-server-new-text: var(--color-server-new-text);
+$color-server-new-hover-bg: var(--color-server-new-hover-bg);
+$color-server-new-hover-border: var(--color-server-new-hover-border);
+$color-server-new-hover-text: var(--color-server-new-hover-text);
+$shadow-server-new-hover: var(--shadow-server-new-hover);
+
+$color-channel-add-hover-text: var(--color-channel-add-hover-text);
+$color-channel-add-hover-bg: var(--color-channel-add-hover-bg);
+$color-channel-hash: var(--color-channel-hash);
+$color-channel-hash-hover: var(--color-channel-hash-hover);
+$color-channel-hash-active: var(--color-channel-hash-active);
+$shadow-channel-active: var(--shadow-channel-active);
+$shadow-channel-hash-glow: var(--shadow-channel-hash-glow);
+
+$color-char-counter-bg: var(--color-char-counter-bg);
+$color-char-counter-border: var(--color-char-counter-border);
+$color-char-counter-text: var(--color-char-counter-text);
+$shadow-char-counter: var(--shadow-char-counter);
+
+$color-read-more-border: var(--color-read-more-border);
+$color-read-more-text: var(--color-read-more-text);
+$color-read-more-hover-border: var(--color-read-more-hover-border);
+$color-read-more-hover-text: var(--color-read-more-hover-text);
+
+$color-editor-badge-border: var(--color-editor-badge-border);
+$color-editor-badge-text: var(--color-editor-badge-text);
+$color-editor-counter-bg: var(--color-editor-counter-bg);
+$color-editor-counter-text: var(--color-editor-counter-text);
+
+$gradient-pill-hover: var(--gradient-pill-hover);
+$gradient-pill-active: var(--gradient-pill-active);
+$filter-pill-active: var(--filter-pill-active);
+$gradient-home-btn: var(--gradient-home-btn);
+$gradient-home-btn-ring: var(--gradient-home-btn-ring);
+$shadow-home-btn-hover: var(--shadow-home-btn-hover);
+$shadow-home-btn-active: var(--shadow-home-btn-active);
+$color-home-badge-border: var(--color-home-badge-border);
+$color-home-badge-border-hover: var(--color-home-badge-border-hover);
+$shadow-home-badge: var(--shadow-home-badge);
+$shadow-home-badge-hover: var(--shadow-home-badge-hover);
+
+$gradient-server-icon: var(--gradient-server-icon);
+$shadow-server-icon-hover: var(--shadow-server-icon-hover);
+$shadow-server-icon-active: var(--shadow-server-icon-active);
+$gradient-server-separator: var(--gradient-server-separator);
+$gradient-channel-active: var(--gradient-channel-active);
+$gradient-footer-top-line: var(--gradient-footer-top-line);
+$gradient-date-divider: var(--gradient-date-divider);
+$gradient-message-avatar: var(--gradient-message-avatar);
+$gradient-read-more: var(--gradient-read-more);
+$gradient-read-more-hover: var(--gradient-read-more-hover);
+$gradient-send-btn: var(--gradient-send-btn);
+$shadow-send-btn: var(--shadow-send-btn);
+$shadow-send-btn-hover: var(--shadow-send-btn-hover);
+$gradient-editor-badge: var(--gradient-editor-badge);
+$gradient-unread-badge: var(--gradient-unread-badge);
+$shadow-unread-badge: var(--shadow-unread-badge);
+$gradient-group-icon: var(--gradient-group-icon);
+$gradient-hero-banner: var(--gradient-hero-banner);
+$color-hero-banner-border: var(--color-hero-banner-border);
+$shadow-hero-banner: var(--shadow-hero-banner);
+$filter-hero-decor: var(--filter-hero-decor);
+$gradient-banner-default: var(--gradient-banner-default);
+$gradient-server-banner: var(--gradient-server-banner);
+$gradient-body-main: var(--gradient-body-main);
+$gradient-body-before: var(--gradient-body-before);
+$gradient-body-after: var(--gradient-body-after);
+$gradient-aurora-orb-1: var(--gradient-aurora-orb-1);
+$gradient-aurora-orb-2: var(--gradient-aurora-orb-2);
+$gradient-aurora-orb-3: var(--gradient-aurora-orb-3);
+
+// Voice Channel Tokens
+$gradient-voice-btn: var(--gradient-voice-btn);
+$shadow-voice-btn: var(--shadow-voice-btn);
+$shadow-voice-btn-hover: var(--shadow-voice-btn-hover);
+$gradient-voice-radar: var(--gradient-voice-radar);
+$shadow-voice-radar: var(--shadow-voice-radar);
+$color-voice-ring: var(--color-voice-ring);
+
+// Quick card hover accents
+$color-quick-join-border: var(--color-quick-join-border);
+$shadow-quick-join: var(--shadow-quick-join);
+$color-quick-join-text: var(--color-quick-join-text);
+
+$color-quick-create-border: var(--color-quick-create-border);
+$shadow-quick-create: var(--shadow-quick-create);
+$color-quick-create-text: var(--color-quick-create-text);
+
+$color-quick-settings-border: var(--color-quick-settings-border);
+$shadow-quick-settings: var(--shadow-quick-settings);
+$color-quick-settings-text: var(--color-quick-settings-text);
+
+$color-quick-dms-border: var(--color-quick-dms-border);
+$shadow-quick-dms: var(--shadow-quick-dms);
+$color-quick-dms-text: var(--color-quick-dms-text);
+
+// ─── Typography ──────────────────────────────────────────────────────────────
+$font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+$font-size-base: 16px;
+$font-size-sm: 14px;
+$font-size-xs: 12px;
+$font-size-xxs: 11px;
+$font-size-lg: 18px;
+$font-size-xl: 28px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-base: 1.5;
+$line-height-tight: 1.2;
+
+// ─── Border radius ───────────────────────────────────────────────────────────
+$radius-xs: 2px;
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-container: 20px;
+$radius-full: 9999px;
+
+$radius-input: $radius-lg;
+$radius-btn: $radius-lg;
+
+// ─── Spacing ─────────────────────────────────────────────────────────────────
+$padding-panel: 40px;
+$padding-panel-sm: 30px 20px;
+$padding-tab: 18px;
+$padding-input: 14px 16px;
+$padding-btn: 14px;
+$padding-social-btn: 12px;
+
+// ─── App shell dimensions ────────────────────────────────────────────────────
+$sidebar-width-server: 72px;
+$sidebar-width-channel: 240px;
+$panel-width-members: 240px;
+$header-height-app: 30px;
+$header-height-channel: 60px;
+
+// ─── Shadows ─────────────────────────────────────────────────────────────────
+$shadow-container: var(--shadow-container);
+$shadow-input-focus: var(--shadow-input-focus);
+$shadow-submit-hover: var(--shadow-submit-hover);
+$shadow-panel: var(--shadow-panel);
+$shadow-modal: var(--shadow-modal);
+$shadow-floating-private: var(--shadow-floating-private);
+$shadow-floating-public: var(--shadow-floating-public);
+$shadow-spinner-1: var(--shadow-spinner-1);
+$shadow-spinner-2: var(--shadow-spinner-2);
+$shadow-spinner-3: var(--shadow-spinner-3);
+$shadow-spinner-core: var(--shadow-spinner-core);
+
+// ─── Transitions ─────────────────────────────────────────────────────────────
+$transition-base: all 0.3s ease;
+$transition-fast: all 0.15s ease;
+$transition-medium: all 0.25s ease;
+
+// ─── Z-index scale ───────────────────────────────────────────────────────────
+$z-base: 0;
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-header: 500;
+$z-drawer: 700;
+$z-modal: 1000;
+$z-toast: 1100;
+$z-tooltip: 1200;
+
+// ─── Breakpoints ─────────────────────────────────────────────────────────────
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+

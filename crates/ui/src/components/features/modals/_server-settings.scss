@@ -1,0 +1,119 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.server-settings-modal {
+    width: 660px;
+    max-width: min(660px, 94vw);
+    background: $color-bg-container;
+    border-radius: $radius-lg;
+    padding: 28px;
+    box-shadow: 0 16px 48px $color-black-alpha-50;
+    max-height: 90vh;
+    overflow-y: auto;
+    @include scrollbar(4px, $color-white-alpha-10);
+
+    @include respond-to(md) {
+        width: 95vw;
+        max-width: 95vw;
+        padding: 16px 14px;
+        max-height: 92vh;
+        border-radius: $radius-md;
+
+        .server-preview-banner {
+            height: 90px;
+            margin-bottom: 20px;
+
+            .server-preview-avatar {
+                width: 48px;
+                height: 48px;
+                bottom: -12px;
+                left: 12px;
+
+                span {
+                    font-size: 20px;
+                }
+            }
+        }
+    }
+
+    .server-preview-banner {
+        position: relative;
+        height: 120px;
+        border-radius: $radius-md;
+        margin-bottom: 24px;
+        background: $gradient-server-banner;
+        overflow: visible;
+
+        .server-banner-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: $radius-md;
+            display: block;
+        }
+
+        .server-banner-placeholder {
+            width: 100%;
+            height: 100%;
+            border-radius: $radius-md;
+            background: $gradient-banner-default;
+        }
+
+        .server-preview-avatar {
+            position: absolute;
+            bottom: -16px;
+            left: 16px;
+            width: 60px;
+            height: 60px;
+            border-radius: $radius-lg;
+            border: 4px solid $color-bg-container;
+            background: linear-gradient(135deg, $color-primary, $color-primary-end);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            span {
+                font-size: 24px;
+                font-weight: $font-weight-bold;
+                color: $color-text-on-accent;
+            }
+        }
+    }
+
+    .server-settings-danger {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid $color-border-subtle;
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    textarea {
+        @include input-base;
+        resize: none !important;
+        background: $color-bg-input;
+        color: $color-text-white;
+        border: 1px solid $color-white-alpha-10;
+        border-radius: $radius-md;
+        padding: 12px 14px;
+        min-height: 72px;
+        line-height: 1.5;
+        box-sizing: border-box;
+
+        &:focus {
+            border-color: $color-primary;
+            box-shadow: 0 0 0 3px $color-primary-alpha-15;
+            background: $color-bg-input-focus;
+        }
+    }
+}
+
+// ─── Profile Settings Modal ───────────────────────────────────────────────────

@@ -150,6 +150,9 @@ async fn handle_command_web(args: Value) -> CommandResult {
         CommandArgs::SaveCachedFile { .. } => {
             CommandResult::Ok(CommandResponse::SaveCachedFile)
         }
+        CommandArgs::GetCachedMedia { .. } => {
+            CommandResult::Ok(CommandResponse::GetCachedMedia(None))
+        }
         CommandArgs::OpenFile { .. } => {
             CommandResult::Ok(CommandResponse::OpenFile)
         }

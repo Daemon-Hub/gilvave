@@ -1,0 +1,129 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+// ─── DM Messages Area ────────────────────────────────────────────────────────
+.dm-messages-area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+}
+
+.dm-chat-header {
+    height: 52px;
+    background: $color-bg-panel;
+    border-bottom: 1px solid $color-border-panel;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+
+    .mobile-back-btn {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: none;
+        color: $color-text-channel;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: $radius-sm;
+        transition: background 0.15s, color 0.15s;
+
+        svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-primary;
+        }
+
+        @include respond-to(md) {
+            display: inline-flex;
+        }
+    }
+
+    .dm-header-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-text-on-accent;
+        font-weight: $font-weight-bold;
+        font-size: 14px;
+        position: relative;
+
+        .status-dot {
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid $color-bg-panel;
+            &.online { background: $color-status-online; }
+        }
+    }
+
+    .dm-header-meta {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dm-header-name {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-bold;
+        color: $color-text-white;
+    }
+
+    .dm-header-sub {
+        font-size: $font-size-xxs;
+        color: $color-text-muted;
+    }
+}
+
+.dm-start-hero {
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    border-bottom: 1px solid $color-border-subtle;
+    margin-bottom: 16px;
+
+    .dm-hero-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: $font-weight-bold;
+        color: $color-text-on-accent;
+        margin-bottom: 8px;
+    }
+
+    h3 {
+        font-size: 24px;
+        font-weight: $font-weight-bold;
+        color: $color-text-white;
+    }
+
+    p {
+        font-size: $font-size-sm;
+        color: $color-text-muted;
+    }
+}

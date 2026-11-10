@@ -5,6 +5,7 @@ use crate::ids::{FileId, MessageId, UserId};
 
 /// Категория файла
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
 #[serde(rename_all = "lowercase")]
 pub enum FileType {
     Image,

@@ -1,0 +1,179 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.profile-settings-modal {
+    width: 980px;
+    max-width: min(980px, 96vw);
+    height: 700px;
+    max-height: 90vh;
+    background: $color-bg-container;
+    border-radius: $radius-lg;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 60px $color-black-alpha-60;
+    display: flex;
+    flex-direction: column;
+
+    @include respond-to(md) {
+        width: 95vw;
+        max-width: 95vw;
+        height: 92vh;
+        max-height: 92vh;
+        border-radius: $radius-md;
+    }
+
+    .profile-modal-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background: $color-bg-container-dark;
+        border-bottom: 1px solid $color-border-subtle;
+        flex-shrink: 0;
+
+        .profile-modal-title {
+            font-size: $font-size-base;
+            font-weight: $font-weight-bold;
+            color: $color-text-white;
+        }
+
+        .modal-close-icon-btn {
+            position: static;
+        }
+    }
+
+    .profile-modal-layout {
+        display: flex;
+        min-height: 520px;
+        flex: 1;
+        min-height: 0;
+
+        @include respond-to(md) {
+            flex-direction: column;
+            min-height: auto;
+            overflow: hidden;
+        }
+    }
+
+    .profile-sidebar-tabs,
+    .profile-sidebar {
+        width: 230px;
+        background: $color-bg-container-dark;
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-right: 1px solid $color-border-subtle;
+        flex-shrink: 0;
+
+        @include respond-to(md) {
+            width: 100%;
+            flex-direction: row;
+            padding: 8px 12px;
+            gap: 6px;
+            border-right: none;
+            border-bottom: 1px solid $color-border-subtle;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            box-sizing: border-box;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+                width: 0;
+                height: 0;
+            }
+
+            h4 {
+                display: none;
+            }
+
+            .profile-tab-divider {
+                display: none;
+            }
+
+            .profile-tab-item {
+                flex-shrink: 0;
+                padding: 7px 12px;
+                font-size: $font-size-xs;
+
+                &.logout {
+                    margin-top: 0;
+                    margin-left: auto;
+                }
+            }
+        }
+
+        h4 {
+            font-size: $font-size-xxs;
+            font-weight: $font-weight-bold;
+            color: $color-text-muted;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        .profile-tab-item {
+            padding: 10px 12px;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            color: $color-text-channel;
+            font-size: $font-size-sm;
+            font-weight: $font-weight-medium;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s, color 0.15s;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                flex-shrink: 0;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-heading;
+            }
+
+            &.active {
+                background: $color-bg-panel-active;
+                color: $color-text-heading;
+            }
+
+            &.logout {
+                color: $color-danger;
+                margin-top: auto;
+
+                &:hover {
+                    background: $color-danger-alpha-15;
+                }
+            }
+        }
+
+        .profile-tab-divider {
+            height: 1px;
+            background: $color-border-subtle;
+            margin: 12px 0;
+        }
+    }
+
+    .profile-content-body {
+        flex: 1;
+        padding: 28px;
+        overflow-y: auto;
+        @include scrollbar(4px, $color-white-alpha-10);
+
+        @include respond-to(md) {
+            padding: 14px 16px;
+
+        }
+    }
+}

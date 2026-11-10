@@ -12,9 +12,6 @@ pub fn is_file_size_valid(bytes_len: u64) -> bool {
 
 /// Определение типа и MIME файла
 pub fn detect_file_type(name: &str, bytes: &[u8]) -> (FileType, &'static str) {
-    let lower_name = name.to_ascii_lowercase();
-    let ext = lower_name.rsplit('.').next().unwrap_or("");
-
     if bytes.len() >= 4 {
         if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
             return (FileType::Image, "image/png");
@@ -61,6 +58,17 @@ pub fn detect_file_type(name: &str, bytes: &[u8]) -> (FileType, &'static str) {
             return (FileType::Video, "video/webm");
         }
     }
+
+    let ext_slice = name.rsplit('.').next().unwrap_or("");
+    let mut ext_buf = [0u8; 16];
+    let ext = if !ext_slice.is_empty() && ext_slice.len() <= 15 && ext_slice.len() != name.len() {
+        for (i, &b) in ext_slice.as_bytes().iter().enumerate() {
+            ext_buf[i] = b.to_ascii_lowercase();
+        }
+        std::str::from_utf8(&ext_buf[..ext_slice.len()]).unwrap_or("")
+    } else {
+        ""
+    };
 
     match ext {
         "png" => (FileType::Image, "image/png"),

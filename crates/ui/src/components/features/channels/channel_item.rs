@@ -36,10 +36,11 @@ pub fn ChannelItem(channel_view: ChannelView) -> View {
                     return;
                 }
 
-                context.current.set(None);
-                context.messages.set(vec![]);
                 if prev.r#type == ChannelType::TEXT {
-                    let _ = WsService::left_channel(prev.id).await;
+                    let prev_id = prev.id;
+                    spawn_local_scoped(async move {
+                        let _ = WsService::left_channel(prev_id).await;
+                    });
                 }
             }
 

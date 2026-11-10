@@ -262,8 +262,123 @@ pub async fn handle_command(
                 CommandResult::Ok(CommandResponse::SyncCachedChannels)
             }
         }
-        CommandArgs::SaveCachedFile { .. } => {
+        CommandArgs::SaveCachedFile {
+            file_id,
+            filename,
+            download_url,
+        } => {
+            let media_dir = get_media_cache_dir(&window);
+            let file_path = get_cache_file_path(&media_dir, &file_id, &filename);
+
+            let token = {
+                let db_lock = db.lock().await;
+                if let Some(ref conn) = *db_lock {
+                    match crate::database::get_token(conn, "access_token") {
+                        Ok(Some(t)) if !t.is_empty() => t,
+                        _ => get_access_token(),
+                    }
+                } else {
+                    get_access_token()
+                }
+            };
+
+            let _ = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await;
             CommandResult::Ok(CommandResponse::SaveCachedFile)
+        }
+        CommandArgs::GetCachedMedia {
+            file_id,
+            filename,
+            download_url,
+        } => {
+            let media_dir = get_media_cache_dir(&window);
+            let effective_filename = if !filename.is_empty() && filename.contains('.') {
+                filename.clone()
+            } else if let Some(ref d_url) = download_url
+                && let Some(last_seg) = d_url.split(['/', '?', '#']).rfind(|s| !s.is_empty())
+                && last_seg.contains('.')
+            {
+                last_seg.to_string()
+            } else {
+                filename.clone()
+            };
+
+            let file_path = get_cache_file_path(&media_dir, &file_id, &effective_filename);
+
+            #[cfg(not(target_os = "android"))]
+            let primary_dir = get_desktop_downloads_dir(&window);
+            #[cfg(target_os = "android")]
+            let primary_dir = get_android_downloads_dir();
+
+            if !file_path.is_file() || std::fs::metadata(&file_path).map(|m| m.len() == 0).unwrap_or(true) {
+                let dl_file = primary_dir.join(&effective_filename);
+                let dl_fallback = primary_dir.join(&filename);
+                if dl_file.is_file() && std::fs::metadata(&dl_file).map(|m| m.len() > 0).unwrap_or(false) {
+                    let _ = std::fs::copy(&dl_file, &file_path);
+                } else if dl_fallback.is_file() && std::fs::metadata(&dl_fallback).map(|m| m.len() > 0).unwrap_or(false) {
+                    let _ = std::fs::copy(&dl_fallback, &file_path);
+                } else if let Ok(entries) = std::fs::read_dir(&media_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.is_file()
+                            && std::fs::metadata(&path).map(|m| m.len() > 0).unwrap_or(false)
+                            && let Some(name_os) = path.file_name().and_then(|n| n.to_str())
+                            && (name_os == file_id || name_os.starts_with(&format!("{file_id}_")))
+                        {
+                            let _ = std::fs::copy(&path, &file_path);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if !file_path.is_file() || std::fs::metadata(&file_path).map(|m| m.len() == 0).unwrap_or(true) {
+                let token = {
+                    let db_lock = db.lock().await;
+                    if let Some(ref conn) = *db_lock {
+                        match crate::database::get_token(conn, "access_token") {
+                            Ok(Some(t)) if !t.is_empty() => t,
+                            _ => get_access_token(),
+                        }
+                    } else {
+                        get_access_token()
+                    }
+                };
+                let _ = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await;
+            }
+
+            if file_path.is_file()
+                && std::fs::metadata(&file_path).map(|m| m.len() > 0).unwrap_or(false)
+                && let Ok(bytes) = std::fs::read(&file_path)
+            {
+                let (file_type, detected_mime) = gilvave_core::files::detect_file_type(&effective_filename, &bytes);
+                let mime = if detected_mime != "application/octet-stream" {
+                    detected_mime
+                } else {
+                    let ext = gilvave_core::files::get_file_extension(&effective_filename, "").to_ascii_lowercase();
+                    match ext.as_str() {
+                        "png" => "image/png",
+                        "jpg" | "jpeg" | "jfif" => "image/jpeg",
+                        "gif" => "image/gif",
+                        "webp" => "image/webp",
+                        "svg" => "image/svg+xml",
+                        "bmp" => "image/bmp",
+                        "ico" => "image/x-icon",
+                        "mp4" => "video/mp4",
+                        "webm" => "video/webm",
+                        _ => match file_type {
+                            gilvave_core::dto::files::FileType::Image => "image/png",
+                            gilvave_core::dto::files::FileType::Video => "video/mp4",
+                            _ => "image/png",
+                        },
+                    }
+                };
+                use base64::Engine;
+                let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                let data_url = format!("data:{mime};base64,{b64}");
+                return Ok(CommandResult::Ok(CommandResponse::GetCachedMedia(Some(data_url))));
+            }
+
+            CommandResult::Ok(CommandResponse::GetCachedMedia(None))
         }
         CommandArgs::OpenFile {
             file_id,
@@ -276,6 +391,12 @@ pub async fn handle_command(
             let primary_dir = get_android_downloads_dir();
 
             let file_path = primary_dir.join(&filename);
+
+            let media_dir = get_media_cache_dir(&window);
+            let cached_path = get_cache_file_path(&media_dir, &file_id, &filename);
+            if !file_path.is_file() && cached_path.is_file() {
+                let _ = std::fs::copy(&cached_path, &file_path);
+            }
 
             let token = {
                 let db_lock = db.lock().await;
@@ -296,6 +417,10 @@ pub async fn handle_command(
                 )));
             }
 
+            if !cached_path.is_file() && file_path.is_file() {
+                let _ = std::fs::copy(&file_path, &cached_path);
+            }
+
             use tauri_plugin_opener::OpenerExt;
             let path_str = file_path.display().to_string();
             let opened = window.app_handle().opener().open_path(&path_str, None::<&str>).is_ok();
@@ -308,6 +433,18 @@ pub async fn handle_command(
                     let _ = std::process::Command::new("cmd")
                         .args(["/C", "start", "", &path_str])
                         .creation_flags(CREATE_NO_WINDOW)
+                        .spawn();
+                }
+                #[cfg(target_os = "macos")]
+                {
+                    let _ = std::process::Command::new("open")
+                        .arg(&path_str)
+                        .spawn();
+                }
+                #[cfg(all(unix, not(target_os = "macos"), not(target_os = "android")))]
+                {
+                    let _ = std::process::Command::new("xdg-open")
+                        .arg(&path_str)
                         .spawn();
                 }
             }
@@ -324,6 +461,12 @@ pub async fn handle_command(
             let target_dir = get_android_downloads_dir();
 
             let file_path = target_dir.join(&filename);
+
+            let media_dir = get_media_cache_dir(&window);
+            let cached_path = get_cache_file_path(&media_dir, &file_id, &filename);
+            if !file_path.is_file() && cached_path.is_file() {
+                let _ = std::fs::copy(&cached_path, &file_path);
+            }
 
             let token = {
                 let db_lock = db.lock().await;
@@ -344,9 +487,36 @@ pub async fn handle_command(
                 )));
             }
 
+            if !cached_path.is_file() && file_path.is_file() {
+                let _ = std::fs::copy(&file_path, &cached_path);
+            }
+
             CommandResult::Ok(CommandResponse::SaveFileToDownloads(file_path.display().to_string()))
         }
     })
+}
+
+fn get_media_cache_dir(window: &WebviewWindow) -> std::path::PathBuf {
+    use tauri::Manager;
+    let app_dir = window
+        .path()
+        .app_local_data_dir()
+        .unwrap_or_else(|_| std::env::temp_dir().join("Gilvave"));
+    let media_dir = app_dir.join("media_cache");
+    let _ = std::fs::create_dir_all(&media_dir);
+    media_dir
+}
+
+fn get_cache_file_path(media_dir: &std::path::Path, file_id: &str, filename: &str) -> std::path::PathBuf {
+    let safe_name: String = filename
+        .chars()
+        .filter(|c| c.is_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        .collect();
+    if safe_name.is_empty() {
+        media_dir.join(file_id)
+    } else {
+        media_dir.join(format!("{}_{}", file_id, safe_name))
+    }
 }
 
 #[cfg(not(target_os = "android"))]
@@ -396,28 +566,62 @@ async fn ensure_file_downloaded(
         let _ = std::fs::create_dir_all(parent);
     }
 
-    let url = download_url.unwrap_or_else(|| {
+    let raw_url = download_url.unwrap_or_default();
+    let url = if raw_url.starts_with("http://") || raw_url.starts_with("https://") {
+        raw_url
+    } else if let Some(fid) = raw_url.strip_prefix("file:") {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+    } else if let Some(fid) = raw_url.strip_prefix("file_id:") {
+        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+    } else if raw_url.starts_with('/') {
+        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, raw_url)
+    } else if !file_id.is_empty() {
         format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id)
-    });
-
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return Err(format!("Invalid download URL: {url}"));
-    }
+    } else {
+        raw_url
+    };
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
+        .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
-    let mut req = client.get(&url);
-    if !token.is_empty() {
-        req = req.header("Authorization", format!("Bearer {token}"));
+    let canonical_url = if !file_id.is_empty() {
+        Some(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id))
+    } else {
+        None
+    };
+
+    let mut resp = None;
+    if url.starts_with("http://") || url.starts_with("https://") {
+        let mut req = client.get(&url);
+        if !token.is_empty() {
+            req = req.header("Authorization", format!("Bearer {token}"));
+        }
+        if let Ok(r) = req.send().await
+            && r.status().is_success()
+        {
+            resp = Some(r);
+        }
     }
 
-    let resp = req.send().await.map_err(|e| format!("Network error: {e}"))?;
-    if !resp.status().is_success() {
-        return Err(format!("Server returned HTTP {}", resp.status()));
+    if resp.is_none()
+        && let Some(ref c_url) = canonical_url
+        && c_url != &url
+    {
+        let mut req = client.get(c_url);
+        if !token.is_empty() {
+            req = req.header("Authorization", format!("Bearer {token}"));
+        }
+        if let Ok(r) = req.send().await
+            && r.status().is_success()
+        {
+            resp = Some(r);
+        }
     }
+
+    let resp = resp.ok_or_else(|| format!("Failed to download file from {url}"))?;
 
     use futures_util::StreamExt;
     use std::io::Write;

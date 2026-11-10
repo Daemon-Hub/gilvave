@@ -55,15 +55,19 @@ fn postprocess_chat_html(raw_html: &str, default_pack: EmojiPack) -> String {
             && let Some(end_idx) = remaining.find('>')
         {
             let tag = &remaining[..=end_idx];
-            let tag_lower = tag.to_ascii_lowercase();
+            let tag_bytes = tag.as_bytes();
 
-            if tag_lower.starts_with("<code") || tag_lower.starts_with("<pre") {
+            if (tag_bytes.len() >= 5 && tag[..5].eq_ignore_ascii_case("<code"))
+                || (tag_bytes.len() >= 4 && tag[..4].eq_ignore_ascii_case("<pre"))
+            {
                 in_code_depth += 1;
                 out.push_str(tag);
-            } else if tag_lower.starts_with("</code") || tag_lower.starts_with("</pre") {
+            } else if (tag_bytes.len() >= 6 && tag[..6].eq_ignore_ascii_case("</code"))
+                || (tag_bytes.len() >= 5 && tag[..5].eq_ignore_ascii_case("</pre"))
+            {
                 in_code_depth = in_code_depth.saturating_sub(1);
                 out.push_str(tag);
-            } else if tag_lower.starts_with("<a ") {
+            } else if tag_bytes.len() >= 3 && tag[..3].eq_ignore_ascii_case("<a ") {
                 let mut a_tag = String::with_capacity(tag.len() + 40);
                 if let Some(pos) = tag.find("<a ") {
                     a_tag.push_str(&tag[..pos + 3]);
@@ -73,6 +77,20 @@ fn postprocess_chat_html(raw_html: &str, default_pack: EmojiPack) -> String {
                     a_tag.push_str(tag);
                 }
                 out.push_str(&a_tag);
+            } else if tag_bytes.len() >= 4 && tag[..4].eq_ignore_ascii_case("<img") {
+                if tag.contains("chat-inline-emoji") {
+                    out.push_str(tag);
+                } else {
+                    let mut img_tag = String::with_capacity(tag.len() + 64);
+                    if let Some(pos) = tag.find("<img") {
+                        img_tag.push_str(&tag[..pos + 4]);
+                        img_tag.push_str(" class=\"chat-message-image\" loading=\"lazy\" decoding=\"async\"");
+                        img_tag.push_str(&tag[pos + 4..]);
+                    } else {
+                        img_tag.push_str(tag);
+                    }
+                    out.push_str(&img_tag);
+                }
             } else {
                 out.push_str(tag);
             }
@@ -107,6 +125,22 @@ fn postprocess_chat_html(raw_html: &str, default_pack: EmojiPack) -> String {
                 remaining = &remaining[end_idx + 4..];
                 continue;
             }
+        }
+
+        let rem_bytes = remaining.as_bytes();
+        let mut non_candidate_len = 0;
+        while non_candidate_len < rem_bytes.len() {
+            let b = rem_bytes[non_candidate_len];
+            if matches!(b, b'<' | b'&' | b'#' | b'*' | b'0'..=b'9' | 0xE2 | 0xE3 | 0xF0) {
+                break;
+            }
+            non_candidate_len += 1;
+        }
+
+        if non_candidate_len > 0 {
+            out.push_str(&remaining[..non_candidate_len]);
+            remaining = &remaining[non_candidate_len..];
+            continue;
         }
 
         let Some(first_char) = remaining.chars().next() else {

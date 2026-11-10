@@ -17,6 +17,32 @@ pub const MESSAGE_COUNTER_VISIBLE_CHARS: usize = 4_096;
 /// 3. Ограничивает количество комбинируемых диакритических знаков до максимум 2 на символ (нейтрализация Zalgo)
 /// 4. Сохраняет естественный мультиязычный текст (кириллицу, латиницу, акценты, эмодзи, фрагменты кода)
 pub fn sanitize_message(content: &str) -> String {
+    let bytes = content.as_bytes();
+    let is_all_ascii = {
+        let (chunks, rem) = bytes.as_chunks::<8>();
+        let mut has_high = false;
+        for chunk in chunks {
+            let word = u64::from_le_bytes(*chunk);
+            if (word & 0x8080_8080_8080_8080) != 0 {
+                has_high = true;
+                break;
+            }
+        }
+        if !has_high {
+            for &b in rem {
+                if b >= 0x80 {
+                    has_high = true;
+                    break;
+                }
+            }
+        }
+        !has_high
+    };
+
+    if is_all_ascii {
+        return content.to_string();
+    }
+
     let mut sanitized = String::with_capacity(content.len());
     let mut consecutive_combining = 0;
     let mut consecutive_zwj = 0;
@@ -72,24 +98,24 @@ pub fn sanitize_message(content: &str) -> String {
 /// Подсчитывает количество реальных напечатанных пользователем символов в сообщении,
 /// исключая технические URL вложений (data-URL, S3-ссылки, file-ID).
 pub fn count_typed_chars(content: &str) -> usize {
+    let bytes = content.as_bytes();
+    let len = bytes.len();
     let mut count = 0;
-    let chars: Vec<char> = content.chars().collect();
-    let len = chars.len();
     let mut i = 0;
 
     while i < len {
         // Проверяем начало изображения ![alt](url)
-        if chars[i] == '!' && i + 1 < len && chars[i + 1] == '[' {
+        if bytes[i] == b'!' && i + 1 < len && bytes[i + 1] == b'[' {
             let mut j = i + 2;
-            while j < len && chars[j] != ']' {
+            while j < len && bytes[j] != b']' {
                 j += 1;
             }
-            if j < len && chars[j] == ']' && j + 1 < len && chars[j + 1] == '(' {
+            if j < len && bytes[j] == b']' && j + 1 < len && bytes[j + 1] == b'(' {
                 let mut k = j + 2;
-                while k < len && chars[k] != ')' {
+                while k < len && bytes[k] != b')' {
                     k += 1;
                 }
-                if k < len && chars[k] == ')' {
+                if k < len && bytes[k] == b')' {
                     // Изображения не считаются за напечатанный текст
                     i = k + 1;
                     continue;
@@ -98,24 +124,29 @@ pub fn count_typed_chars(content: &str) -> usize {
         }
 
         // Проверяем ссылку на файл [name](file:id) или [name](url)
-        if chars[i] == '[' {
+        if bytes[i] == b'[' {
             let mut j = i + 1;
-            while j < len && chars[j] != ']' {
+            while j < len && bytes[j] != b']' {
                 j += 1;
             }
-            if j < len && chars[j] == ']' && j + 1 < len && chars[j + 1] == '(' {
+            if j < len && bytes[j] == b']' && j + 1 < len && bytes[j + 1] == b'(' {
                 let mut k = j + 2;
-                while k < len && chars[k] != ')' {
+                while k < len && bytes[k] != b')' {
                     k += 1;
                 }
-                if k < len && chars[k] == ')' {
-                    let link_target: String = chars[j + 2..k].iter().collect();
-                    if link_target.starts_with("file:")
-                        || link_target.starts_with("data:")
-                        || link_target.contains("/files/")
+                if k < len && bytes[k] == b')' {
+                    let link_target = &bytes[j + 2..k];
+                    if link_target.starts_with(b"file:")
+                        || link_target.starts_with(b"data:")
+                        || link_target.windows(7).any(|w| w == b"/files/")
                     {
                         // Учитываем видимое имя файла [name], но пропускаем технический URL вложения
-                        count += j - (i + 1);
+                        let name_bytes = &bytes[i + 1..j];
+                        for &b in name_bytes {
+                            if (b & 0xC0) != 0x80 {
+                                count += 1;
+                            }
+                        }
                         i = k + 1;
                         continue;
                     }
@@ -124,17 +155,45 @@ pub fn count_typed_chars(content: &str) -> usize {
         }
 
         // Проверяем прямые data: URL (например, data:image/...;base64,...)
-        if i + 5 <= len {
-            let slice: String = chars[i..i + 5].iter().collect();
-            if slice == "data:" {
-                while i < len && !chars[i].is_whitespace() && chars[i] != ')' && chars[i] != '"' {
-                    i += 1;
-                }
+        if i + 5 <= len && &bytes[i..i + 5] == b"data:" {
+            while i < len
+                && bytes[i] != b' '
+                && bytes[i] != b'\t'
+                && bytes[i] != b'\n'
+                && bytes[i] != b'\r'
+                && bytes[i] != b')'
+                && bytes[i] != b'"'
+            {
+                i += 1;
+            }
+            continue;
+        }
+
+        // SWAR fast-path: scan 8 bytes of plain ASCII text in a single step
+        if i + 8 <= len {
+            let chunk: [u8; 8] = bytes[i..i + 8].try_into().unwrap_or_default();
+            let word = u64::from_le_bytes(chunk);
+            let has_high_bit = (word & 0x8080_8080_8080_8080) != 0;
+
+            let xor_excl = word ^ 0x2121_2121_2121_2121;
+            let has_excl = (xor_excl.wrapping_sub(0x0101_0101_0101_0101) & !xor_excl & 0x8080_8080_8080_8080) != 0;
+
+            let xor_brack = word ^ 0x5B5B_5B5B_5B5B_5B5B;
+            let has_brack = (xor_brack.wrapping_sub(0x0101_0101_0101_0101) & !xor_brack & 0x8080_8080_8080_8080) != 0;
+
+            let xor_d = word ^ 0x6464_6464_6464_6464;
+            let has_d = (xor_d.wrapping_sub(0x0101_0101_0101_0101) & !xor_d & 0x8080_8080_8080_8080) != 0;
+
+            if !has_high_bit && !has_excl && !has_brack && !has_d {
+                count += 8;
+                i += 8;
                 continue;
             }
         }
 
-        count += 1;
+        if (bytes[i] & 0xC0) != 0x80 {
+            count += 1;
+        }
         i += 1;
     }
 

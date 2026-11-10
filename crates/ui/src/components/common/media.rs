@@ -249,6 +249,12 @@ impl PendingAttachment {
 
 /// Проверка на источник видео
 pub fn is_video_source(src: &str, alt: &str) -> bool {
+    if src.starts_with("data:image/") {
+        return false;
+    }
+    if src.starts_with("data:video/") {
+        return true;
+    }
     let check = |s: &str| {
         let lower = s.to_ascii_lowercase();
         lower.contains("/videos/")
@@ -496,6 +502,11 @@ pub fn is_file_cached(file_id: &str) -> bool {
 pub async fn cache_uploaded_file_storage(file_id: &str, _file_name: &str, file: &web_sys::File) {
     mark_file_cached(file_id);
 
+    // В desktop окружении файлы сохраняются нативно на диск, не нагружая память WebView2
+    if crate::utils::is_tauri() {
+        return;
+    }
+
     // В Web / CacheStorage сохраняем блоб в фоновом кэше браузера без блокирующих сериализаций
     let Some(window) = web_sys::window() else { return; };
     let Ok(caches_val) = js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("caches")) else { return; };
@@ -550,9 +561,15 @@ pub async fn open_file_card_async(file_id: &str, filename: &str, url: &str) {
             filename: filename.to_string(),
             download_url,
         };
-        let res = crate::utils::invoke_command(cmd.to_json()).await;
-        if res.is_ok() {
-            mark_file_cached(file_id);
+        match crate::utils::invoke_command(cmd.to_json()).await {
+            gilvave_core::dto::command::CommandResult::Ok(_) => {
+                mark_file_cached(file_id);
+            }
+            gilvave_core::dto::command::CommandResult::Error(err) => {
+                web_sys::console::error_1(
+                    &format!("[FILE_CARD] Failed to open file: {}", err.message()).into(),
+                );
+            }
         }
         return;
     }

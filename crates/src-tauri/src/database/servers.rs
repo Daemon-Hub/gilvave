@@ -1,6 +1,8 @@
 //! Server and channel caching, retrieval, and synchronization with SQLite.
 
 use std::collections::HashSet;
+#[cfg(not(target_arch = "wasm32"))]
+use rayon::prelude::*;
 use gilvave_core::{
     dto::servers::{ChannelType, ChannelView, ServerSmallPart},
     ids::{ChannelId, ServerId},
@@ -52,7 +54,11 @@ pub fn sync_cached_servers(
         )?;
     }
 
-    let server_id_set: HashSet<String> = servers.iter().map(|s| s.id.to_string()).collect();
+    #[cfg(not(target_arch = "wasm32"))]
+    let server_id_set: HashSet<ServerId> = servers.par_iter().map(|s| s.id).collect();
+    #[cfg(target_arch = "wasm32")]
+    let server_id_set: HashSet<ServerId> = servers.iter().map(|s| s.id).collect();
+
     let mut stmt = tx.prepare("SELECT id FROM servers")?;
     let all_ids: Vec<String> = stmt
         .query_map([], |r| r.get(0))?
@@ -60,9 +66,10 @@ pub fn sync_cached_servers(
         .collect();
     drop(stmt);
 
-    for old_id in all_ids {
+    for old_id_str in all_ids {
+        let old_id = ServerId(Uuid::parse_str(&old_id_str).unwrap_or_default());
         if !server_id_set.contains(&old_id) {
-            tx.execute("DELETE FROM servers WHERE id = ?1", params![old_id])?;
+            tx.execute("DELETE FROM servers WHERE id = ?1", params![old_id_str])?;
         }
     }
 
@@ -83,8 +90,8 @@ pub fn get_cached_channels(
         let type_str: String = row.get(2)?;
         let position: i32 = row.get(3)?;
 
-        let r#type = match type_str.to_uppercase().as_str() {
-            "VOICE" => ChannelType::VOICE,
+        let r#type = match type_str.as_bytes() {
+            b"VOICE" | b"voice" => ChannelType::VOICE,
             _ => ChannelType::TEXT,
         };
 
@@ -128,7 +135,11 @@ pub fn sync_cached_channels(
         )?;
     }
 
-    let ch_id_set: HashSet<String> = channels.iter().map(|c| c.id.to_string()).collect();
+    #[cfg(not(target_arch = "wasm32"))]
+    let ch_id_set: HashSet<ChannelId> = channels.par_iter().map(|c| c.id).collect();
+    #[cfg(target_arch = "wasm32")]
+    let ch_id_set: HashSet<ChannelId> = channels.iter().map(|c| c.id).collect();
+
     let mut stmt = tx.prepare("SELECT id FROM channels WHERE server_id = ?1")?;
     let all_ids: Vec<String> = stmt
         .query_map(params![server_id.to_string()], |r| r.get(0))?
@@ -136,9 +147,10 @@ pub fn sync_cached_channels(
         .collect();
     drop(stmt);
 
-    for old_id in all_ids {
+    for old_id_str in all_ids {
+        let old_id = ChannelId(Uuid::parse_str(&old_id_str).unwrap_or_default());
         if !ch_id_set.contains(&old_id) {
-            tx.execute("DELETE FROM channels WHERE id = ?1", params![old_id])?;
+            tx.execute("DELETE FROM channels WHERE id = ?1", params![old_id_str])?;
         }
     }
 

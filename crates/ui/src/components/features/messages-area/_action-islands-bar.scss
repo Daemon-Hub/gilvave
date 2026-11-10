@@ -1,0 +1,204 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.chat-action-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 16px 0;
+    background: transparent;
+    animation: fadeIn 0.15s ease-out;
+
+    + .input-area {
+        padding-top: 6px;
+    }
+}
+
+.chat-action-islands-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.15s ease-out;
+
+    .chat-edit-island {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 28px;
+        padding: 0 8px 0 10px;
+        border-radius: $radius-full;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-primary-alpha-40;
+        box-shadow:
+            0 0 14px $color-primary-alpha-30,
+            0 2px 6px $color-black-alpha-35;
+        animation: scaleInFast 0.15s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+            border-color: $color-primary;
+            box-shadow:
+                0 0 18px $color-primary-alpha-50,
+                0 2px 8px $color-black-alpha-50;
+        }
+
+        .island-edit-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $color-primary;
+            flex-shrink: 0;
+
+            svg {
+                width: 13px;
+                height: 13px;
+                stroke-width: 2.2;
+            }
+        }
+
+        .island-title {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: $color-text-white;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .island-close-btn {
+            width: 17px;
+            height: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            color: $color-text-muted;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 2px;
+            transition: background 0.12s ease, color 0.12s ease;
+            flex-shrink: 0;
+
+            svg {
+                width: 11px;
+                height: 11px;
+            }
+
+            &:hover {
+                background: $color-white-alpha-15;
+                color: $color-text-white;
+            }
+        }
+    }
+
+    .chat-action-island {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        border-radius: 14px;
+        background: $color-bg-panel-dark;
+        border: 1px solid $color-border-subtle;
+        box-shadow:
+            0 0 12px $color-black-alpha-35,
+            0 2px 6px $color-black-alpha-24;
+        animation: scaleInFast 0.15s cubic-bezier(0.2, 0.9, 0.3, 1);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        max-width: 100%;
+
+        &:hover {
+            border-color: $color-border;
+            box-shadow:
+                0 0 16px $color-black-alpha-50,
+                0 3px 8px $color-black-alpha-35;
+        }
+
+        &.chat-photos-island {
+            border-color: $color-primary-blue;
+            box-shadow:
+                0 0 14px $color-primary-alpha-30,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-primary-blue;
+                box-shadow:
+                    0 0 18px $color-primary-alpha-50,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.photo-glow {
+                color: $color-primary-blue;
+                filter: drop-shadow(0 0 6px $color-primary-blue);
+            }
+        }
+
+        &.chat-videos-island {
+            border-color: $color-icon-amber;
+            box-shadow:
+                0 0 14px $color-primary-alpha-20,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-icon-amber;
+                box-shadow:
+                    0 0 18px $color-primary-alpha-40,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.video-glow {
+                color: $color-icon-amber;
+                filter: drop-shadow(0 0 6px $color-icon-amber);
+            }
+        }
+
+        &.chat-files-island {
+            border-color: $color-primary-end-light;
+            box-shadow:
+                0 0 14px $color-primary-end-alpha-25,
+                0 2px 6px $color-black-alpha-35;
+
+            &:hover {
+                border-color: $color-primary-end-light;
+                box-shadow:
+                    0 0 18px $color-primary-end-alpha-30,
+                    0 2px 8px $color-black-alpha-50;
+            }
+
+            .island-badge-icon.file-glow {
+                color: $color-primary-end-light;
+                filter: drop-shadow(0 0 6px $color-primary-end-alpha-30);
+            }
+        }
+
+        .island-badge-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            margin-left: 4px;
+            margin-right: 2px;
+
+            svg {
+                width: 16px;
+                height: 16px;
+                stroke-width: 2.2;
+            }
+        }
+
+        .island-items-scroll {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            max-width: 500px;
+            padding: 1px;
+
+            @include scrollbar(4px, $color-white-alpha-10);
+        }
+
+    }
+}

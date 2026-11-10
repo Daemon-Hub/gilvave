@@ -1,0 +1,164 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.messages-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overflow-anchor: none;
+    position: relative;
+    padding: 12px 16px;
+    @include scrollbar(8px, $color-bg-panel-darkest);
+    min-height: 0;
+    scroll-behavior: auto !important;
+    display: flex;
+    flex-direction: column;
+
+    .messages-feed-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        min-height: 100%;
+    }
+}
+
+// ─── Разделитель дат между разными днями ─────────────────────────────────────
+.chat-date-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 18px 0 10px;
+    height: 1px;
+    min-height: 1px;
+    flex-shrink: 0;
+    background: $gradient-date-divider;
+    user-select: none;
+    pointer-events: none;
+    width: 100%;
+    box-sizing: border-box;
+
+    .date-badge {
+        position: absolute;
+        background: $color-bg-panel-dark;
+        padding: 3px 14px;
+        border-radius: 12px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: $color-text-date-badge;
+        border: 1px solid $color-border-container;
+        box-shadow: 0 2px 10px $color-black-alpha-35;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        z-index: 1;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+}
+
+// ─── Разделитель новых непрочитанных сообщений ──────────────────────────────────
+.chat-unread-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 20px 0 12px;
+    height: 1px;
+    min-height: 1px;
+    flex-shrink: 0;
+    background: $gradient-unread-badge;
+    opacity: 0.65;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+    width: 100%;
+    box-sizing: border-box;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, var(--gradient-unread-badge) 50%, transparent 100%);
+        box-shadow: $shadow-unread-badge;
+        opacity: 0.85;
+    }
+
+    .unread-badge {
+        position: relative;
+        background: $gradient-unread-badge;
+        padding: 3px 16px;
+        border-radius: $radius-full;
+        font-size: 11px;
+        font-weight: 700;
+        color: $color-text-on-accent;
+        border: 1px solid $color-white-alpha-18;
+        box-shadow: $shadow-unread-badge, 0 2px 8px $color-black-alpha-35;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        z-index: 1;
+    }
+}
+
+// ─── Отдельное сообщение в стиле мессенджера ──────────────────────────────────
+.welcome-message {
+    padding: 36px 20px 20px;
+    text-align: center;
+    color: $color-text-muted;
+
+    p {
+        margin: 0;
+        font-size: $font-size-lg;
+        font-style: italic;
+        color: $color-text-label;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+}
+
+// ─── Плавающее окошко счётчика символов над полем ввода (после 4096 символов) ─
+.chat-char-counter-float {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    z-index: 25;
+    padding: 4px 11px;
+    border-radius: 9px;
+    background: $color-char-counter-bg;
+    border: 1px solid $color-char-counter-border;
+    box-shadow: $shadow-char-counter;
+    color: $color-char-counter-text;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.92);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0.18s ease,
+        border-color 0.15s ease,
+        background 0.15s ease,
+        color 0.15s ease;
+
+    &.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+
+    &.over-limit {
+        border-color: $color-danger-alpha-75;
+        background: $color-bg-danger-float;
+        color: $color-danger-light;
+        box-shadow:
+            0 6px 18px $color-black-alpha-50,
+            0 0 14px $color-danger-alpha-40;
+    }
+}
+
+// ─── Область ввода (нижняя панель написания) ──────────────────────────────────

@@ -9,24 +9,48 @@ use gilvave_core::{dto::messages::MessageView, validation::MESSAGE_COLLAPSE_CHAR
 use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 
+#[inline]
 fn visible_text_len(s: &str) -> usize {
+    let bytes = s.as_bytes();
+    let len = bytes.len();
     let mut count = 0;
     let mut in_url = false;
-    let mut chars = s.chars().peekable();
+    let mut i = 0;
 
-    while let Some(c) = chars.next() {
-        if c == ']' && chars.peek() == Some(&'(') {
-            chars.next();
-            in_url = true;
-            continue;
-        }
-        if in_url {
-            if c == ')' {
+    while i < len {
+        if !in_url {
+            let b = bytes[i];
+            if b == b']' && i + 1 < len && bytes[i + 1] == b'(' {
+                i += 2;
+                in_url = true;
+                continue;
+            }
+
+            // SWAR fast-path: scan 8 bytes of plain ASCII text in a single step
+            if i + 8 <= len {
+                let chunk: [u8; 8] = bytes[i..i + 8].try_into().unwrap_or_default();
+                let word = u64::from_le_bytes(chunk);
+                let has_high_bit = (word & 0x8080_8080_8080_8080) != 0;
+                let xor_bracket = word ^ 0x5D5D_5D5D_5D5D_5D5D;
+                let has_bracket = (xor_bracket.wrapping_sub(0x0101_0101_0101_0101) & !xor_bracket & 0x8080_8080_8080_8080) != 0;
+
+                if !has_high_bit && !has_bracket {
+                    count += 8;
+                    i += 8;
+                    continue;
+                }
+            }
+
+            if (b & 0xC0) != 0x80 {
+                count += 1;
+            }
+            i += 1;
+        } else {
+            if bytes[i] == b')' {
                 in_url = false;
             }
-            continue;
+            i += 1;
         }
-        count += 1;
     }
     count
 }
@@ -293,13 +317,39 @@ pub fn MessageItem(
     let on_bubble_click = move |e: web_sys::MouseEvent| {
         if let Some(target) = e.target()
             && let Ok(el) = target.dyn_into::<web_sys::HtmlElement>()
-            && el.class_list().contains("chat-message-image")
-            && let Ok(img) = el.dyn_into::<web_sys::HtmlImageElement>()
         {
-            e.stop_propagation();
-            modal_context
-                .lightbox_image
-                .set(Some((img.src(), img.alt())));
+            if let Ok(img) = el.clone().dyn_into::<web_sys::HtmlImageElement>()
+                && !img.class_list().contains("chat-inline-emoji")
+            {
+                e.stop_propagation();
+                modal_context
+                    .lightbox_image
+                    .set(Some((img.src(), img.alt())));
+                return;
+            }
+            if let Some(img_el) = el
+                .closest(".chat-message-image, .chat-media-wrapper, img")
+                .ok()
+                .flatten()
+            {
+                if let Ok(img) = img_el.clone().dyn_into::<web_sys::HtmlImageElement>()
+                    && !img.class_list().contains("chat-inline-emoji")
+                {
+                    e.stop_propagation();
+                    modal_context
+                        .lightbox_image
+                        .set(Some((img.src(), img.alt())));
+                } else if let Ok(wrap) = img_el.dyn_into::<web_sys::HtmlElement>()
+                    && let Some(found_img) = wrap.query_selector("img").ok().flatten()
+                    && let Ok(img) = found_img.dyn_into::<web_sys::HtmlImageElement>()
+                    && !img.class_list().contains("chat-inline-emoji")
+                {
+                    e.stop_propagation();
+                    modal_context
+                        .lightbox_image
+                        .set(Some((img.src(), img.alt())));
+                }
+            }
         }
     };
 

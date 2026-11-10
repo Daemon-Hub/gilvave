@@ -1,0 +1,373 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Server icon strip ────────────────────────────────────────────────────────
+// Base desktop styling; mobile responsive styling handled in _home-panel.scss
+.discord-sidebar {
+    width: $sidebar-width-server;
+    background: $color-bg-panel-darkest;
+}
+
+// ─── Special Home / Profile Button ───────────────────────────────────────────
+.home-button-wrapper {
+    position: relative;
+    @include flex-center;
+    width: 100%;
+    margin-bottom: 2px;
+
+    &:hover {
+        .home-pill:not(.active) {
+            height: 20px;
+        }
+    }
+}
+
+// ─── Smooth 19-point polygons for liquid bar-to-triangle morphing ────────────
+$pill-bar-polygon: polygon(
+    0% 0%,
+    25% 0%,
+    50% 0%,
+    75% 2%,
+    92% 6%,
+    100% 14%,
+    100% 23%,
+    100% 32%,
+    100% 41%,
+    100% 50%,
+    100% 59%,
+    100% 68%,
+    100% 77%,
+    100% 86%,
+    92% 94%,
+    75% 98%,
+    50% 100%,
+    25% 100%,
+    0% 100%
+);
+
+$pill-triangle-polygon: polygon(
+    0% 6%,
+    4% 2%,
+    10% 0%,
+    18% 2%,
+    26% 6%,
+    76% 35%,
+    86% 40%,
+    94% 44.5%,
+    98.5% 47.5%,
+    100% 50%,
+    98.5% 52.5%,
+    94% 55.5%,
+    86% 60%,
+    76% 65%,
+    26% 94%,
+    18% 98%,
+    10% 100%,
+    4% 98%,
+    0% 94%
+);
+
+@keyframes pillTriangleWobble {
+    0% {
+        transform: translateY(-50%) scaleX(0.85) scaleY(1.08) rotate(0deg);
+    }
+    32% {
+        transform: translateY(-50%) scaleX(1.22) scaleY(0.88) rotate(4.5deg);
+    }
+    52% {
+        transform: translateY(-50%) scaleX(0.88) scaleY(1.08) rotate(-3.5deg);
+    }
+    70% {
+        transform: translateY(-50%) scaleX(1.1) scaleY(0.95) rotate(2deg);
+    }
+    85% {
+        transform: translateY(-50%) scaleX(0.96) scaleY(1.02) rotate(-1deg);
+    }
+    100% {
+        transform: translateY(-50%) scaleX(1) scaleY(1) rotate(0deg);
+    }
+}
+
+.home-pill {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    width: 4px;
+    height: 0;
+    background: $gradient-pill-hover;
+    clip-path: $pill-bar-polygon;
+    z-index: 2;
+    transition:
+        height 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+        clip-path 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.25s ease,
+        filter 0.25s ease;
+    pointer-events: none;
+
+    &.active {
+        width: 7.5px;
+        height: 18px;
+        background: $gradient-pill-active;
+        filter: $filter-pill-active;
+        clip-path: $pill-triangle-polygon;
+        animation: pillTriangleWobble 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+
+        @include respond-to(md) {
+            width: 5.5px;
+            height: 13.5px;
+        }
+    }
+}
+
+.home-avatar-btn {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    max-width: 48px;
+    max-height: 48px;
+    border-radius: $radius-lg;
+    background: $gradient-home-btn;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px $color-black-alpha-35;
+    flex-shrink: 0;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: calc(#{$radius-lg} + 2px);
+        background: $gradient-home-btn-ring;
+        opacity: 0;
+        z-index: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    &:hover {
+        transform: scale(1.04);
+        box-shadow: $shadow-home-btn-hover;
+
+        &::before {
+            opacity: 1;
+        }
+
+        .home-badge {
+            transform: scale(1.15) rotate(-6deg);
+            border-color: $color-home-badge-border-hover;
+            box-shadow: $shadow-home-badge-hover;
+        }
+    }
+
+    &.active {
+        box-shadow: $shadow-home-btn-active;
+
+        &::before {
+            opacity: 1;
+        }
+    }
+
+    .home-avatar-inner {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        border-radius: $radius-lg;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        span {
+            font-size: 20px;
+            font-weight: $font-weight-bold;
+            color: $color-text-on-accent;
+        }
+    }
+
+        .home-badge {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: $color-bg-panel-darkest;
+        border: 2px solid $color-home-badge-border;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        box-shadow: $shadow-home-badge;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+
+        svg {
+            width: 12px;
+            height: 12px;
+            color: $color-icon-cyan;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
+    }
+}
+
+
+// ─── Single server icon ───────────────────────────────────────────────────────
+.server-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    max-width: 48px;
+    max-height: 48px;
+    border-radius: $radius-lg;
+    @include flex-center;
+    cursor: pointer;
+    // No border-radius change on hover — stays square/rounded-rect
+    transition: box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    &:has(span) {
+        background: $gradient-server-icon;
+    }
+
+    &:hover {
+        box-shadow: $shadow-server-icon-hover;
+    }
+
+    &.active {
+        box-shadow: $shadow-server-icon-active;
+    }
+
+    // "Add server" button
+    &.new {
+        background: $color-server-new-bg;
+        border-radius: $radius-lg;
+        border: 1px dashed $color-server-new-border;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .server-icon-plus-svg {
+            width: 22px;
+            height: 22px;
+            color: $color-server-new-text;
+            display: block;
+            margin: auto;
+            transform-origin: 50% 50%;
+            transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        &:hover {
+            background: $color-server-new-hover-bg;
+            border-style: solid;
+            border-color: $color-server-new-hover-border;
+            box-shadow: $shadow-server-new-hover;
+
+            .server-icon-plus-svg {
+                color: $color-server-new-hover-text;
+                transform: scale(1.15);
+            }
+        }
+    }
+
+    span {
+        font-size: 20px;
+        font-weight: $font-weight-semibold;
+        line-height: 1;
+        user-select: none;
+        color: $color-text-on-accent;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+}
+
+// Pill indicator and wrapper (active marker on left edge)
+.server-icon-wrapper {
+    position: relative;
+    @include flex-center;
+    width: 100%;
+    flex-shrink: 0;
+
+    &:hover {
+        .server-icon-pill:not(.active) {
+            height: 20px;
+        }
+    }
+}
+
+.server-icon-pill {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    width: 4px;
+    height: 0;
+    background: $gradient-pill-hover;
+    clip-path: $pill-bar-polygon;
+    z-index: 2;
+    transition:
+        height 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+        clip-path 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.25s ease,
+        filter 0.25s ease;
+    pointer-events: none;
+
+    &.active {
+        width: 7.5px;
+        height: 18px;
+        background: $gradient-pill-active;
+        filter: $filter-pill-active;
+        clip-path: $pill-triangle-polygon;
+        animation: pillTriangleWobble 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+
+        @include respond-to(md) {
+            width: 5.5px;
+            height: 13.5px;
+        }
+    }
+}
+
+// Visual divider between server groups
+.server-separator {
+    width: 44px;
+    height: 2px;
+    background: $gradient-server-separator;
+    border-radius: 1px;
+    margin: 4px 0;
+    flex-shrink: 0;
+}
+
+// ─── Modal overlay ────────────────────────────────────────────────────────────

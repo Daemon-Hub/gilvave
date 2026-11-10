@@ -1,0 +1,385 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.profile-settings-modal {
+        .theme-settings-pane,
+        .system-settings-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+            .vscode-setting-item {
+                padding: 16px 18px;
+                border-radius: $radius-md;
+                background: $color-black-alpha-22;
+                border: 1px solid $color-border-subtle;
+                border-left: 3px solid $color-icon-cyan;
+
+                .vscode-setting-header {
+                    font-size: $font-size-sm;
+                    margin-bottom: 6px;
+
+                    .vscode-setting-category {
+                        color: $color-text-muted;
+                        font-weight: $font-weight-medium;
+                    }
+
+                    .vscode-setting-name {
+                        color: $color-text-white;
+                        font-weight: $font-weight-bold;
+                    }
+                }
+
+                .vscode-setting-desc {
+                    font-size: $font-size-xs;
+                    color: $color-text-label;
+                    margin: 0 0 12px;
+                    line-height: 1.45;
+                }
+
+                .vscode-select-wrapper {
+                    position: relative;
+                    max-width: 420px;
+                    width: 100%;
+
+                    .custom-select-backdrop {
+                        position: fixed;
+                        inset: 0;
+                        z-index: 95;
+                        background: transparent;
+                        cursor: default;
+                    }
+
+                    .custom-select-trigger {
+                        position: relative;
+                        z-index: 96;
+                        width: 100%;
+                        padding: 10px 14px;
+                        border-radius: $radius-md;
+                        background: $color-bg-input;
+                        color: $color-text-white;
+                        border: 1px solid $color-border;
+                        font-size: 13.5px;
+                        font-weight: $font-weight-medium;
+                        outline: none;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        text-align: left;
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+                        box-sizing: border-box;
+
+                        &:hover {
+                            border-color: $color-border-input-focus;
+                            background: $color-bg-panel-hover;
+                        }
+
+                        &.is-open {
+                            border-color: $color-primary;
+                            box-shadow: $shadow-input-focus;
+                        }
+
+                        .select-label {
+                            flex: 1;
+                            min-width: 0;
+                            white-space: normal;
+                            word-break: break-word;
+                            line-height: 1.35;
+                            font-size: 13.5px;
+                            color: $color-text-white;
+                        }
+
+                        .select-chevron {
+                            flex-shrink: 0;
+                            width: 16px;
+                            height: 16px;
+                            color: $color-text-muted;
+                            transition: transform $transition-fast ease, color $transition-fast ease;
+
+                            &.is-rotated {
+                                transform: rotate(180deg);
+                                color: $color-primary;
+                            }
+                        }
+                    }
+
+                    .custom-select-dropdown {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        width: 100%;
+                        box-sizing: border-box;
+                        max-height: 280px;
+                        overflow-y: auto;
+                        background: $color-bg-panel;
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
+                        border: 1px solid $color-border;
+                        border-radius: $radius-md;
+                        box-shadow: $shadow-modal;
+                        z-index: 96;
+                        padding: 6px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        animation: fadeIn 0.15s ease-out;
+
+                        .custom-select-option {
+                            padding: 9px 12px;
+                            border-radius: $radius-sm;
+                            cursor: pointer;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                            text-align: left;
+                            border: 1px solid transparent;
+                            transition: background $transition-fast ease, border-color $transition-fast ease;
+                            box-sizing: border-box;
+                            width: 100%;
+
+                            &:hover {
+                                background: $color-bg-panel-hover;
+                            }
+
+                            &.is-selected {
+                                background: $color-primary-alpha-15;
+                                border-color: $color-primary;
+
+                                .option-title {
+                                    color: $color-icon-cyan;
+                                }
+                            }
+
+                            .option-title {
+                                font-size: 13px;
+                                font-weight: $font-weight-bold;
+                                color: $color-text-white;
+                                white-space: normal;
+                                word-break: break-word;
+                                line-height: 1.35;
+                            }
+
+                            .option-desc {
+                                font-size: 11.5px;
+                                color: $color-text-muted;
+                                white-space: normal;
+                                word-break: break-word;
+                                line-height: 1.35;
+                            }
+                        }
+                    }
+
+                    .vscode-theme-select {
+                        width: 100%;
+                        padding: 9px 12px;
+                        border-radius: 6px;
+                        background: $color-bg-input;
+                        color: $color-text-white;
+                        border: 1px solid $color-border;
+                        font-size: 13.5px;
+                        font-weight: $font-weight-medium;
+                        outline: none;
+                        cursor: pointer;
+                        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+                        &:focus {
+                            border-color: $color-primary;
+                            box-shadow: $shadow-input-focus;
+                        }
+
+                        option {
+                            background: $color-bg-panel-dark;
+                            color: $color-text-heading;
+                        }
+                    }
+                }
+
+
+                .vscode-toggle-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    cursor: pointer;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    -webkit-tap-highlight-color: transparent;
+
+                    .vscode-switch {
+                        position: relative;
+                        width: 44px;
+                        height: 24px;
+                        border-radius: $radius-full;
+                        background: $color-bg-input;
+                        border: 1px solid $color-border;
+                        flex-shrink: 0;
+                        transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+                        .vscode-switch-thumb {
+                            position: absolute;
+                            top: 2px;
+                            left: 2px;
+                            width: 18px;
+                            height: 18px;
+                            border-radius: 50%;
+                            background: $color-text-muted;
+                            transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
+                        }
+
+                        &.active {
+                            background: $color-primary-alpha-30;
+                            border-color: $color-primary;
+                            box-shadow: 0 0 10px $color-primary-alpha-25;
+
+                            .vscode-switch-thumb {
+                                transform: translateX(20px);
+                                background: $color-primary;
+                            }
+                        }
+                    }
+
+                    .vscode-switch-label {
+                        font-size: 13px;
+                        font-weight: $font-weight-semibold;
+                        color: $color-text-heading;
+                    }
+                }
+            }
+
+            // ─── Custom Theme Toolbar & JSON Editor (VS Code Extensions style) ─
+            .custom-themes-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 16px;
+                border-radius: $radius-md;
+                background: $color-black-alpha-20;
+                border: 1px solid $color-border-subtle;
+
+                .toolbar-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 7px;
+                    padding: 8px 14px;
+                    border-radius: 7px;
+                    font-size: 12.5px;
+                    font-weight: $font-weight-semibold;
+                    background: $color-bg-input;
+                    border: 1px solid $color-border;
+                    color: $color-text-heading;
+                    cursor: pointer;
+                    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+
+                    svg {
+                        width: 14px;
+                        height: 14px;
+                        stroke: currentColor;
+                        fill: none;
+                        stroke-width: 2.2;
+                        flex-shrink: 0;
+                    }
+
+                    &:hover {
+                        background: $color-bg-input-focus;
+                        border-color: $color-primary;
+                        color: $color-primary;
+                    }
+
+                    &:active {
+                        transform: scale(0.98);
+                    }
+
+                    &.primary {
+                        background: $color-primary-alpha-20;
+                        border-color: $color-primary-alpha-45;
+                        color: $color-primary;
+
+                        &:hover {
+                            background: $color-primary;
+                            border-color: $color-primary;
+                            color: $color-text-on-accent;
+                        }
+                    }
+                }
+
+                .hidden-file-input {
+                    display: none;
+                }
+            }
+
+            .theme-status-banner {
+                padding: 10px 14px;
+                border-radius: $radius-sm;
+                font-size: 12.5px;
+                font-weight: $font-weight-medium;
+                background: $color-primary-alpha-15;
+                border: 1px solid $color-primary-alpha-38;
+                color: $color-text-white;
+
+                &.error {
+                    background: $color-danger-alpha-15;
+                    border-color: $color-danger-alpha-40;
+                    color: $color-danger-light;
+                }
+            }
+
+            .json-theme-editor-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px;
+                border-radius: $radius-md;
+                background: $color-black-alpha-25;
+                border: 1px solid $color-border;
+
+                .json-editor-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+
+                    span {
+                        font-size: 13px;
+                        font-weight: $font-weight-bold;
+                        color: $color-text-white;
+                    }
+
+                    small {
+                        font-size: 11.5px;
+                        color: $color-text-muted;
+                    }
+                }
+
+                .json-theme-textarea {
+                    width: 100%;
+                    min-height: 220px;
+                    font-family: 'Consolas', 'JetBrains Mono', 'Fira Code', monospace;
+                    font-size: 12.5px;
+                    line-height: 1.5;
+                    background: $color-bg-input;
+                    color: $color-text-chat;
+                    border: 1px solid $color-border;
+                    border-radius: $radius-sm;
+                    padding: 12px 14px;
+                    resize: none !important;
+                    outline: none;
+                    box-sizing: border-box;
+                    @include scrollbar(5px, $color-white-alpha-18);
+
+                    &:focus {
+                        border-color: $color-primary;
+                        box-shadow: $shadow-input-focus;
+                    }
+                }
+
+                .json-editor-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                }
+            }
+        }
+    }

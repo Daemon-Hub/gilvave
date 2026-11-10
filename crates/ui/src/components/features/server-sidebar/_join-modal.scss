@@ -1,0 +1,322 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.join-modal-search {
+    margin-top: 16px;
+
+    input {
+        @include input-base;
+        padding: 12px 16px;
+    }
+}
+
+.join-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 200px;
+    @include scrollbar(6px, $color-border);
+}
+
+.join-modal-empty {
+    @include flex-col-center;
+    gap: 16px;
+    padding: 48px 0;
+    color: $color-text-dim;
+
+    svg {
+        opacity: 0.4;
+    }
+
+    span {
+        font-size: $font-size-sm;
+    }
+
+    &.error {
+        color: $color-danger;
+
+        svg {
+            stroke: $color-danger;
+            opacity: 0.8;
+        }
+
+        .error-text {
+            color: $color-danger;
+            max-width: 380px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .retry-btn {
+            padding: 8px 18px;
+            background: $color-primary-alpha-24;
+            color: $color-text-white;
+            border: 1px solid $color-primary-alpha-45;
+            border-radius: $radius-sm;
+            cursor: pointer;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+            transition: background 0.15s ease, transform 0.1s ease;
+
+            &:hover {
+                background: $color-primary;
+            }
+
+            &:active {
+                transform: scale(0.96);
+            }
+        }
+    }
+}
+
+.join-modal-grid {
+    @include flex-col;
+    gap: 10px;
+    padding: 4px 0 56px;
+}
+
+// ─── Server browser card ──────────────────────────────────────────────────────
+.server-browser-card {
+    position: relative;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.25s ease, max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 110px;
+    background: $color-black-alpha-20;
+    border: 1px solid $color-white-alpha-06;
+
+    &:hover {
+        box-shadow: 0 4px 20px $color-black-alpha-35;
+        border-color: $color-white-alpha-10;
+    }
+
+    &.expanded {
+        max-height: none;
+        border-color: $color-white-alpha-12;
+        box-shadow: 0 8px 32px $color-black-alpha-50;
+    }
+}
+
+.card-cover {
+    width: 100%;
+    height: 110px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, $color-bg-panel-dark 0%, $color-bg-panel-hover 100%);
+
+    .expanded & {
+        height: 130px;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease;
+
+        .server-browser-card:hover & {
+            transform: scale(1.05);
+        }
+
+        .server-browser-card.expanded & {
+            transform: scale(1);
+        }
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60%;
+        background: linear-gradient(to top, $color-black-alpha-85, transparent);
+        pointer-events: none;
+    }
+}
+
+.card-collapsed-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 1;
+
+    &.hidden {
+        display: none !important;
+    }
+}
+
+.card-icon-bottom {
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-lg;
+    @include flex-center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px $color-black-alpha-25;
+    overflow: hidden;
+
+    &:has(span) {
+        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+    }
+
+    span {
+        font-size: 15px;
+        font-weight: $font-weight-semibold;
+        color: $color-text-on-accent;
+        line-height: 1;
+        user-select: none;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+}
+
+.card-collapsed-text {
+    min-width: 0;
+    padding-bottom: 2px;
+}
+
+.card-server-name-sm {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-on-accent;
+    @include truncate;
+    text-shadow: 0 1px 4px $color-black-alpha-60;
+}
+
+.card-desc-short {
+    font-size: $font-size-xs;
+    color: $color-white-alpha-60;
+    @include truncate;
+    margin-top: 2px;
+    text-shadow: 0 1px 3px $color-black-alpha-50;
+}
+
+.card-expanded-body {
+    padding: 0 16px 12px;
+    @include flex-col;
+    align-items: center;
+    text-align: center;
+
+    &.hidden {
+        display: none !important;
+    }
+}
+
+.card-icon-centered {
+    width: 72px;
+    height: 72px;
+    border-radius: $radius-lg;
+    @include flex-center;
+    margin-top: -36px; // half of height to overlap cover
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 4px 20px $color-primary-alpha-50;
+    overflow: hidden;
+    border: 3px solid $color-bg-container;
+
+    &:has(span) {
+        background: linear-gradient(135deg, $color-primary, $color-primary-end);
+    }
+
+    span {
+        font-size: 28px;
+        font-weight: $font-weight-semibold;
+        color: $color-text-on-accent;
+        line-height: 1;
+        user-select: none;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+}
+
+.card-expanded-body .card-server-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-heading;
+    margin-top: 8px;
+}
+
+.card-description {
+    font-size: $font-size-xs;
+    color: $color-text-label;
+    line-height: 1.4;
+    margin-top: 6px;
+    max-width: 320px;
+}
+
+.card-members {
+    @include flex-center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+
+    svg {
+        opacity: 0.6;
+    }
+}
+
+.card-join-row {
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid $color-white-alpha-06;
+}
+
+.card-join-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: $color-primary;
+    color: $color-text-on-accent;
+    border: none;
+    border-radius: $radius-btn;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    @include focus-visible-ring($color-primary);
+
+    &:hover {
+        background: $color-primary-hover;
+        box-shadow: 0 4px 16px $color-primary-alpha-40;
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.join-modal-footer {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid $color-white-alpha-06;
+}
+
+// .back-btn uses .btn-ghost from _button.scss — no extra styles needed here
+// Kept as alias for backwards compatibility:
+.back-btn {
+    @extend .btn-ghost !optional;
+}

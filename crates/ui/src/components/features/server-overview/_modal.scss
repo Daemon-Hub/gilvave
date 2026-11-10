@@ -1,0 +1,287 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+.server-overview-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: $z-modal;
+    background: $color-black-alpha-60;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    @include flex-center;
+    animation: overviewOverlayFade 0.22s ease-out;
+    padding: 16px;
+    user-select: none;
+}
+
+.server-overview-modal {
+    width: min(840px, 94vw);
+    height: min(640px, 86vh);
+    background: $color-bg-panel;
+    border: 1px solid $color-border;
+    border-radius: 24px;
+    box-shadow: 0 24px 64px $color-black-alpha-75, 0 0 0 1px $color-white-alpha-06;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: overviewModalEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+// ── Header ──
+.server-overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid $color-border-subtle;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+
+    .server-overview-header-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .server-overview-header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            color: $color-primary;
+
+            svg {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: $color-text-heading;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+
+        .server-overview-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            border-radius: 12px;
+            background: $color-bg-input-panel;
+            border: 1px solid $color-border-subtle;
+            font-size: 12px;
+            font-weight: 600;
+            color: $color-text-muted;
+        }
+    }
+
+    .server-overview-search {
+        flex: 1;
+        max-width: 280px;
+        min-width: 180px;
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .server-overview-search-icon {
+            position: absolute;
+            left: 10px;
+            width: 16px;
+            height: 16px;
+            color: $color-text-dim;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .server-overview-search-input {
+            width: 100%;
+            height: 34px;
+            padding: 0 32px 0 32px;
+            background: $color-bg-input-panel;
+            border: 1px solid $color-border-subtle;
+            border-radius: 12px;
+            color: $color-text-heading;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+            &::placeholder {
+                color: $color-text-dim;
+            }
+
+            &:focus {
+                background: $color-bg-panel-dark;
+                border-color: $color-primary;
+                box-shadow: 0 0 0 2px $color-primary-alpha-24;
+            }
+        }
+
+        .server-overview-search-clear {
+            position: absolute;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: $color-text-dim;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+
+            &:hover {
+                color: $color-text-heading;
+                background: $color-white-alpha-10;
+            }
+
+            svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+    }
+
+    .server-overview-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .server-overview-add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 12px;
+            background: $color-primary-alpha-15;
+            border: 1px solid $color-primary-alpha-30;
+            color: $color-primary-light;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+
+            svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            &:hover {
+                background: $color-primary-alpha-28;
+                border-color: $color-primary-alpha-50;
+                color: $color-text-white;
+                transform: translateY(-1px);
+            }
+
+            &:active {
+                transform: translateY(0);
+            }
+        }
+
+        .server-overview-close-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: $color-text-muted;
+            cursor: pointer;
+            transition: all 0.18s ease;
+
+            svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            &:hover {
+                background: $color-white-alpha-10;
+                color: $color-text-heading;
+            }
+        }
+    }
+}
+
+// ── Tabs Navigation Bar ──
+.server-overview-tabs-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: $color-bg-panel-dark;
+    border-bottom: 1px solid $color-border-subtle;
+    flex-shrink: 0;
+
+    .server-overview-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 16px;
+        border-radius: 12px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: $color-text-muted;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s ease;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            color: $color-text-dim;
+            transition: color 0.18s ease;
+        }
+
+        &:hover {
+            color: $color-text-heading;
+            background: $color-white-alpha-06;
+
+            svg {
+                color: $color-text-heading;
+            }
+        }
+
+        &.active {
+            color: $color-text-white;
+            background: $color-primary-alpha-20;
+            border-color: $color-primary-alpha-30;
+            box-shadow: 0 2px 10px $color-primary-alpha-15;
+
+            svg {
+                color: $color-primary-light;
+            }
+
+            .server-overview-tab-badge {
+                background: $color-primary;
+                color: $color-text-white;
+            }
+        }
+
+        .server-overview-tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background: $color-bg-input-panel;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: $color-text-muted;
+            transition: all 0.18s ease;
+        }
+    }
+}
+

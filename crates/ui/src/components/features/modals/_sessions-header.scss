@@ -1,0 +1,251 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.profile-settings-modal {
+        .sessions-tab-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+
+            .sessions-header-row {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 16px;
+
+                .sessions-header-titles {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+
+                    .tab-title {
+                        margin: 0;
+                    }
+
+                    .sessions-header-desc {
+                        font-size: $font-size-xs;
+                        color: $color-text-muted;
+                        margin: 0;
+                        line-height: 1.5;
+                    }
+                }
+
+            }
+
+            .sessions-alert {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 14px;
+                border-radius: $radius-md;
+                font-size: $font-size-xs;
+                animation: fadeIn 0.2s ease;
+
+                &.success {
+                    background: $color-primary-alpha-15;
+                    border: 1px solid $color-primary-alpha-40;
+                    color: $color-primary-light;
+                }
+
+                &.error {
+                    background: $color-danger-alpha-15;
+                    border: 1px solid $color-danger-alpha-40;
+                    color: $color-danger;
+                }
+
+                .alert-close-btn {
+                    background: transparent;
+                    border: none;
+                    color: inherit;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    opacity: 0.7;
+                    transition: opacity 0.15s;
+
+                    &:hover {
+                        opacity: 1;
+                    }
+
+                    svg {
+                        width: 14px;
+                        height: 14px;
+                    }
+                }
+            }
+
+            .sessions-section {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+
+                .sessions-section-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    flex-wrap: wrap;
+
+                    .sessions-section-title {
+                        font-size: $font-size-xxs;
+                        font-weight: $font-weight-bold;
+                        color: $color-text-muted;
+                        letter-spacing: 0.05em;
+                        margin: 0;
+                    }
+
+                    .sessions-section-actions {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin-left: auto;
+                    }
+
+                    .sessions-refresh-icon-btn {
+                        width: 32px;
+                        height: 32px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: $radius-sm;
+                        background: $color-white-alpha-06;
+                        border: 1px solid $color-border-subtle;
+                        color: $color-text-channel;
+                        cursor: pointer;
+                        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+                        flex-shrink: 0;
+                        user-select: none;
+                        -webkit-tap-highlight-color: transparent;
+
+                        svg {
+                            width: 15px;
+                            height: 15px;
+                            stroke: currentColor;
+                            fill: none;
+                            display: block;
+                            transform-origin: 50% 50%;
+                            transition: transform 0.3s ease;
+                        }
+
+                        &:hover:not(:disabled) {
+                            background: $color-bg-panel-hover;
+                            color: $color-text-white;
+                            border-color: $color-border;
+                        }
+
+                        &:active:not(:disabled) {
+                            transform: scale(0.92);
+                        }
+
+                        &:disabled {
+                            cursor: default;
+                            opacity: 0.8;
+                        }
+
+                        &.is-loading svg {
+                            animation: spin 0.75s linear infinite;
+                        }
+                    }
+
+                    .terminate-all-action-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 12px;
+                    border-radius: $radius-sm;
+                    background: $color-danger-alpha-08;
+                    border: 1px solid $color-danger-alpha-18;
+                    color: $color-danger;
+                    font-size: $font-size-xs;
+                    font-weight: $font-weight-semibold;
+                    cursor: pointer;
+                    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+                    svg {
+                        width: 14px;
+                        height: 14px;
+                        stroke: currentColor;
+                        fill: none;
+                    }
+
+                    &:hover {
+                        background: $color-danger-alpha-18;
+                        color: $color-danger-light;
+                        border-color: $color-danger;
+                    }
+                }
+            }
+            }
+
+            // Confirmation banner
+            .terminate-confirm-banner {
+                padding: 14px 16px;
+                border-radius: $radius-md;
+                background: $color-danger-alpha-15;
+                border: 1px solid $color-danger-alpha-40;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                animation: fadeIn 0.2s ease;
+
+                .confirm-banner-content {
+                    strong {
+                        font-size: $font-size-sm;
+                        color: $color-danger-light;
+                        display: block;
+                        margin-bottom: 4px;
+                    }
+
+                    p {
+                        font-size: $font-size-xs;
+                        color: $color-text-channel;
+                        margin: 0;
+                        line-height: 1.45;
+                    }
+                }
+
+                .confirm-banner-actions {
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 10px;
+
+                    .confirm-cancel-btn {
+                        padding: 7px 14px;
+                        border-radius: $radius-sm;
+                        background: $color-white-alpha-08;
+                        border: 1px solid $color-border-subtle;
+                        color: $color-text-channel;
+                        font-size: $font-size-xs;
+                        font-weight: $font-weight-semibold;
+                        cursor: pointer;
+                        transition: background 0.15s, color 0.15s;
+
+                        &:hover {
+                            background: $color-white-alpha-15;
+                            color: $color-text-white;
+                        }
+                    }
+
+                    .confirm-danger-btn {
+                        padding: 7px 16px;
+                        border-radius: $radius-sm;
+                        background: $color-danger;
+                        border: none;
+                        color: $color-text-on-accent;
+                        font-size: $font-size-xs;
+                        font-weight: $font-weight-semibold;
+                        cursor: pointer;
+                        transition: background 0.15s, transform 0.1s;
+
+                        &:hover {
+                            background: $color-danger-hover;
+                            transform: scale(1.02);
+                        }
+                    }
+                }
+            }
+
+            // Session Cards
+    }
+}

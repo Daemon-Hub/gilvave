@@ -1,0 +1,325 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Friends Panel Layout ───────────────────────────────────────────────────
+.friends-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: $color-bg-panel-dark;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-lg;
+    padding: 16px 20px;
+    box-shadow: $shadow-container;
+    min-height: 380px;
+
+    @include respond-to(md) {
+        padding: 12px 14px;
+        gap: 12px;
+    }
+}
+
+// ─── Header & Sub-Tabs Strip ────────────────────────────────────────────────
+.friends-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid $color-border-panel;
+    flex-wrap: nowrap;
+
+    @include respond-to(md) {
+        gap: 8px;
+        padding-bottom: 10px;
+    }
+}
+
+.friends-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $color-text-heading;
+    font-weight: $font-weight-bold;
+    font-size: $font-size-base;
+    user-select: none;
+    flex-shrink: 0;
+
+    .friends-header-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-primary-light;
+
+        svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.2;
+        }
+    }
+}
+
+.friends-header-divider {
+    width: 1px;
+    height: 22px;
+    background: $color-border-subtle;
+    flex-shrink: 0;
+
+    @include respond-to(sm) {
+        display: none;
+    }
+}
+
+.friends-tabs-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-width: 0;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.friends-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: $radius-sm;
+    background: transparent;
+    border: 1px solid transparent;
+    color: $color-text-channel;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &:hover {
+        background: $color-bg-panel-hover;
+        color: $color-text-heading;
+    }
+
+    &.active {
+        background: $color-bg-panel-hover;
+        color: $color-text-heading;
+        border-color: $color-primary-alpha-30;
+    }
+
+    .tab-count-badge {
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: $radius-full;
+        background: $color-white-alpha-10;
+        color: $color-text-heading;
+        font-weight: $font-weight-bold;
+
+        &.highlight {
+            background: $color-danger;
+            color: $color-text-white;
+        }
+    }
+
+    &.add-btn {
+        color: $color-success;
+        border-color: $color-success-alpha-20;
+        background: $color-white-alpha-04;
+
+        svg {
+            width: 15px;
+            height: 15px;
+            stroke-width: 2.4;
+        }
+
+        &:hover {
+            background: $color-success;
+            color: $color-text-white;
+            border-color: $color-success;
+        }
+
+        &.active {
+            background: $color-success;
+            color: $color-text-white;
+            border-color: $color-success;
+        }
+    }
+}
+
+.friends-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+
+    .friends-refresh-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: $radius-sm;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-border-subtle;
+        color: $color-text-channel;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        flex-shrink: 0;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+
+        svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            display: block;
+            transform-origin: 50% 50%;
+            transition: transform 0.3s ease;
+        }
+
+        &:hover:not(:disabled) {
+            background: $color-bg-panel-hover;
+            color: $color-text-white;
+            border-color: $color-border;
+
+            svg {
+                transform: rotate(45deg);
+            }
+        }
+
+        &:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        &.is-loading svg {
+            animation: spin 0.75s linear infinite;
+        }
+    }
+}
+
+// ─── Action Toast Alert ─────────────────────────────────────────────────────
+.friends-action-toast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    animation: fadeIn 0.2s ease;
+
+    &.success {
+        background: $color-success-alpha-20;
+        border: 1px solid $color-success;
+        color: $color-text-heading;
+    }
+
+    &.error {
+        background: $color-danger-alpha-15;
+        border: 1px solid $color-danger;
+        color: $color-text-heading;
+    }
+
+    .toast-close-btn {
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        opacity: 0.7;
+        transition: opacity 0.15s;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        svg {
+            width: 14px;
+            height: 14px;
+        }
+    }
+}
+
+// ─── Search Bar ─────────────────────────────────────────────────────────────
+.friends-search-bar {
+    width: 100%;
+
+    .friends-search-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: $color-bg-input-panel;
+        border: 1px solid $color-border-input-panel;
+        border-radius: $radius-sm;
+        padding: 8px 12px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            color: $color-text-muted;
+            flex-shrink: 0;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: $color-text-heading;
+            font-size: $font-size-xs;
+            outline: none;
+
+            &::placeholder {
+                color: $color-text-muted;
+            }
+        }
+
+        .search-clear-btn {
+            background: transparent;
+            border: none;
+            color: $color-text-muted;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+
+            &:hover {
+                color: $color-text-heading;
+            }
+
+            svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+
+        &:focus-within {
+            border-color: $color-primary;
+            box-shadow: 0 0 0 2px $color-primary-alpha-20;
+        }
+    }
+}
+
+// ─── Content Container ──────────────────────────────────────────────────────
+.friends-tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+

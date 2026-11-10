@@ -1,0 +1,372 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.discord-main {
+    flex: 1;
+    @include flex-col;
+    background: $color-bg-panel-darkest;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+// ─── Channel topbar ───────────────────────────────────────────────────────────
+.discord-header {
+    height: $header-height-channel;
+    background: $color-bg-panel;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    box-shadow: 0 1px 0 $color-border-slate-arc;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+
+    @include respond-to(md) {
+        height: 48px;
+        padding: 0 12px;
+    }
+}
+
+// ─── Server info on the left side of topbar ──────────────────────────────────
+.header-server-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+    flex: 1;
+
+    // Cover ambient banner effect
+    .header-server-cover {
+        position: absolute;
+        left: -16px;
+        top: -12px;
+        bottom: -12px;
+        width: 220px;
+        opacity: 0.16;
+        pointer-events: none;
+        mask-image: linear-gradient(to right, $color-black 25%, transparent);
+        -webkit-mask-image: linear-gradient(to right, $color-black 25%, transparent);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+    }
+
+    .header-server-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        border-radius: $radius-md;
+        overflow: hidden;
+        background: $gradient-server-icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px $color-black-alpha-35;
+        border: none;
+        position: relative;
+        z-index: 1;
+
+        span {
+            font-size: 16px;
+            font-weight: 700;
+            color: $color-text-on-accent;
+            line-height: 1;
+            user-select: none;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        &.home {
+            background: $color-bg-input-panel;
+
+            svg {
+                width: 18px;
+                height: 18px;
+                color: $color-icon-cyan;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                display: block;
+                margin: auto;
+            }
+        }
+    }
+
+    .header-server-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+    }
+
+    .header-server-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: $color-text-heading;
+        letter-spacing: 0.01em;
+        @include truncate;
+    }
+
+    .header-server-members {
+        font-size: 11px;
+        color: $color-text-muted;
+    }
+
+    .header-settings-btn {
+        background: transparent;
+        border: none;
+        color: $color-text-muted;
+        width: 28px;
+        height: 28px;
+        border-radius: $radius-sm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: background 0.15s, color 0.15s, transform 0.1s;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            display: block;
+            margin: auto;
+        }
+
+        &:hover {
+            background: $color-bg-panel-hover;
+            color: $color-text-white;
+            transform: scale(1.1);
+        }
+    }
+}
+
+// ─── Header search bar: sleek, themeable input with SVG icon & shortcut ──────
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    width: 210px;
+    padding: 0 8px 0 11px;
+    background: $color-bg-input;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    color: $color-text-chat;
+    margin-left: auto;
+    flex-shrink: 0;
+    z-index: 2;
+    box-sizing: border-box;
+    transition:
+        width 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+
+    .search-bar-icon {
+        width: 15px;
+        height: 15px;
+        color: $color-text-muted;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: color 0.18s ease, transform 0.18s ease, filter 0.18s ease;
+
+        svg {
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.1;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+        }
+    }
+
+    .search-bar-input {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: $color-text-heading;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: $font-weight-medium;
+
+        &::placeholder {
+            color: $color-text-muted;
+            transition: color 0.15s ease;
+        }
+    }
+
+    .search-bar-shortcut {
+        font-size: 10px;
+        font-weight: $font-weight-bold;
+        letter-spacing: 0.03em;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: $color-white-alpha-06;
+        border: 1px solid $color-white-alpha-10;
+        color: $color-text-muted;
+        line-height: 1.2;
+        user-select: none;
+        pointer-events: none;
+        flex-shrink: 0;
+        transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    &:hover {
+        background: $color-bg-input-focus;
+        border-color: $color-primary-alpha-45;
+
+        .search-bar-icon {
+            color: $color-primary;
+        }
+
+        .search-bar-shortcut {
+            border-color: $color-primary-alpha-30;
+            color: $color-text-channel;
+        }
+    }
+
+    &:focus-within {
+        width: 268px;
+        background: $color-bg-input-focus;
+        border-color: $color-primary;
+        box-shadow: $shadow-input-focus;
+
+        .search-bar-icon {
+            color: $color-icon-cyan;
+            transform: scale(1.08);
+            filter: drop-shadow(0 0 6px $color-primary-alpha-45);
+        }
+
+        .search-bar-shortcut {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+    }
+
+    @include respond-to(md) {
+        width: 165px;
+
+        &:focus-within {
+            width: 200px;
+        }
+
+        .search-bar-shortcut {
+            display: none;
+        }
+    }
+
+    @include respond-to(sm) {
+        display: none;
+    }
+}
+
+// ─── Content flex row ─────────────────────────────────────────────────────────
+.discord-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+
+    // Desktop: HomeNavPanel is 240px wide, HomeDashboard is flex: 1
+    .home-nav-panel {
+        width: 240px;
+        flex-shrink: 0;
+    }
+
+    .home-dashboard {
+        flex: 1;
+    }
+
+    // Mobile behavior:
+    // 1. ChannelPanel fills the remaining width next to the server sidebar
+    // 2. When a channel is opened, MessagesArea overlays full-screen with back button
+    // 3. In Home:
+    //    - show-chats: .home-nav-panel takes 100%, .home-dashboard is hidden
+    //    - show-dashboard: .home-dashboard takes 100%, .home-nav-panel is hidden
+    //    - dm-messages-area overlays full-screen when a DM is opened
+    @include respond-to(md) {
+        .channel-panel {
+            flex: 1;
+            width: 100%;
+        }
+
+        .no-channel-selected {
+            display: none !important;
+        }
+
+        &.in-server {
+            .channel-panel {
+                flex: 1;
+                width: 100%;
+            }
+
+            .no-channel-selected {
+                display: none !important;
+            }
+        }
+
+        &.in-home.show-chats {
+            .home-nav-panel {
+                display: flex;
+                flex: 1;
+                width: 100%;
+            }
+
+            .home-dashboard {
+                display: none !important;
+            }
+        }
+
+        &.in-home.show-dashboard {
+            .home-nav-panel {
+                display: none !important;
+            }
+
+            .home-dashboard {
+                display: flex;
+                flex: 1;
+                width: 100%;
+            }
+        }
+
+        .messages-area,
+        .voice-channel-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            background: $color-bg-panel;
+        }
+    }
+}

@@ -1,0 +1,225 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+.theme-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.theme-preview-card {
+    border-radius: $radius-lg;
+    background: $color-black-alpha-24;
+    border: 2px solid $color-border-subtle;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: $color-primary-alpha-50;
+    }
+
+    &.active {
+        border-color: $color-icon-amber;
+        box-shadow:
+            0 8px 24px $color-black-alpha-35,
+            0 0 0 1px $color-primary-alpha-38;
+    }
+
+    .theme-mockup {
+        height: 118px;
+        display: flex;
+        padding: 8px;
+        gap: 6px;
+        border-bottom: 1px solid $color-white-alpha-07;
+
+        .mockup-sidebar {
+            width: 22px;
+            border-radius: 6px;
+            padding: 5px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+
+            .mockup-dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 4px;
+            }
+        }
+
+        .mockup-channels {
+            width: 58px;
+            border-radius: 6px;
+            padding: 6px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            .mockup-line {
+                height: 7px;
+                border-radius: 3px;
+            }
+        }
+
+        .mockup-chat {
+            flex: 1;
+            border-radius: 6px;
+            padding: 7px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+
+            .mockup-msg {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+
+                .mockup-avatar {
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                }
+
+                .mockup-bubble {
+                    flex: 1;
+                    height: 16px;
+                    border-radius: 3px 7px 7px 7px;
+                }
+            }
+
+            .mockup-divider {
+                height: 1px;
+                width: 100%;
+            }
+
+            .mockup-input-row {
+                display: flex;
+                gap: 4px;
+                align-items: center;
+
+                .mockup-input {
+                    flex: 1;
+                    height: 12px;
+                    border-radius: 4px;
+                }
+
+                .mockup-send {
+                    width: 14px;
+                    height: 12px;
+                    border-radius: 4px;
+                }
+            }
+        }
+
+        &.advanced-mockup {
+            background: $mockup-adv-bg;
+
+            .mockup-sidebar {
+                background: $raw-adv-bg-panel-darkest;
+                .mockup-dot { background: $mockup-adv-dot; }
+                .mockup-dot.home { background: $mockup-adv-dot-home; box-shadow: $mockup-adv-dot-home-shadow; }
+                .mockup-dot.plus { background: $mockup-adv-dot-plus-bg; border: 1px dashed $raw-icon-cyan; }
+            }
+
+            .mockup-channels {
+                background: $raw-adv-bg-panel-dark;
+                .mockup-line { background: $mockup-adv-line; }
+                .mockup-line.active { background: $mockup-adv-line-active; border-left: 2px solid $raw-icon-cyan; }
+            }
+
+            .mockup-chat {
+                background: $raw-adv-bg-panel;
+                .mockup-avatar { background: $mockup-adv-avatar; }
+                .mockup-bubble { background: $mockup-adv-bubble-bg; border: 1px solid $mockup-adv-bubble-border; }
+                .mockup-divider { background: $mockup-adv-divider; }
+                .mockup-input { background: $raw-adv-bg-input-panel; border: 1px solid $mockup-adv-input-border; }
+                .mockup-send { background: $mockup-adv-send; }
+            }
+        }
+
+        &.standard-mockup {
+            background: $raw-std-bg-panel-darkest;
+
+            .mockup-sidebar {
+                background: $raw-std-bg-panel-darkest;
+                .mockup-dot { background: $mockup-std-dot; }
+                .mockup-dot.home { background: $mockup-std-dot; box-shadow: $mockup-std-dot-home-shadow; }
+                .mockup-dot.plus { background: $raw-std-bg-panel; }
+            }
+
+            .mockup-channels {
+                background: $raw-std-bg-panel-dark;
+                .mockup-line { background: $color-white-alpha-14; }
+                .mockup-line.active { background: $raw-std-bg-panel-active; }
+            }
+
+            .mockup-chat {
+                background: $raw-std-bg-panel;
+                .mockup-avatar { background: $mockup-std-dot; }
+                .mockup-bubble { background: $color-black-alpha-25; border: 1px solid $color-white-alpha-10; }
+                .mockup-divider { background: $color-white-alpha-12; }
+                .mockup-input { background: $raw-std-bg-panel-active; }
+                .mockup-send { background: $mockup-std-dot; }
+            }
+        }
+
+        &.light-mockup {
+            background: $raw-light-bg-page;
+
+            .mockup-sidebar {
+                background: $raw-light-bg-panel-darkest;
+                .mockup-dot { background: $mockup-light-dot; }
+                .mockup-dot.home { background: $mockup-light-dot; box-shadow: $mockup-light-dot-home-shadow; }
+                .mockup-dot.plus { background: $raw-light-bg-panel; border: 1px dashed $raw-light-primary; }
+            }
+
+            .mockup-channels {
+                background: $raw-light-bg-panel-dark;
+                .mockup-line { background: rgba(0, 0, 0, 0.12); }
+                .mockup-line.active { background: $raw-light-bg-panel-active; border-left: 2px solid $raw-light-primary; }
+            }
+
+            .mockup-chat {
+                background: $raw-light-bg-panel;
+                .mockup-avatar { background: $mockup-light-dot; }
+                .mockup-bubble { background: $raw-light-bg-input; border: 1px solid rgba(0, 0, 0, 0.08); }
+                .mockup-divider { background: rgba(0, 0, 0, 0.08); }
+                .mockup-input { background: $raw-light-bg-input; border: 1px solid rgba(0, 0, 0, 0.1); }
+                .mockup-send { background: $mockup-light-dot; }
+            }
+        }
+
+        &.custom-mockup {
+            background: $preview-bg-sidebar;
+
+            .mockup-sidebar {
+                background: $preview-bg-sidebar;
+                .mockup-dot { background: linear-gradient(135deg, $preview-primary, $preview-primary-end); }
+                .mockup-dot.home { background: linear-gradient(135deg, $preview-accent, $preview-primary); box-shadow: 0 0 0 1.5px $preview-accent; }
+                .mockup-dot.plus { background: $preview-bg-input; border: 1px dashed $preview-accent; }
+            }
+
+            .mockup-channels {
+                background: $preview-bg-channels;
+                .mockup-line { background: $color-white-alpha-14; }
+                .mockup-line.active { background: $preview-bg-input; border-left: 2px solid $preview-accent; }
+            }
+
+            .mockup-chat {
+                background: $preview-bg-chat;
+                .mockup-avatar { background: linear-gradient(135deg, $preview-primary, $preview-primary-end); }
+                .mockup-bubble { background: $color-black-alpha-25; border: 1px solid $color-white-alpha-10; }
+                .mockup-divider { background: linear-gradient(90deg, transparent, $preview-accent, $preview-primary, transparent); }
+                .mockup-input { background: $preview-bg-input; }
+                .mockup-send { background: linear-gradient(135deg, $preview-primary, $preview-primary-end); }
+            }
+        }
+    }
+
+}

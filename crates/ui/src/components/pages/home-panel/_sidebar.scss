@@ -1,0 +1,312 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+// ─── Server sidebar: ALWAYS on the left on all devices ───────────────────────
+.discord-sidebar {
+    width: $sidebar-width-server;
+    background: $color-bg-panel-darkest;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 12px;
+    gap: 6px;
+    flex-shrink: 0;
+    height: 100%;
+    overflow: visible;
+
+    .discord-sidebar-top {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        flex-shrink: 0;
+        gap: 6px;
+        position: relative;
+        overflow: visible;
+    }
+
+    .discord-sidebar-servers {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 4px 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+    }
+
+    .discord-sidebar-bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        flex-shrink: 0;
+        margin-top: auto;
+        gap: 8px;
+        padding-top: 4px;
+    }
+
+    .separator {
+        width: 44px;
+        height: 2px;
+        background: $gradient-server-separator;
+        border-radius: 1px;
+        margin: 2px 0;
+        flex-shrink: 0;
+    }
+
+    // ── Interactive top-right paper corner peel (from code_artifacts.html) ──
+    // Authentic 3D paper curl roll engine where the top-right corner of the server sheet
+    // curls forward, pointing down and left towards the server list.
+    .sidebar-corner-peel {
+        position: relative;
+        width: 100%;
+        height: 22px;
+        margin: 10px 0 -10px 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        flex-shrink: 0;
+        outline: none;
+        display: block;
+        user-select: none;
+        perspective: 500px;
+        z-index: 10;
+        overflow: visible;
+        pointer-events: none;
+
+        .corner-peel-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            overflow: visible;
+            transform-style: preserve-3d;
+            pointer-events: none;
+
+            .corner-cut-line {
+                pointer-events: none;
+                transition: d 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                            filter 0.28s ease,
+                            stroke 0.28s ease,
+                            opacity 0.28s ease;
+            }
+
+            .peel-corner-hit {
+                pointer-events: auto;
+                cursor: pointer;
+                transform-origin: 72px 0;
+                transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+                .peel-hit-pad {
+                    pointer-events: auto;
+                    cursor: pointer;
+                    transition: d 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                .corner-void,
+                .corner-flap,
+                .corner-bevel,
+                .corner-crease,
+                .corner-shadow {
+                    transition: d 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                                filter 0.28s ease,
+                                stroke 0.28s ease,
+                                opacity 0.28s ease;
+                }
+
+                .corner-void {
+                    filter: drop-shadow(0 0 3px var(--color-server-peel-glow, rgba(245, 158, 11, 0.45)));
+                }
+
+                &:hover {
+                    .corner-void {
+                        filter: drop-shadow(0 0 6px var(--color-server-peel-glow, rgba(245, 158, 11, 0.8)))
+                                drop-shadow(-2px 2px 10px var(--color-server-peel-glow-ambient, rgba(236, 72, 153, 0.45)))
+                                brightness(1.15);
+                    }
+
+                    .corner-flap {
+                        filter: none;
+                    }
+
+                    .corner-bevel {
+                        stroke: rgba(255, 255, 255, 0.75);
+                    }
+
+                    .corner-shadow {
+                        opacity: 0.95;
+                    }
+                }
+
+                &:active {
+                    transform: scale(0.97);
+
+                    .corner-void {
+                        filter: drop-shadow(0 0 14px var(--color-server-peel-glow, rgba(245, 158, 11, 0.95))) brightness(1.35);
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Sidebar user controls (Mic, Deafen, Settings) ──
+    .sidebar-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+
+        .sidebar-ctrl-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid transparent;
+            color: $color-text-channel;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+            svg {
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2.2;
+                display: block;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-white;
+                border-color: $color-border;
+                transform: scale(1.06);
+                box-shadow: 0 4px 14px $color-black-alpha-35;
+            }
+
+            &:active {
+                transform: scale(0.96);
+            }
+
+            // Top: Microphone & Middle: Headphones (compact 38px squircle)
+            &.mic,
+            &.deafen {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+
+                svg {
+                    width: 18px;
+                    height: 18px;
+                }
+            }
+
+            &.mic.muted,
+            &.deafen.deafened {
+                background: $color-danger-alpha-15;
+                color: $color-danger;
+                border-color: $color-danger-alpha-40;
+
+                &:hover {
+                    background: $color-danger-alpha-40;
+                    color: $color-danger-light;
+                    border-color: $color-danger;
+                }
+            }
+
+            // Bottom: Gear / Settings (noticeably larger 46px squircle matching server icon)
+            &.settings {
+                width: 46px;
+                height: 46px;
+                border-radius: $radius-lg;
+
+                svg {
+                    width: 22px;
+                    height: 22px;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                &:hover {
+                    color: $color-primary-light;
+                    border-color: $color-primary-alpha-40;
+
+                    svg {
+                        transform: rotate(45deg);
+                    }
+                }
+            }
+        }
+    }
+
+    // Mobile: compact vertical sidebar on the left
+    @include respond-to(md) {
+        width: 60px;
+        padding: 10px 0 8px;
+        gap: 4px;
+
+        .home-avatar-btn {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            min-height: 42px;
+            max-width: 42px;
+            max-height: 42px;
+        }
+
+        .server-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            min-height: 42px;
+            max-width: 42px;
+            max-height: 42px;
+        }
+
+        .separator {
+            width: 38px;
+            height: 2px;
+            margin: 1px 0;
+        }
+
+        .sidebar-controls {
+            gap: 6px;
+
+            .sidebar-ctrl-btn {
+                &.mic,
+                &.deafen {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 8px;
+
+                    svg {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+
+                &.settings {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 10px;
+
+                    svg {
+                        width: 20px;
+                        height: 20px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Main flex area (channel + messages) ─────────────────────────────────────

@@ -8,6 +8,7 @@ pub const STORAGE_KEY_EMOJI_PACK: &str = "gilvave_emoji_pack";
 
 /// Available emoji visual packs supported across the application.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[repr(u8)]
 pub enum EmojiPack {
     /// Microsoft Fluent 3D glossy WebP emojis.
     #[default]
@@ -115,14 +116,14 @@ impl EmojiPack {
     }
 }
 
+const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
+
 /// Converts a Unicode emoji string into a standardized hyphen-separated lowercase hex codepoint string.
 ///
 /// Fully adheres to the standard iamcal / Unicode Consortium data source specification:
 /// - ASCII digits (0-9), '#' and '*' pad to 4 hex digits (e.g. `0031-fe0f-20e3`).
 /// - Standard codepoints are formatted in lowercase hex (e.g. `1f600`, `2764-fe0f`).
 pub fn emoji_to_codepoint(emoji: &str) -> String {
-    use std::fmt::Write;
-
     let mut code = String::with_capacity(32);
     let mut first = true;
     for ch in emoji.chars() {
@@ -132,9 +133,22 @@ pub fn emoji_to_codepoint(emoji: &str) -> String {
         first = false;
         let cp = ch as u32;
         if cp < 0x1000 {
-            let _ = write!(code, "{:04x}", cp);
+            code.push(HEX_DIGITS[((cp >> 12) & 0xF) as usize] as char);
+            code.push(HEX_DIGITS[((cp >> 8) & 0xF) as usize] as char);
+            code.push(HEX_DIGITS[((cp >> 4) & 0xF) as usize] as char);
+            code.push(HEX_DIGITS[(cp & 0xF) as usize] as char);
         } else {
-            let _ = write!(code, "{:x}", cp);
+            let mut buf = [0u8; 8];
+            let mut n = cp;
+            let mut pos = 8;
+            while n > 0 {
+                pos -= 1;
+                buf[pos] = HEX_DIGITS[(n & 0xF) as usize];
+                n >>= 4;
+            }
+            for &b in &buf[pos..] {
+                code.push(b as char);
+            }
         }
     }
     code

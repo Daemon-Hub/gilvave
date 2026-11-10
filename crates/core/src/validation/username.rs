@@ -17,11 +17,7 @@ pub fn validate_username(username: &str) -> Result<(), &'static str> {
         return Err("Имя пользователя не может быть пустым");
     }
 
-    let char_count = trimmed.chars().count();
-    if !(2..=32).contains(&char_count) {
-        return Err("Имя пользователя должно содержать от 2 до 32 символов");
-    }
-
+    let mut char_count = 0;
     let mut has_latin = false;
     let mut has_cyrillic = false;
     let mut has_greek = false;
@@ -29,6 +25,11 @@ pub fn validate_username(username: &str) -> Result<(), &'static str> {
     let mut total_combining = 0;
 
     for c in trimmed.chars() {
+        char_count += 1;
+        if char_count > 32 {
+            return Err("Имя пользователя должно содержать от 2 до 32 символов");
+        }
+
         if c.is_control() {
             return Err("Имя пользователя содержит недопустимые управляющие символы");
         }
@@ -65,6 +66,10 @@ pub fn validate_username(username: &str) -> Result<(), &'static str> {
                 "Имя пользователя может содержать только буквы, цифры и символы '_', '.', '-'",
             );
         }
+    }
+
+    if char_count < 2 {
+        return Err("Имя пользователя должно содержать от 2 до 32 символов");
     }
 
     // Защита от спуфинга: обнаружение атак со смешиванием алфавитов (например, кириллическая А с латинскими dmin)

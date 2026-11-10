@@ -329,6 +329,7 @@ pub fn apply_channel_scroll_anchor(
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
 pub fn apply_channel_scroll_anchor(
     _container: &web_sys::HtmlElement,
     _anchor: &ChannelScrollAnchor,

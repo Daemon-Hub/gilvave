@@ -1,0 +1,81 @@
+@use '../../common/variables' as *;
+@use '../../common/mixins' as *;
+
+
+// ─── Main Discord container (active home view) ───────────────────────────────
+.discord-container,
+.home-panel-container {
+    display: none;
+    position: fixed;
+    top: calc(#{$header-height-app} + 4px);
+    left: 2%;
+    right: 2%;
+    bottom: 14px;
+    background: $color-bg-panel;
+    border-radius: $radius-container;
+    border: 1px solid $color-border-container;
+    overflow: hidden;
+    box-shadow: $shadow-container;
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+
+    &.active {
+        display: flex;
+        flex-direction: row;
+        pointer-events: auto;
+        animation: homeExpand 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    // Tablet
+    @include respond-to(lg) {
+        top: calc(#{$header-height-app} + 4px);
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        border-radius: $radius-lg;
+    }
+
+    // Mobile (< 768px): always fills entire screen with zero gaps or visible bg
+    @include respond-to(md) {
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+
+        &.active {
+            flex-direction: row; // servers on left, channel content on right
+        }
+    }
+
+    // Fullbleed (frameless) mode: fills entire screen with zero gaps or visible bg
+    &.fullbleed {
+        top: $header-height-app;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+
+        @include respond-to(lg) {
+            top: $header-height-app;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+        }
+
+        @include respond-to(md) {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+        }
+    }
+}
+
