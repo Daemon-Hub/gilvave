@@ -201,7 +201,6 @@
     flex-shrink: 0;
     overflow-y: auto;
     @include scrollbar(4px, $color-white-alpha-10);
-    transition: width 0.3s ease;
 
     // Tablet: hidden by default, reveal via toggle
     @include respond-to(lg) {

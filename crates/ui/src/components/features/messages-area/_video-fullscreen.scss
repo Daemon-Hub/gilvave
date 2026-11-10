@@ -17,9 +17,7 @@
                         padding: 0 !important;
                         border: none !important;
                         border-radius: 0 !important;
-                        background: $color-black-alpha-35 !important;
-                        backdrop-filter: blur(28px) saturate(180%) !important;
-                        -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+                        background: $color-black-alpha-95 !important;
                         display: flex !important;
                         flex-direction: column !important;
                         justify-content: space-between !important;
@@ -35,9 +33,7 @@
                         overflow: hidden !important;
 
                         &::backdrop {
-                            background: $color-black-alpha-35 !important;
-                            backdrop-filter: blur(28px) saturate(180%) !important;
-                            -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+                            background: $color-black-alpha-95 !important;
                         }
 
                         .video-fullscreen-topbar {
@@ -113,6 +109,7 @@
                             height: 100% !important;
                             max-height: none !important;
                             min-height: 0 !important;
+                            aspect-ratio: unset !important;
                             background: transparent !important;
                             display: flex !important;
                             align-items: center !important;

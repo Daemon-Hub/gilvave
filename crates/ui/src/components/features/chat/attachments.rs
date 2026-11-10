@@ -333,6 +333,44 @@ pub fn MessageAttachmentsView(
     }
 }
 
+/// Вычисляет адаптивные габариты мини-плеера под реальное соотношение сторон видео
+fn compute_player_dimensions(vw: u32, vh: u32) -> (f64, f64) {
+    if vw == 0 || vh == 0 {
+        return (400.0, 225.0);
+    }
+    let ar = vw as f64 / vh as f64;
+    let max_w = 420.0;
+    let max_h = 330.0;
+    let min_w = 220.0;
+    let min_h = 160.0;
+
+    let (mut target_w, mut target_h);
+
+    if ar >= 1.0 {
+        target_w = max_w;
+        target_h = target_w / ar;
+        if target_h > max_h {
+            target_h = max_h;
+            target_w = target_h * ar;
+        }
+    } else {
+        target_h = (max_h + 30.0).min(380.0);
+        target_w = target_h * ar;
+        if target_w < min_w {
+            target_w = min_w;
+            target_h = target_w / ar;
+            if target_h > 380.0 {
+                target_h = 380.0;
+            }
+        }
+    }
+
+    target_w = target_w.clamp(min_w, max_w);
+    target_h = target_h.clamp(min_h, 380.0);
+
+    (target_w.round(), target_h.round())
+}
+
 /// Нативный видеоплеер Sycamore для встроенного просмотра в чате
 #[component(inline_props)]
 pub fn InlineVideoPlayer(
@@ -348,6 +386,7 @@ pub fn InlineVideoPlayer(
     let is_scrubbing = create_signal(false);
     let current_time = create_signal(0.0f64);
     let duration = create_signal(0.0f64);
+    let video_dims = create_signal::<Option<(u32, u32)>>(None);
 
     let is_video_loading = create_signal(true);
     let is_video_error = create_signal(false);
@@ -465,6 +504,28 @@ pub fn InlineVideoPlayer(
         }));
     };
 
+    let check_video_dims = move || {
+        if let Some(v) = video_ref
+            .try_get()
+            .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok())
+        {
+            let vw = v.video_width();
+            let vh = v.video_height();
+            if vw > 0 && vh > 0 && video_dims.get_untracked() != Some((vw, vh)) {
+                video_dims.set(Some((vw, vh)));
+            }
+            let d = v.duration();
+            if d > 0.0 && !d.is_nan() && !d.is_infinite() && duration.get_untracked() <= 0.0 {
+                duration.set(d);
+            }
+        }
+    };
+
+    create_effect(move || {
+        active_video_src.track();
+        check_video_dims();
+    });
+
     let card_class = move || {
         let mut cls = String::from("chat-message-video-card custom-player");
         if is_playing.get() {
@@ -476,6 +537,27 @@ pub fn InlineVideoPlayer(
             cls.push_str(" is-muted");
         }
         cls
+    };
+
+    let card_style = move || {
+        if let Some((vw, vh)) = video_dims.get() {
+            let (w, _) = compute_player_dimensions(vw, vh);
+            format!("width: {w}px; max-width: 100%;")
+        } else {
+            "width: 380px; max-width: 100%;".to_string()
+        }
+    };
+
+    let stage_style = move || {
+        if let Some((vw, vh)) = video_dims.get() {
+            if vw > 0 && vh > 0 {
+                format!("aspect-ratio: {vw} / {vh};")
+            } else {
+                "aspect-ratio: 16 / 9;".to_string()
+            }
+        } else {
+            "aspect-ratio: 16 / 9;".to_string()
+        }
     };
 
     let fill_style = move || {
@@ -498,11 +580,13 @@ pub fn InlineVideoPlayer(
     view! {
         div(
             class=card_class(),
+            style=card_style(),
             on:mouseup=move |_| is_scrubbing.set(false),
             on:touchend=move |_| is_scrubbing.set(false),
         ) {
             div(
                 class="video-stage",
+                style=stage_style(),
                 on:click=move |e: web_sys::MouseEvent| {
                     e.stop_propagation();
                     toggle_play();
@@ -514,7 +598,10 @@ pub fn InlineVideoPlayer(
                     src=active_video_src.get_clone(),
                     preload="auto",
                     playsinline=true,
-                    on:play=move |_| is_playing.set(true),
+                    on:play=move |_| {
+                        check_video_dims();
+                        is_playing.set(true);
+                    },
                     on:pause=move |_| is_playing.set(false),
                     on:ended=move |_| is_playing.set(false),
                     on:timeupdate=move |_| {
@@ -532,43 +619,36 @@ pub fn InlineVideoPlayer(
                         }
                     },
                     on:loadedmetadata=move |_| {
+                        check_video_dims();
+                        #[cfg(target_arch = "wasm32")]
                         if let Some(v) = video_ref
                             .try_get()
-                            .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok())
+                            .and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok())
                         {
-                            let d = v.duration();
-                            if d > 0.0 && !d.is_nan() && !d.is_infinite() {
-                                duration.set(d);
+                            if let Some(closest_list) = v.closest(".messages-list").ok().flatten() {
+                                if let Ok(list_el) = closest_list.dyn_into::<web_sys::HtmlElement>() {
+                                    let sh = list_el.scroll_height();
+                                    let ch = list_el.client_height();
+                                    let st = list_el.scroll_top();
+                                    if (sh - ch - st).abs() <= 120 {
+                                        list_el.set_scroll_top(sh - ch);
+                                    }
+                                }
                             }
                         }
                     },
                     on:loadeddata=move |_| {
+                        check_video_dims();
                         is_video_loading.set(false);
                         is_video_error.set(false);
                     },
                     on:durationchange=move |_| {
-                        if let Some(v) = video_ref
-                            .try_get()
-                            .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok())
-                        {
-                            let d = v.duration();
-                            if d > 0.0 && !d.is_nan() && !d.is_infinite() {
-                                duration.set(d);
-                            }
-                        }
+                        check_video_dims();
                     },
                     on:canplay=move |_| {
+                        check_video_dims();
                         is_video_loading.set(false);
                         is_video_error.set(false);
-                        if let Some(v) = video_ref
-                            .try_get()
-                            .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok())
-                        {
-                            let d = v.duration();
-                            if duration.get() <= 0.0 && d > 0.0 && !d.is_nan() && !d.is_infinite() {
-                                duration.set(d);
-                            }
-                        }
                     },
                     on:error=move |_| {
                         is_video_loading.set(false);

@@ -184,15 +184,16 @@
 
 // ─── Анимация подсветки сообщения при переходе по цитате ───────────────────
 .message-highlight-pulse {
-    animation: messagePulseFlash 1.5s ease-out;
-}
+    position: relative;
 
-@keyframes messagePulseFlash {
-    0% {
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
         background: $color-primary-alpha-30;
-    }
-    100% {
-        background: transparent;
+        border-radius: inherit;
+        pointer-events: none;
+        animation: fadeOut 1.5s ease-out forwards;
     }
 }
 

@@ -19,13 +19,16 @@
 
 @keyframes speakingRingPulse {
     0% {
-        box-shadow: 0 0 0 0 $color-status-online;
+        transform: scale(0.96);
+        opacity: 0.9;
     }
     70% {
-        box-shadow: 0 0 0 8px transparent;
+        transform: scale(1.16);
+        opacity: 0;
     }
     100% {
-        box-shadow: 0 0 0 0 transparent;
+        transform: scale(1.16);
+        opacity: 0;
     }
 }
 

@@ -81,14 +81,14 @@
     border-radius: $radius-lg;
     overflow: hidden;
     cursor: pointer;
-    transition: box-shadow 0.25s ease, max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     max-height: 110px;
     background: $color-black-alpha-20;
     border: 1px solid $color-white-alpha-06;
+    transition: border-color 0.2s ease, box-shadow 0.25s ease;
 
     &:hover {
-        box-shadow: 0 4px 20px $color-black-alpha-35;
         border-color: $color-white-alpha-10;
+        box-shadow: 0 4px 20px $color-black-alpha-35;
     }
 
     &.expanded {
