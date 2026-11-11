@@ -4,32 +4,32 @@ version.workspace = true
 description.workspace = true
 edition.workspace = true
 
-
 [dependencies]
+console_error_panic_hook = "0.1.7"
+emojis = "0.9.1"
+futures-channel = "0.3.34"
+gloo-timers = { version = "0.4.0", features = ["futures"] }
+js-sys = "0.3.107"
+pulldown-cmark = { version = "0.13.6", default-features = false, features = [
+    "html",
+] }
+sycamore = { version = "0.9.4", features = ["suspense"] }
 tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = [
+    "app",
     "core",
     "event",
-    "app",
 ] }
 validator = { version = "0.21.0", features = ["derive"] }
-sycamore = { version = "0.9", features = ["suspense"] }
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
-serde-wasm-bindgen = "0.6"
-console_error_panic_hook = "0.1"
-wasm-streams = "0.7" # ReadableStream → Rust Stream
-ws_stream_wasm = "0.7"
-gloo-timers = { version = "0.4", features = ["futures"] }
-serde_json.workspace = true
-serde.workspace = true
-strum.workspace = true
+wasm-bindgen = "0.2.130"
+wasm-bindgen-futures = "0.4.80"
+ws_stream_wasm = "0.7.5"
+
 futures-util.workspace = true
-futures-channel = "0.3"
-tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+strum.workspace = true
 time.workspace = true
-web-sys = { workspace = true, features = ["HtmlVideoElement", "MouseEvent", "DomRect"] }
+tracing.workspace = true
+web-sys.workspace = true
 
 gilvave-core = { path = "../core" }
-pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }
-emojis = "0.9.1"

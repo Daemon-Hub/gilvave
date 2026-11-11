@@ -4,33 +4,34 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+uuid = { version = "1.29.2", features = ["js", "serde", "v4", "v7"] }
+
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
-web-sys.workspace = true
-uuid = { version = "1.23.1", features = ["v4", "v7", "serde", "js"] }
-decancer = "4.0.0"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sysinfo = "0.39.6"
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "android")))'.dependencies]
+sysinfo = "0.40.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 woothee = "0.13.0"
 
+web-sys.workspace = true
+
 [target.'cfg(target_os = "windows")'.dependencies]
-keyring = { version = "4", default-features = false, features = [
+keyring = { version = "4.2.0", default-features = false, features = [
     "v1",
     "windows-native-keyring-store",
 ] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-keyring = { version = "4", default-features = false, features = [
+keyring = { version = "4.2.0", default-features = false, features = [
     "v1",
     "zbus-secret-service-keyring-store",
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-keyring = { version = "4", default-features = false, features = [
+keyring = { version = "4.2.0", default-features = false, features = [
     "v1",
     "apple-native-keyring-store",
 ] }

@@ -10,24 +10,24 @@ name = "gilvave_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
+base64 = "0.23.1"
+include_dir = "0.7.4"
+rusqlite_migration = { version = "2.7.0", features = ["from-directory"] }
+tauri-plugin-tracing = "0.3.4"
+
+futures-util.workspace = true
+rayon.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
 tauri = { workspace = true, features = ["devtools", "tray-icon"] }
 tauri-plugin-opener.workspace = true
-reqwest.workspace = true
-futures-util.workspace = true
-tauri-plugin-tracing = "0.3.4"
-serde.workspace = true
-serde_json.workspace = true
-tokio.workspace = true
 time.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-rusqlite.workspace = true
-rayon.workspace = true
-base64 = "0.22"
-rusqlite_migration = { version = "2.6", features = ["from-directory"] }
-include_dir = "0.7"
 
 gilvave-core = { path = "../core" }

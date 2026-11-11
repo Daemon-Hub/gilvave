@@ -126,11 +126,11 @@ pub fn collect_desktop() -> DeviceInfo {
     // host_name() → "DESKTOP-7K2F9A" / hostname машины
     // cpu_arch()  → "x86_64" / "aarch64"
     DeviceInfo {
-        platform: System::name(),
-        os_version: System::os_version(),
+        platform: System::name().ok(),
+        os_version: System::os_version().ok(),
         client: "desktop".into(),
         client_version: DeviceInfo::client_version(),
-        device_name: System::host_name(),
+        device_name: System::host_name().ok(),
         browser: None,
         browser_version: None,
     }
