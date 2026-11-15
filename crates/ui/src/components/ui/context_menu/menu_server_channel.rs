@@ -1,10 +1,10 @@
 //! Contextual menu items for server icons and channel tree items.
 
-use std::rc::Rc;
-use web_sys::Element;
 use super::clipboard::copy_to_clipboard;
 use super::types::ContextMenuItem;
 use crate::components::common::{ServerContext, UiModalContext, UserProfileContext};
+use std::rc::Rc;
+use web_sys::Element;
 
 #[allow(dead_code)]
 pub(crate) fn build_channel_menu(ch_el: &Element) -> Vec<ContextMenuItem> {
@@ -45,29 +45,26 @@ pub(crate) fn build_server_menu(
     let mut items = Vec::new();
     let s_id = s_el.get_attribute("data-server-id").unwrap_or_default();
 
-    let is_server_owner = if let Ok(s_id_typed) =
-        gilvave_core::ids::ServerId::try_from(s_id.as_str())
-    {
-        let from_list = server_ctx.is_some_and(|sc| {
-            sc.list
-                .with(|list| list.iter().any(|s| s.id == s_id_typed && s.is_owner))
-        });
-        let from_curr = server_ctx.is_some_and(|sc| {
-            sc.current.with(|curr| {
-                curr.as_ref().is_some_and(|curr| {
-                    curr.id == s_id_typed
-                        && (user_ctx.and_then(|u| u.user_id.get()) == Some(curr.owner_id))
+    let is_server_owner =
+        if let Ok(s_id_typed) = gilvave_core::ids::ServerId::try_from(s_id.as_str()) {
+            let from_list = server_ctx.is_some_and(|sc| {
+                sc.list
+                    .with(|list| list.iter().any(|s| s.id == s_id_typed && s.is_owner))
+            });
+            let from_curr = server_ctx.is_some_and(|sc| {
+                sc.current.with(|curr| {
+                    curr.as_ref().is_some_and(|curr| {
+                        curr.id == s_id_typed
+                            && (user_ctx.and_then(|u| u.user_id.get()) == Some(curr.owner_id))
+                    })
                 })
-            })
-        });
-        from_list || from_curr
-    } else {
-        false
-    };
+            });
+            from_list || from_curr
+        } else {
+            false
+        };
 
-    if is_server_owner
-        && let Some(m_ctx) = modal_ctx
-    {
+    if is_server_owner && let Some(m_ctx) = modal_ctx {
         let open_settings = m_ctx.is_server_settings_open;
         items.push(ContextMenuItem {
             label: "Настройки сервера".to_string(),

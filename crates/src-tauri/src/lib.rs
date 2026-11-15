@@ -38,20 +38,18 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .tooltip("Gilvave")
-        .on_menu_event(|app, event| {
-            match event.id().as_ref() {
-                "open" => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.unminimize();
-                        let _ = window.set_focus();
-                    }
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
                 }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
             }
+            "quit" => {
+                app.exit(0);
+            }
+            _ => {}
         })
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
@@ -118,6 +116,58 @@ pub fn run() {
 
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
             setup_tray(app)?;
+
+            #[cfg(target_os = "windows")]
+            {
+                unsafe {
+                    use windows_sys::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
+                    let id: Vec<u16> = "com.gilvave.client\0".encode_utf16().collect();
+                    let _ = SetCurrentProcessExplicitAppUserModelID(id.as_ptr());
+                }
+
+                std::thread::spawn(|| {
+                    loop {
+                        std::thread::sleep(std::time::Duration::from_millis(200));
+                        unsafe {
+                            use windows_sys::Win32::UI::WindowsAndMessaging::{
+                                EnumWindows, GWL_EXSTYLE, GetWindowLongW, GetWindowTextW, SW_HIDE,
+                                SetWindowLongW, ShowWindow, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+                            };
+                            unsafe extern "system" fn enum_proc(
+                                hwnd: windows_sys::Win32::Foundation::HWND,
+                                _lparam: isize,
+                            ) -> windows_sys::Win32::Foundation::BOOL {
+                                unsafe {
+                                    let mut title: [u16; 256] = [0; 256];
+                                    let len = GetWindowTextW(hwnd, title.as_mut_ptr(), 256);
+                                    if len > 0 {
+                                        let text = String::from_utf16_lossy(&title[..len as usize]);
+                                        let lower = text.to_lowercase();
+                                        if lower.contains("предоставляет доступ")
+                                            || lower.contains("sharing your screen")
+                                            || lower.contains("is sharing")
+                                            || lower.contains("прекратить доступ")
+                                            || lower.contains("127.0.0.1:1420")
+                                        {
+                                            let ex_style = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+                                            if (ex_style & WS_EX_APPWINDOW) != 0
+                                                || (ex_style & WS_EX_TOOLWINDOW) == 0
+                                            {
+                                                let new_style = (ex_style & !WS_EX_APPWINDOW)
+                                                    | WS_EX_TOOLWINDOW;
+                                                SetWindowLongW(hwnd, GWL_EXSTYLE, new_style as i32);
+                                            }
+                                            ShowWindow(hwnd, SW_HIDE);
+                                        }
+                                    }
+                                }
+                                1
+                            }
+                            EnumWindows(Some(enum_proc), 0);
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })

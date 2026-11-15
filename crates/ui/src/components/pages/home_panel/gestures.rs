@@ -1,8 +1,8 @@
 //! Mobile gestures: Android hardware back button handler and touch swipe navigation.
 
-use sycamore::prelude::*;
-use wasm_bindgen::{prelude::Closure, JsCast};
 use gilvave_core::dto::servers::channels::ChannelView;
+use sycamore::prelude::*;
+use wasm_bindgen::{JsCast, prelude::Closure};
 
 use crate::components::common::{
     ChannelContext, CreateServerContext, ServerContext, UiModalContext,
@@ -83,18 +83,20 @@ pub(crate) fn setup_android_back_button(
             // Already at the top-level list: do not consume, allow Android to exit/minimize
             false
         });
-        let on_esc_key = Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
-            if e.key() == "Escape" {
-                if modal_ctx.active_fullscreen_video.with(|v| v.is_some()) {
-                    modal_ctx.active_fullscreen_video.set(None);
-                    return;
+        let on_esc_key =
+            Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
+                if e.key() == "Escape" {
+                    if modal_ctx.active_fullscreen_video.with(|v| v.is_some()) {
+                        modal_ctx.active_fullscreen_video.set(None);
+                        return;
+                    }
+                    if modal_ctx.lightbox_image.with(|img| img.is_some()) {
+                        modal_ctx.lightbox_image.set(None);
+                    }
                 }
-                if modal_ctx.lightbox_image.with(|img| img.is_some()) {
-                    modal_ctx.lightbox_image.set(None);
-                }
-            }
-        });
-        let _ = window.add_event_listener_with_callback("keydown", on_esc_key.as_ref().unchecked_ref());
+            });
+        let _ =
+            window.add_event_listener_with_callback("keydown", on_esc_key.as_ref().unchecked_ref());
         on_esc_key.forget();
 
         let _ = js_sys::Reflect::set(
@@ -110,7 +112,10 @@ pub(crate) fn use_swipe_gestures(
     channel_context: ChannelContext,
     ui_modal_context: UiModalContext,
     server_context: ServerContext,
-) -> (impl Fn(web_sys::TouchEvent) + Copy + 'static, impl Fn(web_sys::TouchEvent) + Copy + 'static) {
+) -> (
+    impl Fn(web_sys::TouchEvent) + Copy + 'static,
+    impl Fn(web_sys::TouchEvent) + Copy + 'static,
+) {
     let last_selected_channel = create_signal::<Option<ChannelView>>(None);
     let last_selected_dm = create_signal::<Option<String>>(None);
 
@@ -169,7 +174,8 @@ pub(crate) fn use_swipe_gestures(
                         if let Some(ch) = last_selected_channel.get_clone() {
                             channel_context.current.set(Some(ch));
                         } else {
-                            let first_text = channel_context.text.with(|list| list.first().cloned());
+                            let first_text =
+                                channel_context.text.with(|list| list.first().cloned());
                             if let Some(ch) = first_text {
                                 channel_context.current.set(Some(ch));
                             }

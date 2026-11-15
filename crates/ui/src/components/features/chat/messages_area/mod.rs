@@ -14,18 +14,14 @@ use self::feed::MessagesFeed;
 use self::header::ChannelHeader;
 use super::chat_input_area::send_channel_message;
 use super::chat_scroll::{
-    determine_channel_target_scroll,
-    execute_initial_scroll_restoration, find_top_visible_message,
-    get_channel_last_read, save_channel_scroll_state,
-    ChannelScrollAnchor,
+    ChannelScrollAnchor, determine_channel_target_scroll, execute_initial_scroll_restoration,
+    find_top_visible_message, get_channel_last_read, save_channel_scroll_state,
 };
 use crate::{
     cache::CacheService,
-    components::common::{
-        ChannelContext, ServerContext, UiModalContext, UserProfileContext,
-    },
+    components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext},
     gateway::{
-        handler::{subscribe_gateway_events, GatewayEvent},
+        handler::{GatewayEvent, subscribe_gateway_events},
         service::WsService,
     },
 };
@@ -152,12 +148,20 @@ pub fn MessagesArea() -> View {
         {
             let el: HtmlElement = node.unchecked_into();
             const SCROLL_THRESHOLD: i32 = 50;
-            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs() <= SCROLL_THRESHOLD;
+            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs()
+                <= SCROLL_THRESHOLD;
             let fits_screen = el.scroll_height() <= el.client_height() + 20;
 
             if is_bottom || fits_screen {
-                if let Some(last_msg) = channel_context.messages.with_untracked(|m| m.last().cloned()) {
-                    save_channel_last_read(prev_id, last_msg.id, last_msg.created_at.unix_timestamp());
+                if let Some(last_msg) = channel_context
+                    .messages
+                    .with_untracked(|m| m.last().cloned())
+                {
+                    save_channel_last_read(
+                        prev_id,
+                        last_msg.id,
+                        last_msg.created_at.unix_timestamp(),
+                    );
                 }
                 save_channel_scroll_state(prev_id, true, None, 0);
             } else {
@@ -197,19 +201,24 @@ pub fn MessagesArea() -> View {
                     });
 
                     if !initial_scroll_performed.get() {
-                        let (target_anchor, marker_id) = determine_channel_target_scroll(
-                            ch.id,
-                            saved,
-                            &cached,
-                        );
+                        let (target_anchor, marker_id) =
+                            determine_channel_target_scroll(ch.id, saved, &cached);
 
                         if saved.is_none() {
                             // Начальный базис для нового канала
                             if let Some(last_msg) = cached.last() {
-                                save_channel_last_read(ch.id, last_msg.id, last_msg.created_at.unix_timestamp());
+                                save_channel_last_read(
+                                    ch.id,
+                                    last_msg.id,
+                                    last_msg.created_at.unix_timestamp(),
+                                );
                             }
                             save_channel_scroll_state(ch.id, true, None, 0);
-                            saved_read_marker.set(cached.last().map(|m| (Some(m.id), Some(m.created_at.unix_timestamp()))));
+                            saved_read_marker.set(
+                                cached
+                                    .last()
+                                    .map(|m| (Some(m.id), Some(m.created_at.unix_timestamp()))),
+                            );
                         }
 
                         unread_marker_id.set(marker_id);
@@ -396,10 +405,19 @@ pub fn MessagesArea() -> View {
                             &all_msgs,
                         );
 
-                        if saved_read_marker.get().is_none() && let Some(last_msg) = all_msgs.last() {
-                            save_channel_last_read(current_ch_id, last_msg.id, last_msg.created_at.unix_timestamp());
+                        if saved_read_marker.get().is_none()
+                            && let Some(last_msg) = all_msgs.last()
+                        {
+                            save_channel_last_read(
+                                current_ch_id,
+                                last_msg.id,
+                                last_msg.created_at.unix_timestamp(),
+                            );
                             save_channel_scroll_state(current_ch_id, true, None, 0);
-                            saved_read_marker.set(Some((Some(last_msg.id), Some(last_msg.created_at.unix_timestamp()))));
+                            saved_read_marker.set(Some((
+                                Some(last_msg.id),
+                                Some(last_msg.created_at.unix_timestamp()),
+                            )));
                         }
 
                         unread_marker_id.set(marker_id);
@@ -548,12 +566,20 @@ pub fn MessagesArea() -> View {
         {
             let el: HtmlElement = node.unchecked_into();
             const SCROLL_THRESHOLD: i32 = 50;
-            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs() <= SCROLL_THRESHOLD;
+            let is_bottom = (el.scroll_height() - el.client_height() - el.scroll_top()).abs()
+                <= SCROLL_THRESHOLD;
             let fits_screen = el.scroll_height() <= el.client_height() + 20;
 
             if is_bottom || fits_screen {
-                if let Some(last_msg) = channel_context.messages.with_untracked(|m| m.last().cloned()) {
-                    save_channel_last_read(ch.id, last_msg.id, last_msg.created_at.unix_timestamp());
+                if let Some(last_msg) = channel_context
+                    .messages
+                    .with_untracked(|m| m.last().cloned())
+                {
+                    save_channel_last_read(
+                        ch.id,
+                        last_msg.id,
+                        last_msg.created_at.unix_timestamp(),
+                    );
                 }
                 save_channel_scroll_state(ch.id, true, None, 0);
             } else {

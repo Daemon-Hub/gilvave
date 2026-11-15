@@ -797,3 +797,116 @@ pub fn VideoIcon() -> View {
         }
     }
 }
+
+#[component]
+pub fn VideoOffIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-video-off",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            path(d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10")
+            line(x1="1", y1="1", x2="23", y2="23")
+        }
+    }
+}
+
+#[component]
+pub fn ScreenShareIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-screen-share",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            rect(x="2", y="3", width="20", height="14", rx="2", ry="2")
+            line(x1="8", y1="21", x2="16", y2="21")
+            line(x1="12", y1="17", x2="12", y2="21")
+            path(d="M17 8l-5-5-5 5")
+            line(x1="12", y1="3", x2="12", y2="13")
+        }
+    }
+}
+
+#[component]
+pub fn ScreenShareOffIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-screen-share-off",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            line(x1="1", y1="1", x2="23", y2="23")
+            path(d="M21 17a2 2 0 0 0 1-1.73V5a2 2 0 0 0-2-2H7")
+            path(d="M2 5v10a2 2 0 0 0 2 2h10")
+            line(x1="8", y1="21", x2="16", y2="21")
+            line(x1="12", y1="17", x2="12", y2="21")
+        }
+    }
+}
+
+#[component]
+pub fn FullscreenIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-fullscreen",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            path(d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3")
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[component]
+pub fn ExitFullscreenIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-exit-fullscreen",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            path(d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3")
+        }
+    }
+}
+
+#[component]
+pub fn PinIcon() -> View {
+    view! {
+        svg(
+            class="ui-icon ui-icon-pin",
+            viewBox="0 0 24 24",
+            fill="none",
+            stroke="currentColor",
+            stroke-width="2.2",
+            stroke-linecap="round",
+            stroke-linejoin="round",
+        ) {
+            line(x1="12", y1="17", x2="12", y2="22")
+            path(d="M5 17h14v-2l-2-3V5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v7l-2 3v2z")
+        }
+    }
+}

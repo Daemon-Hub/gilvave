@@ -45,14 +45,9 @@ pub fn handle_global_context_menu(
 
             // 2. Check if clicked on a user element (member item, avatar, header, friend row)
             if let Ok(Some(user_el)) = el.closest("[data-user-id]") {
-                if let Some(items) = build_user_menu(
-                    &el,
-                    &user_el,
-                    modal_ctx,
-                    channel_ctx,
-                    server_ctx,
-                    user_ctx,
-                ) {
+                if let Some(items) =
+                    build_user_menu(&el, &user_el, modal_ctx, channel_ctx, server_ctx, user_ctx)
+                {
                     menu_ctx.show(x, y, items);
                     return;
                 }

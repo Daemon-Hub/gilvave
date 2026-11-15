@@ -5,7 +5,6 @@ use super::{
     STORAGE_KEY_WINDOWED_MODE,
 };
 
-
 pub fn load_close_to_tray() -> bool {
     if crate::components::common::is_mobile_device() {
         return false;
@@ -87,6 +86,3 @@ pub fn save_windowed_mode(is_windowed: bool) {
         );
     }
 }
-
-
-

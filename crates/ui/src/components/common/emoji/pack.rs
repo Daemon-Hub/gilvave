@@ -22,11 +22,8 @@ pub enum EmojiPack {
 }
 
 /// All selectable emoji packs presented in the appearance settings.
-pub const ALL_EMOJI_PACKS: [EmojiPack; 3] = [
-    EmojiPack::Fluent3D,
-    EmojiPack::Apple,
-    EmojiPack::Noto,
-];
+pub const ALL_EMOJI_PACKS: [EmojiPack; 3] =
+    [EmojiPack::Fluent3D, EmojiPack::Apple, EmojiPack::Noto];
 
 impl EmojiPack {
     /// Returns the unique programmatic identifier for the pack.
@@ -162,13 +159,19 @@ pub fn emoji_to_pack_url(emoji: &str, pack: EmojiPack) -> String {
 
     match pack {
         EmojiPack::Fluent3D => {
-            format!("https://cdn.jsdelivr.net/npm/@lobehub/fluent-emoji-3d@1.1.0/assets/{code}.webp")
+            format!(
+                "https://cdn.jsdelivr.net/npm/@lobehub/fluent-emoji-3d@1.1.0/assets/{code}.webp"
+            )
         }
         EmojiPack::Apple => {
-            format!("https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/{code}.png")
+            format!(
+                "https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/{code}.png"
+            )
         }
         EmojiPack::Noto => {
-            format!("https://cdn.jsdelivr.net/npm/emoji-datasource-google@15.1.2/img/google/64/{code}.png")
+            format!(
+                "https://cdn.jsdelivr.net/npm/emoji-datasource-google@15.1.2/img/google/64/{code}.png"
+            )
         }
         EmojiPack::Twemoji => {
             crate::components::common::emoji::twemoji::emoji_to_twemoji_url(emoji)

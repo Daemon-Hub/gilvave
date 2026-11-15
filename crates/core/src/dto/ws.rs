@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    dto::messages::MessageView,
+    dto::{
+        messages::MessageView,
+        voice::{VoiceParticipantView, VoiceSignalData},
+    },
     ids::{ChannelId, MessageId, ServerId, UserId},
 };
 
@@ -34,11 +37,39 @@ pub enum ServerRecieve {
     UserOffline {
         user_id: UserId,
     },
-    // TODO [WS]: VoiceStateUpdate { channel_id: ChannelId, user_id: UserId, is_muted: bool, is_deafened: bool },
-    // TODO [WS]: VoiceParticipantJoined { channel_id: ChannelId, user_id: UserId, username: String, avatar: String },
-    // TODO [WS]: VoiceParticipantLeft { channel_id: ChannelId, user_id: UserId },
-    // TODO [WS]: VoiceSpeaking { channel_id: ChannelId, user_id: UserId, is_speaking: bool },
-    // TODO [WS]: VoiceSignal { channel_id: ChannelId, sender_id: UserId, data: String } (WebRTC SDP/ICE signaling),
+    VoiceRoomJoined {
+        channel_id: ChannelId,
+        participants: Vec<VoiceParticipantView>,
+    },
+    VoiceParticipantJoined {
+        channel_id: ChannelId,
+        participant: VoiceParticipantView,
+    },
+    VoiceParticipantLeft {
+        channel_id: ChannelId,
+        user_id: UserId,
+    },
+    VoiceStateUpdate {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_muted: bool,
+        is_deafened: bool,
+    },
+    VoiceSignal {
+        channel_id: ChannelId,
+        signal: VoiceSignalData,
+    },
+    VoiceSpeaking {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_speaking: bool,
+    },
+    VoiceVideoState {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_camera_on: bool,
+        is_screen_sharing: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,8 +114,28 @@ pub enum ServerSend {
         #[serde(with = "time::serde::rfc3339")]
         timestamp: time::OffsetDateTime,
     },
-    // TODO [WS]: JoinVoiceChannel { channel_id: ChannelId },
-    // TODO [WS]: LeftVoiceChannel { channel_id: ChannelId },
-    // TODO [WS]: VoiceStateUpdate { channel_id: ChannelId, is_muted: bool, is_deafened: bool },
-    // TODO [WS]: VoiceSignal { channel_id: ChannelId, target_id: Option<UserId>, data: String } (WebRTC SDP/ICE signaling),
+    JoinVoiceChannel {
+        channel_id: ChannelId,
+    },
+    LeftVoiceChannel {
+        channel_id: ChannelId,
+    },
+    VoiceStateUpdate {
+        channel_id: ChannelId,
+        is_muted: bool,
+        is_deafened: bool,
+    },
+    VoiceSignal {
+        channel_id: ChannelId,
+        signal: VoiceSignalData,
+    },
+    VoiceSpeaking {
+        channel_id: ChannelId,
+        is_speaking: bool,
+    },
+    VoiceVideoState {
+        channel_id: ChannelId,
+        is_camera_on: bool,
+        is_screen_sharing: bool,
+    },
 }

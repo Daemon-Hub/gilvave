@@ -1,11 +1,8 @@
 //! Blocked users management tab with unblock actions.
 
-use sycamore::prelude::*;
-use gilvave_core::{
-    dto::users::friends::BlockedUserView,
-    ids::UserId,
-};
 use crate::components::ui::icons::{BanIcon, SearchIcon};
+use gilvave_core::{dto::users::friends::BlockedUserView, ids::UserId};
+use sycamore::prelude::*;
 
 pub(crate) fn view_blocked<F>(
     blocked_signal: Signal<Vec<BlockedUserView>>,
@@ -129,5 +126,3 @@ where
         }
     }
 }
-
-

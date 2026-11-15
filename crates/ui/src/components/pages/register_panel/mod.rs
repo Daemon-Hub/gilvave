@@ -6,8 +6,8 @@ mod waiting_confirmation;
 pub(crate) use register_form::RegisterFormStage;
 pub(crate) use waiting_confirmation::WaitingConfirmationStage;
 
-use std::rc::Rc;
 use serde::Deserialize;
+use std::rc::Rc;
 use sycamore::{
     prelude::*,
     web::{console_error, console_log, events::SubmitEvent},
@@ -15,7 +15,7 @@ use sycamore::{
 use validator::Validate;
 
 use crate::{
-    components::common::{classes, ActiveScreen, ScreenWrapper},
+    components::common::{ActiveScreen, ScreenWrapper, classes},
     http::api::Api,
     utils::invoke_command,
 };
@@ -153,7 +153,7 @@ pub fn RegisterPanel(props: RegisterFormProps) -> View {
                                     let device_info =
                                         match invoke_command(CommandArgs::GetDeviceInfo.to_json())
                                             .await
-                                         {
+                                        {
                                             CommandResult::Ok(CommandResponse::GetDeviceInfo(
                                                 info,
                                             )) => info.to_json(),

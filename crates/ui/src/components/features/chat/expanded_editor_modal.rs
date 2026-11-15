@@ -6,8 +6,8 @@ use web_sys::{Event, HtmlElement, SubmitEvent};
 
 use super::chat_input_area::{EmojiPicker, send_channel_message};
 use crate::components::common::{
-    ChannelContext, ServerContext, UiModalContext, UserProfileContext,
-    insert_text_into_editor, serialize_contenteditable, sync_editor_content,
+    ChannelContext, ServerContext, UiModalContext, UserProfileContext, insert_text_into_editor,
+    serialize_contenteditable, sync_editor_content,
 };
 
 #[component]
@@ -48,7 +48,10 @@ pub fn ExpandedMessageEditorModal() -> View {
     });
 
     let is_over_limit = create_memo(move || {
-        draft_message.with(|msg| gilvave_core::validation::count_typed_chars(msg) > gilvave_core::validation::MAX_MESSAGE_CHARS)
+        draft_message.with(|msg| {
+            gilvave_core::validation::count_typed_chars(msg)
+                > gilvave_core::validation::MAX_MESSAGE_CHARS
+        })
     });
 
     let counter_class = move || {
@@ -103,7 +106,10 @@ pub fn ExpandedMessageEditorModal() -> View {
             let (is_empty, is_too_long) = draft_message.with(|msg| {
                 let trimmed = msg.trim();
                 let count = gilvave_core::validation::count_typed_chars(trimmed);
-                (trimmed.is_empty(), count > gilvave_core::validation::MAX_MESSAGE_CHARS)
+                (
+                    trimmed.is_empty(),
+                    count > gilvave_core::validation::MAX_MESSAGE_CHARS,
+                )
             });
             if is_too_long || (is_empty && !has_attachments) {
                 return;
@@ -184,7 +190,9 @@ pub fn ExpandedMessageEditorModal() -> View {
             return;
         }
         let att = crate::components::common::media::PendingAttachment::new(file);
-        modal_context.pending_attachments.update(|list| list.push(att));
+        modal_context
+            .pending_attachments
+            .update(|list| list.push(att));
     };
 
     let on_expanded_paste = move |event: web_sys::Event| {

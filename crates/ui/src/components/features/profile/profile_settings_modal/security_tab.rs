@@ -1,7 +1,7 @@
 //! Security tab with password change form and session shortcuts.
 
-use sycamore::prelude::*;
 use crate::components::ui::icons::{LogOutIcon, MonitorIcon};
+use sycamore::prelude::*;
 
 #[component(inline_props)]
 pub fn SecurityTab<F1, F2, F3, F4>(

@@ -141,4 +141,3 @@ pub(crate) fn MenuIcon(name: &'static str) -> View {
         },
     }
 }
-

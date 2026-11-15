@@ -5,6 +5,7 @@ pub mod gateway;
 pub mod http;
 pub mod security;
 pub mod utils;
+pub mod voice;
 
 use app::App;
 

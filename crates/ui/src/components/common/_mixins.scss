@@ -63,10 +63,12 @@
 @mixin scrollbar($width: 8px, $thumb-color: $color-bg-panel-darkest, $track-color: transparent) {
     &::-webkit-scrollbar {
         width: $width;
+        height: $width;
     }
 
     &::-webkit-scrollbar-track {
         background: $track-color;
+        border-radius: calc($width / 2);
     }
 
     &::-webkit-scrollbar-thumb {
@@ -74,7 +76,7 @@
         border-radius: calc($width / 2);
 
         &:hover {
-            background: $thumb-color;
+            background: color-mix(in srgb, $thumb-color, #fff 15%);
         }
     }
 

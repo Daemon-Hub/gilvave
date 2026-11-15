@@ -6,8 +6,8 @@ mod session_card;
 pub use security_tip::{EmptySessionsCard, SecurityTipCard, TerminateConfirmBanner};
 pub use session_card::{CurrentSessionCard, OtherSessionCard};
 
-use std::rc::Rc;
 use gilvave_core::dto::users::SessionView;
+use std::rc::Rc;
 use sycamore::{futures::spawn_local_scoped, prelude::*};
 
 use crate::{

@@ -1,7 +1,7 @@
 //! LocalStorage persistence and synchronization for owned server IDs.
 
-use std::collections::HashSet;
 use gilvave_core::ids::ServerId;
+use std::collections::HashSet;
 
 #[allow(dead_code)]
 pub const OWNED_SERVERS_KEY: &str = "gilvave_owned_servers";

@@ -7,9 +7,7 @@ use crate::{
             UserProfileContext,
         },
         features::{
-            chat::messages_area::ChatInputArea,
-            friends::FriendsPanel,
-            servers::open_join_modal,
+            chat::messages_area::ChatInputArea, friends::FriendsPanel, servers::open_join_modal,
         },
         ui::icons::{ArrowLeftIcon, ArrowRightIcon, ChatBubbleIcon, GearIcon, GlobeIcon, PlusIcon},
     },

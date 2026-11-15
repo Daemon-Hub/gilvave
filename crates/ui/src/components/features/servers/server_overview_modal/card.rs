@@ -1,8 +1,8 @@
 //! Grid items for the server overview modal (server cards and add tile).
 
-use sycamore::prelude::*;
-use gilvave_core::dto::servers::ServerSmallPart;
 use crate::components::ui::icons::PlusIcon;
+use gilvave_core::dto::servers::ServerSmallPart;
+use sycamore::prelude::*;
 
 pub fn get_server_initials(name: &str) -> String {
     let words: Vec<&str> = name.split_whitespace().collect();
@@ -54,7 +54,10 @@ where
         format!("server-overview-icon-box {grad_cls}")
     };
 
-    let card_class = format!("server-overview-item{}", if is_active { " active" } else { "" });
+    let card_class = format!(
+        "server-overview-item{}",
+        if is_active { " active" } else { "" }
+    );
 
     view! {
         div(

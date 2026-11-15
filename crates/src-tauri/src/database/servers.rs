@@ -1,18 +1,19 @@
 //! Server and channel caching, retrieval, and synchronization with SQLite.
 
-use std::collections::HashSet;
-#[cfg(not(target_arch = "wasm32"))]
-use rayon::prelude::*;
 use gilvave_core::{
     dto::servers::{ChannelType, ChannelView, ServerSmallPart},
     ids::{ChannelId, ServerId},
     uuid::Uuid,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use rayon::prelude::*;
 use rusqlite::{Connection, params};
+use std::collections::HashSet;
 
 pub fn get_cached_servers(conn: &Connection) -> rusqlite::Result<Vec<ServerSmallPart>> {
-    let mut stmt =
-        conn.prepare("SELECT id, name, icon_url, is_owner FROM servers ORDER BY position ASC, rowid ASC")?;
+    let mut stmt = conn.prepare(
+        "SELECT id, name, icon_url, is_owner FROM servers ORDER BY position ASC, rowid ASC",
+    )?;
     let rows = stmt.query_map([], |row| {
         let id_str: String = row.get(0)?;
         let name: String = row.get(1)?;

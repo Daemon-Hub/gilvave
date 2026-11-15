@@ -34,8 +34,16 @@ pub fn paste_into_target_element(
     use wasm_bindgen::JsCast;
     if let Ok(input) = el.clone().dyn_into::<web_sys::HtmlInputElement>() {
         let val = input.value();
-        let start = input.selection_start().ok().flatten().unwrap_or(val.len() as u32) as usize;
-        let end = input.selection_end().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let start = input
+            .selection_start()
+            .ok()
+            .flatten()
+            .unwrap_or(val.len() as u32) as usize;
+        let end = input
+            .selection_end()
+            .ok()
+            .flatten()
+            .unwrap_or(val.len() as u32) as usize;
         let mut new_val = String::with_capacity(val.len() + text.len());
         let start_clamped = start.min(val.len());
         let end_clamped = end.min(val.len()).max(start_clamped);
@@ -48,8 +56,16 @@ pub fn paste_into_target_element(
         let _ = input.dispatch_event(&web_sys::Event::new("input").unwrap());
     } else if let Ok(textarea) = el.clone().dyn_into::<web_sys::HtmlTextAreaElement>() {
         let val = textarea.value();
-        let start = textarea.selection_start().ok().flatten().unwrap_or(val.len() as u32) as usize;
-        let end = textarea.selection_end().ok().flatten().unwrap_or(val.len() as u32) as usize;
+        let start = textarea
+            .selection_start()
+            .ok()
+            .flatten()
+            .unwrap_or(val.len() as u32) as usize;
+        let end = textarea
+            .selection_end()
+            .ok()
+            .flatten()
+            .unwrap_or(val.len() as u32) as usize;
         let mut new_val = String::with_capacity(val.len() + text.len());
         let start_clamped = start.min(val.len());
         let end_clamped = end.min(val.len()).max(start_clamped);
@@ -193,5 +209,3 @@ pub fn show_toast(modal_ctx: &UiModalContext, is_err: bool, msg: String) {
         toast_sig.set(None);
     });
 }
-
-

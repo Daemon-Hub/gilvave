@@ -309,18 +309,32 @@ pub async fn handle_command(
             #[cfg(target_os = "android")]
             let primary_dir = get_android_downloads_dir();
 
-            if !file_path.is_file() || std::fs::metadata(&file_path).map(|m| m.len() == 0).unwrap_or(true) {
+            if !file_path.is_file()
+                || std::fs::metadata(&file_path)
+                    .map(|m| m.len() == 0)
+                    .unwrap_or(true)
+            {
                 let dl_file = primary_dir.join(&effective_filename);
                 let dl_fallback = primary_dir.join(&filename);
-                if dl_file.is_file() && std::fs::metadata(&dl_file).map(|m| m.len() > 0).unwrap_or(false) {
+                if dl_file.is_file()
+                    && std::fs::metadata(&dl_file)
+                        .map(|m| m.len() > 0)
+                        .unwrap_or(false)
+                {
                     let _ = std::fs::copy(&dl_file, &file_path);
-                } else if dl_fallback.is_file() && std::fs::metadata(&dl_fallback).map(|m| m.len() > 0).unwrap_or(false) {
+                } else if dl_fallback.is_file()
+                    && std::fs::metadata(&dl_fallback)
+                        .map(|m| m.len() > 0)
+                        .unwrap_or(false)
+                {
                     let _ = std::fs::copy(&dl_fallback, &file_path);
                 } else if let Ok(entries) = std::fs::read_dir(&media_dir) {
                     for entry in entries.flatten() {
                         let path = entry.path();
                         if path.is_file()
-                            && std::fs::metadata(&path).map(|m| m.len() > 0).unwrap_or(false)
+                            && std::fs::metadata(&path)
+                                .map(|m| m.len() > 0)
+                                .unwrap_or(false)
                             && let Some(name_os) = path.file_name().and_then(|n| n.to_str())
                             && (name_os == file_id || name_os.starts_with(&format!("{file_id}_")))
                         {
@@ -331,7 +345,11 @@ pub async fn handle_command(
                 }
             }
 
-            if !file_path.is_file() || std::fs::metadata(&file_path).map(|m| m.len() == 0).unwrap_or(true) {
+            if !file_path.is_file()
+                || std::fs::metadata(&file_path)
+                    .map(|m| m.len() == 0)
+                    .unwrap_or(true)
+            {
                 let token = {
                     let db_lock = db.lock().await;
                     if let Some(ref conn) = *db_lock {
@@ -347,14 +365,18 @@ pub async fn handle_command(
             }
 
             if file_path.is_file()
-                && std::fs::metadata(&file_path).map(|m| m.len() > 0).unwrap_or(false)
+                && std::fs::metadata(&file_path)
+                    .map(|m| m.len() > 0)
+                    .unwrap_or(false)
                 && let Ok(bytes) = std::fs::read(&file_path)
             {
-                let (file_type, detected_mime) = gilvave_core::files::detect_file_type(&effective_filename, &bytes);
+                let (file_type, detected_mime) =
+                    gilvave_core::files::detect_file_type(&effective_filename, &bytes);
                 let mime = if detected_mime != "application/octet-stream" {
                     detected_mime
                 } else {
-                    let ext = gilvave_core::files::get_file_extension(&effective_filename, "").to_ascii_lowercase();
+                    let ext = gilvave_core::files::get_file_extension(&effective_filename, "")
+                        .to_ascii_lowercase();
                     match ext.as_str() {
                         "png" => "image/png",
                         "jpg" | "jpeg" | "jfif" => "image/jpeg",
@@ -375,7 +397,9 @@ pub async fn handle_command(
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
                 let data_url = format!("data:{mime};base64,{b64}");
-                return Ok(CommandResult::Ok(CommandResponse::GetCachedMedia(Some(data_url))));
+                return Ok(CommandResult::Ok(CommandResponse::GetCachedMedia(Some(
+                    data_url,
+                ))));
             }
 
             CommandResult::Ok(CommandResponse::GetCachedMedia(None))
@@ -410,7 +434,8 @@ pub async fn handle_command(
                 }
             };
 
-            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await {
+            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await
+            {
                 return Ok(CommandResult::Error(ErrorInfo::from_code(
                     ErrorCode::CommandExecutionFailed,
                     format!("Failed to open file: {e}"),
@@ -423,7 +448,11 @@ pub async fn handle_command(
 
             use tauri_plugin_opener::OpenerExt;
             let path_str = file_path.display().to_string();
-            let opened = window.app_handle().opener().open_path(&path_str, None::<&str>).is_ok();
+            let opened = window
+                .app_handle()
+                .opener()
+                .open_path(&path_str, None::<&str>)
+                .is_ok();
             if !opened {
                 tracing::warn!("opener open_path failed, using system fallback");
                 #[cfg(target_os = "windows")]
@@ -437,9 +466,7 @@ pub async fn handle_command(
                 }
                 #[cfg(target_os = "macos")]
                 {
-                    let _ = std::process::Command::new("open")
-                        .arg(&path_str)
-                        .spawn();
+                    let _ = std::process::Command::new("open").arg(&path_str).spawn();
                 }
                 #[cfg(all(unix, not(target_os = "macos"), not(target_os = "android")))]
                 {
@@ -480,7 +507,8 @@ pub async fn handle_command(
                 }
             };
 
-            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await {
+            if let Err(e) = ensure_file_downloaded(&file_path, &file_id, download_url, &token).await
+            {
                 return Ok(CommandResult::Error(ErrorInfo::from_code(
                     ErrorCode::CommandExecutionFailed,
                     format!("Failed to save to downloads: {e}"),
@@ -491,7 +519,9 @@ pub async fn handle_command(
                 let _ = std::fs::copy(&file_path, &cached_path);
             }
 
-            CommandResult::Ok(CommandResponse::SaveFileToDownloads(file_path.display().to_string()))
+            CommandResult::Ok(CommandResponse::SaveFileToDownloads(
+                file_path.display().to_string(),
+            ))
         }
     })
 }
@@ -507,7 +537,11 @@ fn get_media_cache_dir(window: &WebviewWindow) -> std::path::PathBuf {
     media_dir
 }
 
-fn get_cache_file_path(media_dir: &std::path::Path, file_id: &str, filename: &str) -> std::path::PathBuf {
+fn get_cache_file_path(
+    media_dir: &std::path::Path,
+    file_id: &str,
+    filename: &str,
+) -> std::path::PathBuf {
     let safe_name: String = filename
         .chars()
         .filter(|c| c.is_alphanumeric() || matches!(c, '.' | '_' | '-'))
@@ -526,10 +560,14 @@ fn get_desktop_downloads_dir(window: &tauri::WebviewWindow) -> std::path::PathBu
         return dl.join("Gilvave");
     }
     if let Ok(userprofile) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(userprofile).join("Downloads").join("Gilvave");
+        return std::path::PathBuf::from(userprofile)
+            .join("Downloads")
+            .join("Gilvave");
     }
     if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home).join("Downloads").join("Gilvave");
+        return std::path::PathBuf::from(home)
+            .join("Downloads")
+            .join("Gilvave");
     }
     std::env::temp_dir().join("Gilvave").join("Downloads")
 }
@@ -551,14 +589,17 @@ fn get_android_downloads_dir() -> std::path::PathBuf {
     }
 }
 
-
 async fn ensure_file_downloaded(
     target_path: &std::path::Path,
     file_id: &str,
     download_url: Option<String>,
     token: &str,
 ) -> Result<(), String> {
-    if target_path.is_file() && std::fs::metadata(target_path).map(|m| m.len() > 0).unwrap_or(false) {
+    if target_path.is_file()
+        && std::fs::metadata(target_path)
+            .map(|m| m.len() > 0)
+            .unwrap_or(false)
+    {
         return Ok(());
     }
 
@@ -570,13 +611,25 @@ async fn ensure_file_downloaded(
     let url = if raw_url.starts_with("http://") || raw_url.starts_with("https://") {
         raw_url
     } else if let Some(fid) = raw_url.strip_prefix("file:") {
-        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+        format!(
+            "{}/files/{}",
+            gilvave_core::settings::BASE_HTTP_URL,
+            fid.trim()
+        )
     } else if let Some(fid) = raw_url.strip_prefix("file_id:") {
-        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid.trim())
+        format!(
+            "{}/files/{}",
+            gilvave_core::settings::BASE_HTTP_URL,
+            fid.trim()
+        )
     } else if raw_url.starts_with('/') {
         format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, raw_url)
     } else if !file_id.is_empty() {
-        format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id)
+        format!(
+            "{}/files/{}",
+            gilvave_core::settings::BASE_HTTP_URL,
+            file_id
+        )
     } else {
         raw_url
     };
@@ -588,7 +641,11 @@ async fn ensure_file_downloaded(
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
     let canonical_url = if !file_id.is_empty() {
-        Some(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, file_id))
+        Some(format!(
+            "{}/files/{}",
+            gilvave_core::settings::BASE_HTTP_URL,
+            file_id
+        ))
     } else {
         None
     };
@@ -626,7 +683,10 @@ async fn ensure_file_downloaded(
     use futures_util::StreamExt;
     use std::io::Write;
 
-    let filename = target_path.file_name().and_then(|n| n.to_str()).unwrap_or("file");
+    let filename = target_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file");
     let temp_path = target_path.with_file_name(format!(".tmp_{}_{}", file_id, filename));
     let mut file = std::fs::File::create(&temp_path)
         .map_err(|e| format!("Failed to create temp file: {e}"))?;

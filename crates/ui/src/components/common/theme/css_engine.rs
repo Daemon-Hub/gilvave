@@ -118,5 +118,3 @@ pub fn download_json_file(filename: &str, content: &str) {
         }
     }
 }
-
-

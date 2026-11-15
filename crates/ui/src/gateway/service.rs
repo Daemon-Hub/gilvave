@@ -92,21 +92,114 @@ impl WsService {
 
     // ─── VOICE CALL SIGNALING (WS) ───────────────────────────────────────────
 
-    // TODO [WS]: Отправка ServerSend::JoinVoiceChannel { channel_id }
-    // Оповещает шлюз о присоединении пользователя к голосовому каналу
-    // pub async fn join_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo>
+    pub async fn join_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] join_voice_channel: channel_id={channel_id}").into(),
+        );
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::JoinVoiceChannel { channel_id })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
 
-    // TODO [WS]: Отправка ServerSend::LeftVoiceChannel { channel_id }
-    // Оповещает шлюз об отключении пользователя от голосового канала
-    // pub async fn left_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo>
+    pub async fn left_voice_channel(channel_id: ChannelId) -> Result<(), ErrorInfo> {
+        web_sys::console::log_1(
+            &format!("[WS SERVICE] left_voice_channel: channel_id={channel_id}").into(),
+        );
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::LeftVoiceChannel { channel_id })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
 
-    // TODO [WS]: Отправка ServerSend::VoiceStateUpdate { channel_id, is_muted, is_deafened }
-    // Синхронизация статуса микрофона / звука со всеми клиентами комнаты в реальном времени
-    // pub async fn update_voice_state(channel_id: ChannelId, is_muted: bool, is_deafened: bool) -> Result<(), ErrorInfo>
+    pub async fn update_voice_state(
+        channel_id: ChannelId,
+        is_muted: bool,
+        is_deafened: bool,
+    ) -> Result<(), ErrorInfo> {
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::VoiceStateUpdate {
+                    channel_id,
+                    is_muted,
+                    is_deafened,
+                })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
 
-    // TODO [WS]: Отправка ServerSend::VoiceSignal { channel_id, data }
-    // Обмен сигнальными сообщениями WebRTC (SDP Offer, SDP Answer, ICE Candidates) через WebSocket
-    // pub async fn send_voice_signal(channel_id: ChannelId, data: String) -> Result<(), ErrorInfo>
+    pub async fn send_voice_signal(
+        channel_id: ChannelId,
+        signal: gilvave_core::dto::voice::VoiceSignalData,
+    ) -> Result<(), ErrorInfo> {
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::VoiceSignal { channel_id, signal })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
+
+    pub async fn send_voice_speaking(
+        channel_id: ChannelId,
+        is_speaking: bool,
+    ) -> Result<(), ErrorInfo> {
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::VoiceSpeaking {
+                    channel_id,
+                    is_speaking,
+                })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
+
+    pub async fn update_voice_video_state(
+        channel_id: ChannelId,
+        is_camera_on: bool,
+        is_screen_sharing: bool,
+    ) -> Result<(), ErrorInfo> {
+        let sender_ptr = SENDER.lock().await;
+        match sender_ptr.as_ref() {
+            Some(sender) => sender
+                .unbounded_send(ServerSend::VoiceVideoState {
+                    channel_id,
+                    is_camera_on,
+                    is_screen_sharing,
+                })
+                .map_err(|e| ErrorInfo::from_code(ErrorCode::GatewaySendFailed, e.to_string())),
+            None => Err(ErrorInfo::from_code(
+                ErrorCode::GatewayNotInitialized,
+                "WebSocket sender not initialized".to_string(),
+            )),
+        }
+    }
 
     pub async fn message_create(
         channel_id: ChannelId,
@@ -265,6 +358,8 @@ impl WsService {
         }
 
         wasm_bindgen_futures::spawn_local(async {
+            let mut retry_delay_secs = 2u64;
+
             loop {
                 web_sys::console::log_1(&"[WS SERVICE] listen_web_socket loop start".into());
 
@@ -289,6 +384,7 @@ impl WsService {
                 web_sys::console::log_1(&format!("[WS SERVICE] connecting to {ws_url}").into());
                 match WsMeta::connect(&ws_url, None).await {
                     Ok((_meta, ws_stream)) => {
+                        retry_delay_secs = 2;
                         web_sys::console::log_1(&"[WS SERVICE] connected successfully!".into());
                         dispatch_gateway_event(GatewayEvent::Connected);
                         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
@@ -383,9 +479,16 @@ impl WsService {
                     Err(e) => {
                         dispatch_gateway_event(GatewayEvent::Disconnected);
                         web_sys::console::error_1(
-                            &format!("[WS SERVICE] WebSocket connection error: {e:?}").into(),
+                            &format!(
+                                "[WS SERVICE] WebSocket connection error: {e:?}. Retrying in {retry_delay_secs}s..."
+                            )
+                            .into(),
                         );
-                        gloo_timers::future::sleep(core::time::Duration::from_secs(3)).await;
+                        gloo_timers::future::sleep(core::time::Duration::from_secs(
+                            retry_delay_secs,
+                        ))
+                        .await;
+                        retry_delay_secs = (retry_delay_secs * 2).min(15);
                         continue;
                     }
                 }

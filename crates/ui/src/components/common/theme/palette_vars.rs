@@ -1,8 +1,8 @@
 //! Automatic derivation of 120+ CSS custom properties from a custom theme palette.
 
-use std::collections::BTreeMap;
 use super::css_engine::{darken_color, is_allowed_css_var, is_safe_css_value, with_alpha};
 use super::custom_theme::ThemePalette;
+use std::collections::BTreeMap;
 
 pub(crate) fn build_palette_variable_map(
     palette: &ThemePalette,

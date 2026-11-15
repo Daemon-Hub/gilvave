@@ -1,8 +1,8 @@
 //! Email confirmation waiting stage with radar pulse animation and manual verification.
 
+use crate::components::ui::icons::{ArrowLeftIcon, CheckIcon, MailIcon};
 use std::rc::Rc;
 use sycamore::prelude::*;
-use crate::components::ui::icons::{ArrowLeftIcon, CheckIcon, MailIcon};
 
 #[derive(Props)]
 pub(crate) struct WaitingConfirmationProps {

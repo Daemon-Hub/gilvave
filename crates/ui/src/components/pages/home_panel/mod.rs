@@ -24,9 +24,10 @@ use crate::{
         common::{
             AppTheme, ChannelContext, CreateServerContext, CreateServerOrigin, CustomTheme,
             EmojiPack, HomeTab, ModalView, OverviewTab, ScreenWrapper, ServerContext,
-            UiModalContext, UserProfileContext, classes, is_mobile_device, load_close_to_tray,
-            load_show_greeting, load_show_quick_actions, load_windowed_mode, save_close_to_tray,
-            save_show_greeting, save_show_quick_actions, save_windowed_mode,
+            UiModalContext, UserProfileContext, VoiceConnectionStatus, VoiceContext, classes,
+            is_mobile_device, load_close_to_tray, load_show_greeting, load_show_quick_actions,
+            load_windowed_mode, save_close_to_tray, save_show_greeting, save_show_quick_actions,
+            save_windowed_mode,
         },
         features::{
             channels::{
@@ -175,6 +176,37 @@ pub fn HomePanel() -> View {
     };
     provide_context(channel_context);
 
+    let cached_codec = web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .and_then(|s| s.get_item("gilvave_video_codec").ok().flatten())
+        .map(|val| match val.as_str() {
+            "VP8" => gilvave_core::dto::voice::VideoCodecPreference::Vp8,
+            "H264" => gilvave_core::dto::voice::VideoCodecPreference::H264,
+            "VP9" => gilvave_core::dto::voice::VideoCodecPreference::Vp9,
+            "AV1" => gilvave_core::dto::voice::VideoCodecPreference::Av1,
+            _ => gilvave_core::dto::voice::VideoCodecPreference::Auto,
+        })
+        .unwrap_or_default();
+
+    let voice_context = VoiceContext {
+        current_channel_id: create_signal(None),
+        connection_status: create_signal(VoiceConnectionStatus::Disconnected),
+        participants: create_signal(Vec::new()),
+        is_speaking: create_signal(false),
+        is_camera_on: create_signal(false),
+        is_screen_sharing: create_signal(false),
+        video_codec_preference: create_signal(cached_codec),
+        local_camera_stream: create_signal(None),
+        local_screen_stream: create_signal(None),
+        remote_video_streams: create_signal(std::collections::HashMap::new()),
+        remote_screen_streams: create_signal(std::collections::HashMap::new()),
+        pinned_user_id: create_signal(None),
+        is_focus_mode: create_signal(false),
+        channel_participants: create_signal(std::collections::HashMap::new()),
+    };
+    provide_context(voice_context);
+
     let mut ws_started = false;
     create_effect(move || {
         if screen_wrapper.is_home() && !ws_started {
@@ -276,6 +308,159 @@ pub fn HomePanel() -> View {
                         crate::gateway::handler::GatewayEvent::UserOffline { user_id } => {
                             server_context.online_users.update(|set| {
                                 set.remove(&user_id);
+                            });
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceRoomJoined {
+                            channel_id,
+                            participants,
+                        } => {
+                            voice_context.channel_participants.update(|map| {
+                                map.insert(channel_id, participants.clone());
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.set(participants);
+                                voice_context
+                                    .connection_status
+                                    .set(VoiceConnectionStatus::Connected);
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceParticipantJoined {
+                            channel_id,
+                            participant,
+                        } => {
+                            voice_context.channel_participants.update(|map| {
+                                let list = map.entry(channel_id).or_default();
+                                list.retain(|p| p.user_id != participant.user_id);
+                                list.push(participant.clone());
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.update(|list| {
+                                    list.retain(|p| p.user_id != participant.user_id);
+                                    list.push(participant);
+                                });
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceParticipantLeft {
+                            channel_id,
+                            user_id,
+                        } => {
+                            voice_context.channel_participants.update(|map| {
+                                if let Some(list) = map.get_mut(&channel_id) {
+                                    list.retain(|p| p.user_id != user_id);
+                                }
+                            });
+                            voice_context.remote_video_streams.update(|map| {
+                                map.remove(&user_id);
+                            });
+                            voice_context.remote_screen_streams.update(|map| {
+                                map.remove(&user_id);
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.update(|list| {
+                                    list.retain(|p| p.user_id != user_id);
+                                });
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceStateUpdate {
+                            channel_id,
+                            user_id,
+                            is_muted,
+                            is_deafened,
+                        } => {
+                            voice_context.channel_participants.update(|map| {
+                                if let Some(list) = map.get_mut(&channel_id)
+                                    && let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                {
+                                    p.is_muted = is_muted;
+                                    p.is_deafened = is_deafened;
+                                }
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.update(|list| {
+                                    if let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                    {
+                                        p.is_muted = is_muted;
+                                        p.is_deafened = is_deafened;
+                                    }
+                                });
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceSpeaking {
+                            channel_id,
+                            user_id,
+                            is_speaking,
+                        } => {
+                            voice_context.channel_participants.update(|map| {
+                                if let Some(list) = map.get_mut(&channel_id)
+                                    && let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                {
+                                    p.is_speaking = is_speaking;
+                                }
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.update(|list| {
+                                    if let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                    {
+                                        p.is_speaking = is_speaking;
+                                    }
+                                });
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceVideoState {
+                            channel_id,
+                            user_id,
+                            is_camera_on,
+                            is_screen_sharing,
+                        } => {
+                            if !is_camera_on {
+                                voice_context.remote_video_streams.update(|map| {
+                                    map.remove(&user_id);
+                                });
+                            }
+                            if !is_screen_sharing {
+                                voice_context.remote_screen_streams.update(|map| {
+                                    map.remove(&user_id);
+                                });
+                            }
+                            voice_context.channel_participants.update(|map| {
+                                if let Some(list) = map.get_mut(&channel_id)
+                                    && let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                {
+                                    p.is_camera_on = is_camera_on;
+                                    p.is_screen_sharing = is_screen_sharing;
+                                }
+                            });
+                            if voice_context.current_channel_id.get() == Some(channel_id) {
+                                voice_context.participants.update(|list| {
+                                    if let Some(p) = list.iter_mut().find(|p| p.user_id == user_id)
+                                    {
+                                        p.is_camera_on = is_camera_on;
+                                        p.is_screen_sharing = is_screen_sharing;
+                                    }
+                                });
+
+                                if is_camera_on || is_screen_sharing {
+                                    crate::voice::VoiceManager::try_match_pending_video_tracks(
+                                        user_id,
+                                        is_camera_on,
+                                        is_screen_sharing,
+                                        voice_context,
+                                    );
+                                }
+                            }
+                        }
+                        crate::gateway::handler::GatewayEvent::VoiceSignal {
+                            channel_id,
+                            signal,
+                        } if voice_context.current_channel_id.get() == Some(channel_id) => {
+                            wasm_bindgen_futures::spawn_local(async move {
+                                if let Err(e) =
+                                    crate::voice::VoiceManager::handle_signal(signal).await
+                                {
+                                    web_sys::console::error_1(
+                                        &format!("[VoiceManager] Signal error: {e}").into(),
+                                    );
+                                }
                             });
                         }
                         _ => {}
@@ -461,10 +646,15 @@ pub fn HomePanel() -> View {
                 }
             }
 
-            (if server_context.current.with(|c| c.is_some()) {
-                MembersPanel()
-            } else {
-                view!{}
+            (move || {
+                let is_server_selected = server_context.current.with(|c| c.is_some());
+                let in_voice = active_channel_type.get() == Some(ChannelType::VOICE)
+                    || voice_context.current_channel_id.get().is_some();
+                if is_server_selected && !in_voice {
+                    view! { MembersPanel() }
+                } else {
+                    view! {}
+                }
             })
         }
 
@@ -565,7 +755,11 @@ fn ImageLightbox(lightbox_sig: Signal<Option<(String, String)>>) -> View {
     let is_remote = crate::utils::is_tauri() && !is_ready;
     let is_loading = create_signal(is_remote);
     let is_img_error = create_signal(false);
-    let src_sig = create_signal(if is_remote { String::new() } else { canonical_url.clone() });
+    let src_sig = create_signal(if is_remote {
+        String::new()
+    } else {
+        canonical_url.clone()
+    });
     let alt_sig = create_signal(alt.clone());
 
     if is_remote {
@@ -592,7 +786,8 @@ fn ImageLightbox(lightbox_sig: Signal<Option<(String, String)>>) -> View {
                 src_sig.set(data_url);
                 is_loading.set(false);
                 is_img_error.set(false);
-            } else if src_for_cache.starts_with("http://") || src_for_cache.starts_with("https://") {
+            } else if src_for_cache.starts_with("http://") || src_for_cache.starts_with("https://")
+            {
                 src_sig.set(src_for_cache);
                 is_loading.set(false);
                 is_img_error.set(false);

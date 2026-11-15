@@ -7,17 +7,14 @@ use crate::components::common::{CustomTheme, UiModalContext, download_json_file}
 use crate::components::ui::icons::{CatalogIcon, CodeIcon, DownloadIcon, FileTextIcon};
 
 #[component(inline_props)]
-pub fn ThemeToolbar(
-    theme_status_msg: Signal<String>,
-    theme_status_is_error: Signal<bool>,
-) -> View {
+pub fn ThemeToolbar(theme_status_msg: Signal<String>, theme_status_is_error: Signal<bool>) -> View {
     let modal_context = use_context::<UiModalContext>();
     let current_theme = modal_context.app_theme;
     let custom_themes_sig = modal_context.custom_themes;
 
     #[allow(unused_variables)]
-    let install_custom_theme_from_json = move |raw_json: String| {
-        match CustomTheme::from_json_str(&raw_json) {
+    let install_custom_theme_from_json =
+        move |raw_json: String| match CustomTheme::from_json_str(&raw_json) {
             Ok(new_theme) => {
                 let new_id = new_theme.id.clone();
                 let new_name = new_theme.name.clone();
@@ -43,8 +40,7 @@ pub fn ThemeToolbar(
                     theme_status_msg.set(err_msg);
                 }
             }
-        }
-    };
+        };
 
     let on_file_upload = move |e: web_sys::Event| {
         if let Some(target) = e.target()

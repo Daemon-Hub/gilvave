@@ -15,7 +15,7 @@ pub use servers::{
 };
 pub use tokens::{get_token, set_token};
 
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use rusqlite::Connection;
 use rusqlite_migration::Migrations;
 use std::{fs, sync::LazyLock};

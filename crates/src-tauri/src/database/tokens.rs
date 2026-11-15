@@ -1,7 +1,7 @@
 //! Auth token persistence in the local SQLite database.
 
-use rusqlite::{Connection, params};
 use super::BoxResult;
+use rusqlite::{Connection, params};
 
 pub fn get_token(conn: &Connection, key: &str) -> BoxResult<Option<String>> {
     let mut stmt = conn.prepare("SELECT value FROM auth_tokens WHERE key = ?1")?;

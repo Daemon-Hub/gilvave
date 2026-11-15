@@ -6,7 +6,7 @@
   "identifier": "com.gilvave.client",
   "build": {
     "beforeDevCommand": "trunk serve --config ui/Trunk.toml",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "https://127.0.0.1:1420",
     "beforeBuildCommand": "trunk build --release --config ui/Trunk.toml",
     "frontendDist": "../ui/dist"
   },
@@ -20,7 +20,7 @@
         "height": 600,
         "decorations": false,
         "devtools": true,
-        "additionalBrowserArgs": "--ignore-certificate-errors"
+        "additionalBrowserArgs": "--ignore-certificate-errors --autoplay-policy=no-user-gesture-required"
       }
     ],
     "security": {

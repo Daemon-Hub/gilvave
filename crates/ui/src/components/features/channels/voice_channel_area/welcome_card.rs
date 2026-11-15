@@ -1,10 +1,10 @@
 //! Pre-connect stage with radar pulse rings, audio specifications, and connect action.
 
-use sycamore::prelude::*;
 use crate::components::{
-    common::UserProfileContext,
+    common::{UserProfileContext, VoiceConnectionStatus, VoiceContext},
     ui::icons::{HeadphonesIcon, MicIcon, MicOffIcon, PhoneIcon, Volume2Icon},
 };
+use sycamore::prelude::*;
 
 #[component(inline_props)]
 pub(crate) fn PreConnectCard<F>(channel_name: ReadSignal<String>, on_connect: F) -> View
@@ -12,6 +12,10 @@ where
     F: Fn(web_sys::MouseEvent) + Copy + 'static,
 {
     let user_profile = use_context::<UserProfileContext>();
+    let voice_ctx = use_context::<VoiceContext>();
+
+    let is_connecting =
+        create_memo(move || voice_ctx.connection_status.get() == VoiceConnectionStatus::Connecting);
 
     view! {
         div(class="voice-welcome-card") {
@@ -51,9 +55,19 @@ where
                 }
             }
 
-            button(class="voice-connect-action-btn", on:click=on_connect) {
+            button(
+                class="voice-connect-action-btn",
+                disabled=is_connecting,
+                on:click=on_connect,
+            ) {
                 PhoneIcon()
-                span { "Подключиться к голосовому каналу" }
+                span {
+                    (if is_connecting.get() {
+                        "Подключение..."
+                    } else {
+                        "Подключиться к голосовому каналу"
+                    })
+                }
             }
         }
     }

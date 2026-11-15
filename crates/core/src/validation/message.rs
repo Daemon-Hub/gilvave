@@ -176,13 +176,19 @@ pub fn count_typed_chars(content: &str) -> usize {
             let has_high_bit = (word & 0x8080_8080_8080_8080) != 0;
 
             let xor_excl = word ^ 0x2121_2121_2121_2121;
-            let has_excl = (xor_excl.wrapping_sub(0x0101_0101_0101_0101) & !xor_excl & 0x8080_8080_8080_8080) != 0;
+            let has_excl =
+                (xor_excl.wrapping_sub(0x0101_0101_0101_0101) & !xor_excl & 0x8080_8080_8080_8080)
+                    != 0;
 
             let xor_brack = word ^ 0x5B5B_5B5B_5B5B_5B5B;
-            let has_brack = (xor_brack.wrapping_sub(0x0101_0101_0101_0101) & !xor_brack & 0x8080_8080_8080_8080) != 0;
+            let has_brack = (xor_brack.wrapping_sub(0x0101_0101_0101_0101)
+                & !xor_brack
+                & 0x8080_8080_8080_8080)
+                != 0;
 
             let xor_d = word ^ 0x6464_6464_6464_6464;
-            let has_d = (xor_d.wrapping_sub(0x0101_0101_0101_0101) & !xor_d & 0x8080_8080_8080_8080) != 0;
+            let has_d =
+                (xor_d.wrapping_sub(0x0101_0101_0101_0101) & !xor_d & 0x8080_8080_8080_8080) != 0;
 
             if !has_high_bit && !has_excl && !has_brack && !has_d {
                 count += 8;

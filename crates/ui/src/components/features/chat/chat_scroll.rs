@@ -174,8 +174,12 @@ pub fn find_top_visible_message(container: &web_sys::HtmlElement) -> (Option<Mes
 
     let len = node_list.length();
     for i in 0..len {
-        let Some(node) = node_list.get(i) else { continue };
-        let Ok(el) = node.dyn_into::<web_sys::HtmlElement>() else { continue };
+        let Some(node) = node_list.get(i) else {
+            continue;
+        };
+        let Ok(el) = node.dyn_into::<web_sys::HtmlElement>() else {
+            continue;
+        };
         let el_rect = el.get_bounding_client_rect();
 
         if el_rect.bottom() > threshold {
@@ -230,10 +234,7 @@ pub enum ChannelScrollAnchor {
     /// Плашка «Непрочитанные сообщения»
     UnreadMarker(MessageId),
     /// Конкретное сообщение, на котором пользователь остановился при чтении истории
-    Message {
-        message_id: MessageId,
-        offset: i32,
-    },
+    Message { message_id: MessageId, offset: i32 },
 }
 
 /// Чистая логика определения целевой позиции скролла
@@ -371,7 +372,8 @@ pub fn execute_initial_scroll_restoration(
 pub fn execute_initial_scroll_restoration(
     _container: web_sys::HtmlElement,
     _anchor: ChannelScrollAnchor,
-) {}
+) {
+}
 
 #[allow(dead_code)]
 pub fn scroll_to_bottom(container: &web_sys::HtmlElement) {

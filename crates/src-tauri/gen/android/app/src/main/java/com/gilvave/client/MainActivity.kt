@@ -20,6 +20,10 @@ class MainActivity : TauriActivity() {
     window.statusBarColor = Color.parseColor("#0a0e1a")
     window.navigationBarColor = Color.parseColor("#0a0e1a")
 
+    if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+      androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 101)
+    }
+
     val content = findViewById<View>(android.R.id.content)
     ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
       val topInset = insets.getInsets(
@@ -57,6 +61,13 @@ class MainActivity : TauriActivity() {
     mWebView = webView
     WebView.setWebContentsDebuggingEnabled(true)
     webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
+    // Grant WebRTC microphone permissions in Android WebView
+    webView.webChromeClient = object : android.webkit.WebChromeClient() {
+      override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
+        request.grant(request.resources)
+      }
+    }
 
     try {
       val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {

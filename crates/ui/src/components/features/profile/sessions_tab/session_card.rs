@@ -1,12 +1,12 @@
 //! Session card rendering and formatting for active login sessions.
 
-use std::rc::Rc;
-use gilvave_core::dto::users::SessionView;
-use sycamore::prelude::*;
 use crate::{
     components::ui::icons::{GlobeIcon, MonitorIcon, SmartphoneIcon, TrashIcon},
     utils::to_local_datetime,
 };
+use gilvave_core::dto::users::SessionView;
+use std::rc::Rc;
+use sycamore::prelude::*;
 
 pub fn format_last_active(dt: time::OffsetDateTime, is_current: bool) -> String {
     if is_current {
@@ -60,8 +60,12 @@ pub fn CurrentSessionCard(session: SessionView) -> View {
         "{} v{}",
         session.device_info.client, session.device_info.client_version
     );
-    let ip = session.ip_address.unwrap_or_else(|| "127.0.0.1".to_string());
-    let location = session.location.unwrap_or_else(|| "Локальная сеть".to_string());
+    let ip = session
+        .ip_address
+        .unwrap_or_else(|| "127.0.0.1".to_string());
+    let location = session
+        .location
+        .unwrap_or_else(|| "Локальная сеть".to_string());
     let created_str = format_created_date(session.created_at);
 
     view! {
@@ -116,8 +120,12 @@ pub fn OtherSessionCard(session: SessionView, on_terminate: Rc<dyn Fn()>) -> Vie
         "{} v{}",
         session.device_info.client, session.device_info.client_version
     );
-    let ip = session.ip_address.unwrap_or_else(|| "Неизвестный IP".to_string());
-    let location = session.location.unwrap_or_else(|| "Неизвестное местоположение".to_string());
+    let ip = session
+        .ip_address
+        .unwrap_or_else(|| "Неизвестный IP".to_string());
+    let location = session
+        .location
+        .unwrap_or_else(|| "Неизвестное местоположение".to_string());
     let last_active = format_last_active(session.last_used_at, session.is_current);
 
     let on_terminate_click = on_terminate.clone();

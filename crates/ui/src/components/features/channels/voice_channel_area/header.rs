@@ -1,10 +1,7 @@
 //! Voice channel header bar with channel name, connected badge, and server name.
 
+use crate::components::{common::classes, ui::icons::Volume2Icon};
 use sycamore::prelude::*;
-use crate::components::{
-    common::classes,
-    ui::icons::Volume2Icon,
-};
 
 #[component(inline_props)]
 pub(crate) fn VoiceHeader<F>(

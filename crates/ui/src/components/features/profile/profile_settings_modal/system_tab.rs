@@ -1,7 +1,7 @@
 //! System preferences tab (Close-to-tray desktop toggle).
 
-use sycamore::prelude::*;
 use crate::components::common::UiModalContext;
+use sycamore::prelude::*;
 
 #[component]
 pub fn SystemTab() -> View {

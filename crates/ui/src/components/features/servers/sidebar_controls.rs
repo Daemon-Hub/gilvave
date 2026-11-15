@@ -1,25 +1,25 @@
 use sycamore::prelude::*;
 
 use crate::components::{
-    common::{UiModalContext, UserProfileContext},
+    common::{UiModalContext, UserProfileContext, VoiceContext},
     ui::icons::{GearIcon, HeadphonesIcon, HeadphonesOffIcon, MicIcon, MicOffIcon},
 };
+use crate::voice::VoiceManager;
 
 #[component]
 pub fn SidebarControls() -> View {
     let user_profile = use_context::<UserProfileContext>();
     let modal_context = use_context::<UiModalContext>();
+    let voice_context = use_context::<VoiceContext>();
 
     let on_toggle_mic = move |_| {
         let new_muted = !user_profile.is_muted.get();
-        user_profile.is_muted.set(new_muted);
-        // TODO [WS]: Send ServerSend::VoiceStateUpdate if currently connected to a voice channel
+        VoiceManager::set_muted(new_muted, voice_context, user_profile);
     };
 
     let on_toggle_deafen = move |_| {
         let new_deafened = !user_profile.is_deafened.get();
-        user_profile.is_deafened.set(new_deafened);
-        // TODO [WS]: Send ServerSend::VoiceStateUpdate if currently connected to a voice channel
+        VoiceManager::set_deafened(new_deafened, voice_context, user_profile);
     };
 
     let on_open_settings = move |_| {

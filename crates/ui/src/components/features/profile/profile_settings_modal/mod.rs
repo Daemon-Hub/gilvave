@@ -103,7 +103,10 @@ pub fn ProfileSettingsModal() -> View {
                     user_profile_ctx.avatar.set(user_view.avatar().to_string());
                     user_profile_ctx.bio.set(user_view.bio().to_string());
                     #[cfg(target_arch = "wasm32")]
-                    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+                    if let Some(storage) = web_sys::window()
+                        .and_then(|w| w.local_storage().ok())
+                        .flatten()
+                    {
                         let _ = storage.set_item("gilvave_cached_username", &user_view.username);
                         let _ = storage.set_item("gilvave_cached_avatar", user_view.avatar());
                         let _ = storage.set_item("gilvave_cached_bio", user_view.bio());

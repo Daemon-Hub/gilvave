@@ -1,7 +1,7 @@
 //! Security information tip card, empty state card, and terminate confirmation banner.
 
-use sycamore::prelude::*;
 use crate::components::ui::icons::ShieldCheckIcon;
+use sycamore::prelude::*;
 
 #[component(inline_props)]
 pub fn TerminateConfirmBanner<F1, F2>(on_confirm: F1, on_cancel: F2) -> View

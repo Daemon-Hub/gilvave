@@ -1,11 +1,10 @@
 //! User-installed and community JSON themes with automatic derivation of 120+ CSS variables.
 
-use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
-use super::{STORAGE_KEY_CUSTOM_THEMES, STYLE_TAG_CUSTOM_PREVIEWS};
 use super::css_engine::{is_safe_css_value, sanitize_id, set_style_tag, with_alpha};
-
+use super::{STORAGE_KEY_CUSTOM_THEMES, STYLE_TAG_CUSTOM_PREVIEWS};
 
 fn default_version() -> String {
     "1.0.0".to_string()
@@ -328,5 +327,3 @@ impl From<gilvave_core::dto::users::Theme> for CustomTheme {
         }
     }
 }
-
-

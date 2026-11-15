@@ -1,7 +1,7 @@
 //! Send friend request by username tab with input validation and feedback.
 
-use sycamore::prelude::*;
 use crate::components::ui::icons::UsersIcon;
+use sycamore::prelude::*;
 
 pub(crate) fn view_add_friend<F>(
     input_signal: Signal<String>,

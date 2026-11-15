@@ -1,14 +1,14 @@
 //! Message caching, retrieval, updates, and synchronization with SQLite.
 
-use std::collections::HashSet;
-#[cfg(not(target_arch = "wasm32"))]
-use rayon::prelude::*;
 use gilvave_core::{
     dto::messages::MessageView,
     ids::{ChannelId, MessageId, UserId},
     uuid::Uuid,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use rayon::prelude::*;
 use rusqlite::{Connection, params};
+use std::collections::HashSet;
 use time::format_description::well_known::Rfc3339;
 
 pub(crate) fn row_to_message_view(row: &rusqlite::Row<'_>) -> rusqlite::Result<MessageView> {
@@ -159,14 +159,30 @@ pub fn sync_cached_messages(
     if !messages.is_empty() {
         #[cfg(not(target_arch = "wasm32"))]
         let (min_time, max_time) = {
-            let min = messages.par_iter().map(|m| m.created_at).min().expect("non-empty");
-            let max = messages.par_iter().map(|m| m.created_at).max().expect("non-empty");
+            let min = messages
+                .par_iter()
+                .map(|m| m.created_at)
+                .min()
+                .expect("non-empty");
+            let max = messages
+                .par_iter()
+                .map(|m| m.created_at)
+                .max()
+                .expect("non-empty");
             (min, max)
         };
         #[cfg(target_arch = "wasm32")]
         let (min_time, max_time) = {
-            let min = messages.iter().map(|m| m.created_at).min().expect("non-empty");
-            let max = messages.iter().map(|m| m.created_at).max().expect("non-empty");
+            let min = messages
+                .iter()
+                .map(|m| m.created_at)
+                .min()
+                .expect("non-empty");
+            let max = messages
+                .iter()
+                .map(|m| m.created_at)
+                .max()
+                .expect("non-empty");
             (min, max)
         };
 

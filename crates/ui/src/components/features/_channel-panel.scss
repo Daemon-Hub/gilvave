@@ -194,6 +194,60 @@
     }
 }
 
+.channel-voice-members {
+    display: flex;
+    flex-direction: column;
+    padding-left: 32px;
+    padding-right: 12px;
+    gap: 4px;
+    margin-bottom: 4px;
+
+    .channel-voice-member {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px;
+        border-radius: $radius-sm;
+        font-size: 12px;
+        color: $color-text-muted;
+
+        &.speaking {
+            color: $color-text-white;
+
+            .voice-member-avatar,
+            .voice-member-initial {
+                box-shadow: 0 0 0 2px $color-status-online;
+            }
+        }
+
+        .voice-member-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .voice-member-initial {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: $color-bg-panel-hover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: $font-weight-bold;
+            color: $color-text-channel;
+        }
+
+        .voice-member-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}
+
 
 // ─── No channel selected placeholder ──────────────────────────────────────────
 .no-channel-selected {
@@ -247,4 +301,93 @@
         line-height: 1.5;
     }
 }
+
+// ─── Voice status bar (persistent docked call bar) ────────────────────────────
+.voice-status-bar {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: $color-bg-panel-dark;
+    border-top: 1px solid $color-border-bubble;
+    flex-shrink: 0;
+
+    .voice-status-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        cursor: pointer;
+
+        .voice-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: $color-status-online;
+            box-shadow: 0 0 6px $color-status-online;
+            flex-shrink: 0;
+        }
+
+        .voice-status-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+
+            .voice-status-title {
+                font-size: 11px;
+                font-weight: $font-weight-semibold;
+                color: $color-status-online;
+                line-height: 1.2;
+            }
+
+            .voice-status-channel {
+                font-size: 12px;
+                color: $color-text-channel;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 140px;
+            }
+        }
+    }
+
+    .voice-status-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .voice-status-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: $radius-md;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            background: transparent;
+            color: $color-text-muted;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            &:hover {
+                background: $color-bg-panel-hover;
+                color: $color-text-white;
+            }
+
+            &.disconnect {
+                &:hover {
+                    background: $color-danger-alpha-15;
+                    color: $color-danger;
+                }
+            }
+        }
+    }
+}
+
 

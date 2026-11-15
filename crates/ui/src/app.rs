@@ -50,20 +50,16 @@ pub fn App() -> View {
         let on_offline = Closure::<dyn Fn()>::new(move || {
             status_offline.set(NetworkStatus::Offline);
         });
-        let _ = window.add_event_listener_with_callback(
-            "offline",
-            on_offline.as_ref().unchecked_ref(),
-        );
+        let _ =
+            window.add_event_listener_with_callback("offline", on_offline.as_ref().unchecked_ref());
         on_offline.forget();
 
         let status_online = connectivity.status;
         let on_online = Closure::<dyn Fn()>::new(move || {
             status_online.set(NetworkStatus::Reconnecting);
         });
-        let _ = window.add_event_listener_with_callback(
-            "online",
-            on_online.as_ref().unchecked_ref(),
-        );
+        let _ =
+            window.add_event_listener_with_callback("online", on_online.as_ref().unchecked_ref());
         on_online.forget();
     }
 
@@ -83,26 +79,16 @@ pub fn App() -> View {
                     }
                 }
                 crate::gateway::handler::GatewayEvent::Disconnected => {
-                    connectivity.status.set(NetworkStatus::Offline);
+                    let is_browser_online = web_sys::window()
+                        .map(|w| w.navigator().on_line())
+                        .unwrap_or(true);
+                    if is_browser_online {
+                        connectivity.status.set(NetworkStatus::Reconnecting);
+                    } else {
+                        connectivity.status.set(NetworkStatus::Offline);
+                    }
                 }
                 _ => {}
-            }
-        }
-    });
-
-    // Auto-reconnect polling loop when offline
-    let connectivity_auto_retry = connectivity;
-    spawn_local_scoped(async move {
-        loop {
-            gloo_timers::future::sleep(core::time::Duration::from_secs(3)).await;
-            if connectivity_auto_retry.status.get() == NetworkStatus::Offline
-                && Api::get_profile().await.is_ok()
-            {
-                connectivity_auto_retry.status.set(NetworkStatus::Connected);
-                gloo_timers::future::sleep(core::time::Duration::from_millis(1800)).await;
-                if connectivity_auto_retry.status.get() == NetworkStatus::Connected {
-                    connectivity_auto_retry.status.set(NetworkStatus::Online);
-                }
             }
         }
     });
@@ -151,18 +137,12 @@ pub fn App() -> View {
                 } else {
                     let _ = root.remove_attribute("data-window-hidden");
                     if connectivity_vis.status.get() == NetworkStatus::Offline {
-                        connectivity_vis.status.set(NetworkStatus::Reconnecting);
-                        wasm_bindgen_futures::spawn_local(async move {
-                            if Api::get_profile().await.is_ok() {
-                                connectivity_vis.status.set(NetworkStatus::Connected);
-                                gloo_timers::future::sleep(core::time::Duration::from_millis(1800)).await;
-                                if connectivity_vis.status.get() == NetworkStatus::Connected {
-                                    connectivity_vis.status.set(NetworkStatus::Online);
-                                }
-                            } else {
-                                connectivity_vis.status.set(NetworkStatus::Offline);
-                            }
-                        });
+                        let is_browser_online = web_sys::window()
+                            .map(|w| w.navigator().on_line())
+                            .unwrap_or(true);
+                        if is_browser_online {
+                            connectivity_vis.status.set(NetworkStatus::Reconnecting);
+                        }
                     }
                 }
             }
@@ -175,11 +155,13 @@ pub fn App() -> View {
     }
 
     spawn_local_scoped(async move {
-        // Check if saved authentication tokens exist
-        let token = Api::fetch_access_token().await;
-        if token.is_empty() {
-            screen_wrapper.set(ActiveScreen::Login);
-            return;
+        // Check if saved authentication tokens exist (in desktop/mobile keyring)
+        if is_tauri() {
+            let token = Api::fetch_access_token().await;
+            if token.is_empty() {
+                screen_wrapper.set(ActiveScreen::Login);
+                return;
+            }
         }
 
         match Api::get_profile().await {
@@ -194,7 +176,9 @@ pub fn App() -> View {
                 } else if is_tauri() {
                     // Offline mode on Desktop/Mobile: saved token exists and network failed,
                     // allow entering Home screen to view cached SQLite data
-                    web_sys::console::log_1(&"[APP] Offline mode active: loading cached workspace".into());
+                    web_sys::console::log_1(
+                        &"[APP] Offline mode active: loading cached workspace".into(),
+                    );
                     connectivity.status.set(NetworkStatus::Offline);
                     screen_wrapper.set(ActiveScreen::Home);
                 } else {

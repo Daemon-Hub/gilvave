@@ -2,7 +2,11 @@ use futures_channel::mpsc::{UnboundedReceiver, UnboundedSender, unbounded};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use gilvave_core::{
-    dto::{messages::MessageView, ws::ServerRecieve},
+    dto::{
+        messages::MessageView,
+        voice::{VoiceParticipantView, VoiceSignalData},
+        ws::ServerRecieve,
+    },
     ids::{ChannelId, MessageId, ServerId, UserId},
 };
 
@@ -27,6 +31,39 @@ pub enum GatewayEvent {
     },
     UserOffline {
         user_id: UserId,
+    },
+    VoiceRoomJoined {
+        channel_id: ChannelId,
+        participants: Vec<VoiceParticipantView>,
+    },
+    VoiceParticipantJoined {
+        channel_id: ChannelId,
+        participant: VoiceParticipantView,
+    },
+    VoiceParticipantLeft {
+        channel_id: ChannelId,
+        user_id: UserId,
+    },
+    VoiceStateUpdate {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_muted: bool,
+        is_deafened: bool,
+    },
+    VoiceSignal {
+        channel_id: ChannelId,
+        signal: VoiceSignalData,
+    },
+    VoiceSpeaking {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_speaking: bool,
+    },
+    VoiceVideoState {
+        channel_id: ChannelId,
+        user_id: UserId,
+        is_camera_on: bool,
+        is_screen_sharing: bool,
     },
 }
 
@@ -139,6 +176,102 @@ pub async fn handle(text: &str) {
             ServerRecieve::UserOffline { user_id } => {
                 web_sys::console::log_1(&format!("[WS] UserOffline received: {user_id}").into());
                 dispatch_gateway_event(GatewayEvent::UserOffline { user_id });
+            }
+            ServerRecieve::VoiceRoomJoined {
+                channel_id,
+                participants,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] VoiceRoomJoined received for channel_id={channel_id}, count={}",
+                        participants.len()
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::VoiceRoomJoined {
+                    channel_id,
+                    participants,
+                });
+            }
+            ServerRecieve::VoiceParticipantJoined {
+                channel_id,
+                participant,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] VoiceParticipantJoined received for channel_id={channel_id}, user_id={}",
+                        participant.user_id
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::VoiceParticipantJoined {
+                    channel_id,
+                    participant,
+                });
+            }
+            ServerRecieve::VoiceParticipantLeft {
+                channel_id,
+                user_id,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] VoiceParticipantLeft received for channel_id={channel_id}, user_id={user_id}"
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::VoiceParticipantLeft {
+                    channel_id,
+                    user_id,
+                });
+            }
+            ServerRecieve::VoiceStateUpdate {
+                channel_id,
+                user_id,
+                is_muted,
+                is_deafened,
+            } => {
+                web_sys::console::log_1(
+                    &format!(
+                        "[WS] VoiceStateUpdate received: channel_id={channel_id}, user_id={user_id}, muted={is_muted}, deafened={is_deafened}"
+                    )
+                    .into(),
+                );
+                dispatch_gateway_event(GatewayEvent::VoiceStateUpdate {
+                    channel_id,
+                    user_id,
+                    is_muted,
+                    is_deafened,
+                });
+            }
+            ServerRecieve::VoiceSignal { channel_id, signal } => {
+                web_sys::console::log_1(
+                    &format!("[WS] VoiceSignal received for channel_id={channel_id}").into(),
+                );
+                dispatch_gateway_event(GatewayEvent::VoiceSignal { channel_id, signal });
+            }
+            ServerRecieve::VoiceSpeaking {
+                channel_id,
+                user_id,
+                is_speaking,
+            } => {
+                dispatch_gateway_event(GatewayEvent::VoiceSpeaking {
+                    channel_id,
+                    user_id,
+                    is_speaking,
+                });
+            }
+            ServerRecieve::VoiceVideoState {
+                channel_id,
+                user_id,
+                is_camera_on,
+                is_screen_sharing,
+            } => {
+                dispatch_gateway_event(GatewayEvent::VoiceVideoState {
+                    channel_id,
+                    user_id,
+                    is_camera_on,
+                    is_screen_sharing,
+                });
             }
         },
         Err(e) => {

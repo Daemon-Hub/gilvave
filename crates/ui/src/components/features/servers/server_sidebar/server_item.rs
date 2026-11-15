@@ -18,7 +18,9 @@ pub fn ServerIconItem(server: ServerSmallPart) -> View {
     let icon_url = create_signal(server.icon_url);
 
     let is_active_memo = create_memo(move || {
-        server_context.current.with(|c| c.as_ref().map(|s| s.id) == Some(id))
+        server_context
+            .current
+            .with(|c| c.as_ref().map(|s| s.id) == Some(id))
     });
     let is_active_dyn: MaybeDyn<bool> = is_active_memo.into();
 

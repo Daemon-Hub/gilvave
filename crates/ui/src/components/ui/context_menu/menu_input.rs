@@ -1,21 +1,23 @@
 //! Contextual menu items for text inputs, textareas, and contenteditable elements.
 
-use std::rc::Rc;
-use web_sys::Element;
-use super::clipboard::{
-    copy_to_clipboard, cut_from_target_element, select_all_in_target_element,
-};
 #[cfg(target_arch = "wasm32")]
 use super::clipboard::paste_into_target_element;
+use super::clipboard::{copy_to_clipboard, cut_from_target_element, select_all_in_target_element};
 use super::types::ContextMenuItem;
 use crate::components::common::UiModalContext;
+use std::rc::Rc;
+use web_sys::Element;
 
 #[allow(dead_code)]
 pub(crate) fn is_editable_element(el: &Element) -> bool {
     el.tag_name().eq_ignore_ascii_case("INPUT")
         || el.tag_name().eq_ignore_ascii_case("TEXTAREA")
         || el.get_attribute("contenteditable").as_deref() == Some("true")
-        || el.closest("[contenteditable='true']").ok().flatten().is_some()
+        || el
+            .closest("[contenteditable='true']")
+            .ok()
+            .flatten()
+            .is_some()
 }
 
 #[allow(dead_code)]

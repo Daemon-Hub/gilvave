@@ -5,8 +5,10 @@ use sycamore::{futures::spawn_local_scoped, prelude::*};
 use wasm_bindgen::JsCast;
 
 use crate::components::common::{
-    media::{open_file_card_async, parse_file_id_from_url, ActiveFullscreenVideo, ParsedAttachment},
     UiModalContext,
+    media::{
+        ActiveFullscreenVideo, ParsedAttachment, open_file_card_async, parse_file_id_from_url,
+    },
 };
 use crate::utils::{invoke_command, is_tauri};
 
@@ -28,11 +30,7 @@ fn format_time(secs: f64) -> String {
 /// Индивидуальное изображение сообщения с локальным дисковым кешированием,
 /// размытой карточкой-заглушкой и крутящимся спиннером во время загрузки.
 #[component(inline_props)]
-pub fn ChatMessageImage(
-    name: String,
-    url: String,
-    modal_ctx: UiModalContext,
-) -> View {
+pub fn ChatMessageImage(name: String, url: String, modal_ctx: UiModalContext) -> View {
     let file_id = parse_file_id_from_url(&url)
         .map(|id| id.to_string())
         .unwrap_or_else(|| {
@@ -55,11 +53,13 @@ pub fn ChatMessageImage(
     let is_desktop = is_tauri();
     let is_loaded = create_signal(false);
     let is_error = create_signal(false);
-    let active_src = create_signal(if !is_desktop || url.starts_with("data:") || url.starts_with("blob:") {
-        canonical_url.clone()
-    } else {
-        String::new()
-    });
+    let active_src = create_signal(
+        if !is_desktop || url.starts_with("data:") || url.starts_with("blob:") {
+            canonical_url.clone()
+        } else {
+            String::new()
+        },
+    );
 
     if is_desktop && !url.starts_with("data:") && !url.starts_with("blob:") {
         let fid = file_id.clone();
@@ -80,7 +80,11 @@ pub fn ChatMessageImage(
                     if durl.starts_with("http://") || durl.starts_with("https://") {
                         active_src.set(durl);
                     } else if !fid.is_empty() {
-                        active_src.set(format!("{}/files/{}", gilvave_core::settings::BASE_HTTP_URL, fid));
+                        active_src.set(format!(
+                            "{}/files/{}",
+                            gilvave_core::settings::BASE_HTTP_URL,
+                            fid
+                        ));
                     } else {
                         is_error.set(true);
                     }
@@ -237,10 +241,8 @@ pub fn ChatMessageImage(
 pub fn MessageAttachmentsView(
     attachments: Vec<ParsedAttachment>,
     modal_ctx: UiModalContext,
-    #[prop(default = false)]
-    is_pending: bool,
-    #[prop(default = false)]
-    is_failed: bool,
+    #[prop(default = false)] is_pending: bool,
+    #[prop(default = false)] is_failed: bool,
 ) -> View {
     let mut media_items = Vec::new();
     let mut file_items = Vec::new();
@@ -373,11 +375,7 @@ fn compute_player_dimensions(vw: u32, vh: u32) -> (f64, f64) {
 
 /// Нативный видеоплеер Sycamore для встроенного просмотра в чате
 #[component(inline_props)]
-pub fn InlineVideoPlayer(
-    url: String,
-    title: String,
-    modal_ctx: UiModalContext,
-) -> View {
+pub fn InlineVideoPlayer(url: String, title: String, modal_ctx: UiModalContext) -> View {
     let video_ref = create_node_ref();
     let scrubber_ref = create_node_ref();
 
@@ -454,7 +452,9 @@ pub fn InlineVideoPlayer(
             .try_get()
             .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok());
         let mut dur = duration.get();
-        if (dur <= 0.0 || dur.is_nan() || dur.is_infinite()) && let Some(v) = &video_elem {
+        if (dur <= 0.0 || dur.is_nan() || dur.is_infinite())
+            && let Some(v) = &video_elem
+        {
             let vd = v.duration();
             if vd > 0.0 && !vd.is_nan() && !vd.is_infinite() {
                 dur = vd;
@@ -497,11 +497,13 @@ pub fn InlineVideoPlayer(
             current_time.get()
         };
 
-        modal_ctx.active_fullscreen_video.set(Some(ActiveFullscreenVideo {
-            url: url_for_fs.clone(),
-            title: title_for_fs.clone(),
-            initial_time: cur,
-        }));
+        modal_ctx
+            .active_fullscreen_video
+            .set(Some(ActiveFullscreenVideo {
+                url: url_for_fs.clone(),
+                title: title_for_fs.clone(),
+                initial_time: cur,
+            }));
     };
 
     let check_video_dims = move || {
@@ -872,7 +874,11 @@ fn classify_file_kind(ext: &str) -> (CyberFileKind, String) {
             "archive" => "ZIP".to_string(),
             "document" => "DOC".to_string(),
             "picture" => "IMG".to_string(),
-            _ => ext_lower.chars().take(4).collect::<String>().to_ascii_uppercase(),
+            _ => ext_lower
+                .chars()
+                .take(4)
+                .collect::<String>()
+                .to_ascii_uppercase(),
         }
     };
 
@@ -892,8 +898,9 @@ fn classify_file_kind(ext: &str) -> (CyberFileKind, String) {
         "exe" | "msi" | "apk" | "app" | "deb" | "rpm" | "bin" | "bat" | "cmd" | "ps1" => {
             CyberFileKind::Exe
         }
-        "png" | "jpg" | "jpeg" | "webp" | "gif" | "svg" | "bmp" | "ico" | "psd" | "ai"
-        | "tiff" => CyberFileKind::Image,
+        "png" | "jpg" | "jpeg" | "webp" | "gif" | "svg" | "bmp" | "ico" | "psd" | "ai" | "tiff" => {
+            CyberFileKind::Image
+        }
         _ => CyberFileKind::Generic,
     };
 
@@ -906,10 +913,8 @@ pub fn FileAttachmentCard(
     name: String,
     file_id_str: String,
     url: String,
-    #[prop(default = false)]
-    is_pending: bool,
-    #[prop(default = false)]
-    is_failed: bool,
+    #[prop(default = false)] is_pending: bool,
+    #[prop(default = false)] is_failed: bool,
 ) -> View {
     let fid_for_open = file_id_str.clone();
     let name_for_open = name.clone();
@@ -976,7 +981,10 @@ pub fn FileAttachmentCard(
     let display_name = name.clone();
     let ext = gilvave_core::files::get_file_extension(&name, "");
     let (kind, display_ext) = classify_file_kind(&ext);
-    let icon_class = format!("chat-message-file-icon cyber-file-shard {}", kind.class_name());
+    let icon_class = format!(
+        "chat-message-file-icon cyber-file-shard {}",
+        kind.class_name()
+    );
 
     let glyph_view = match kind {
         CyberFileKind::Pdf => view! {
@@ -1274,7 +1282,9 @@ pub fn FullscreenVideoModal(
             .try_get()
             .and_then(|n| n.dyn_into::<web_sys::HtmlVideoElement>().ok());
         let mut dur = duration.get();
-        if (dur <= 0.0 || dur.is_nan() || dur.is_infinite()) && let Some(v) = &video_elem {
+        if (dur <= 0.0 || dur.is_nan() || dur.is_infinite())
+            && let Some(v) = &video_elem
+        {
             let vd = v.duration();
             if vd > 0.0 && !vd.is_nan() && !vd.is_infinite() {
                 dur = vd;
@@ -1321,10 +1331,8 @@ pub fn FullscreenVideoModal(
                     }
                 }) as Box<dyn Fn(web_sys::KeyboardEvent)>,
             );
-            let _ = window.add_event_listener_with_callback(
-                "keydown",
-                on_keydown.as_ref().unchecked_ref(),
-            );
+            let _ = window
+                .add_event_listener_with_callback("keydown", on_keydown.as_ref().unchecked_ref());
             let win = window.clone();
             on_cleanup(move || {
                 let _ = win.remove_event_listener_with_callback(

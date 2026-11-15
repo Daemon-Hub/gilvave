@@ -1,7 +1,7 @@
 //! Interactive 3D paper corner peel and razor slit cut line in the server sidebar.
 
-use sycamore::prelude::*;
 use crate::components::common::UiModalContext;
+use sycamore::prelude::*;
 
 #[component]
 pub(crate) fn SidebarCornerPeel() -> View {

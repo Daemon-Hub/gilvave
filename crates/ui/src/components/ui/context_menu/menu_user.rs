@@ -1,13 +1,15 @@
 //! Contextual menu items for user elements (avatars, member lists, friend rows).
 
-use std::rc::Rc;
-use web_sys::Element;
-use gilvave_core::ids::{MessageId, UserId};
 use super::clipboard::copy_to_clipboard;
 #[cfg(target_arch = "wasm32")]
 use super::clipboard::show_toast;
 use super::types::ContextMenuItem;
-use crate::components::common::{ChannelContext, ServerContext, UiModalContext, UserProfileContext};
+use crate::components::common::{
+    ChannelContext, ServerContext, UiModalContext, UserProfileContext,
+};
+use gilvave_core::ids::{MessageId, UserId};
+use std::rc::Rc;
+use web_sys::Element;
 
 #[allow(dead_code)]
 pub(crate) fn build_user_menu(
@@ -23,8 +25,7 @@ pub(crate) fn build_user_menu(
     let target_uid = UserId::try_from(u_id_str.as_str()).ok()?;
 
     let mut items = Vec::new();
-    let is_self = user_ctx
-        .and_then(|u| u.user_id.get()) == Some(target_uid);
+    let is_self = user_ctx.and_then(|u| u.user_id.get()) == Some(target_uid);
 
     let is_friend_card = user_el.class_name().contains("friend-row-item")
         || user_el.closest(".friend-row-item").ok().flatten().is_some();
@@ -62,30 +63,30 @@ pub(crate) fn build_user_menu(
                         };
                         wasm_bindgen_futures::spawn_local(async move {
                             use gilvave_core::dto::users::friends::SendFriendRequest;
-                        let req = SendFriendRequest {
-                            user_id: Some(target_uid),
-                            username: None,
-                        };
-                        match crate::http::api::Api::send_friend_request(&req).await {
-                            Ok(res) => {
-                                if let Some(m) = m_ctx.as_ref() {
-                                    show_toast(m, false, res.message);
+                            let req = SendFriendRequest {
+                                user_id: Some(target_uid),
+                                username: None,
+                            };
+                            match crate::http::api::Api::send_friend_request(&req).await {
+                                Ok(res) => {
+                                    if let Some(m) = m_ctx.as_ref() {
+                                        show_toast(m, false, res.message);
+                                    }
+                                }
+                                Err(err) => {
+                                    if let Some(m) = m_ctx.as_ref() {
+                                        show_toast(
+                                            m,
+                                            true,
+                                            format!(
+                                                "Не удалось отправить запрос {}: {}",
+                                                target_display, err.1
+                                            ),
+                                        );
+                                    }
                                 }
                             }
-                            Err(err) => {
-                                if let Some(m) = m_ctx.as_ref() {
-                                    show_toast(
-                                        m,
-                                        true,
-                                        format!(
-                                            "Не удалось отправить запрос {}: {}",
-                                            target_display, err.1
-                                        ),
-                                    );
-                                }
-                            }
-                        }
-                    });
+                        });
                     }
                 }),
             });
@@ -137,25 +138,29 @@ pub(crate) fn build_user_menu(
                         let u_ctx_clone = u_ctx_clone.clone();
                         wasm_bindgen_futures::spawn_local(async move {
                             match crate::http::api::Api::remove_friend(target_uid).await {
-                            Ok(()) => {
-                                if let Some(u) = u_ctx_clone.as_ref() {
-                                    u.friends.update(|list| list.retain(|f| f.id != target_uid));
+                                Ok(()) => {
+                                    if let Some(u) = u_ctx_clone.as_ref() {
+                                        u.friends
+                                            .update(|list| list.retain(|f| f.id != target_uid));
+                                    }
+                                    if let Some(m) = m_ctx.as_ref() {
+                                        show_toast(
+                                            m,
+                                            false,
+                                            format!(
+                                                "Пользователь {} удален из друзей",
+                                                target_display
+                                            ),
+                                        );
+                                    }
                                 }
-                                if let Some(m) = m_ctx.as_ref() {
-                                    show_toast(
-                                        m,
-                                        false,
-                                        format!("Пользователь {} удален из друзей", target_display),
-                                    );
+                                Err(err) => {
+                                    if let Some(m) = m_ctx.as_ref() {
+                                        show_toast(m, true, format!("Ошибка удаления: {}", err.1));
+                                    }
                                 }
                             }
-                            Err(err) => {
-                                if let Some(m) = m_ctx.as_ref() {
-                                    show_toast(m, true, format!("Ошибка удаления: {}", err.1));
-                                }
-                            }
-                        }
-                    });
+                        });
                     }
                 }),
             });

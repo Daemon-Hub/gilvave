@@ -8,21 +8,29 @@ pub(crate) use header::VoiceHeader;
 pub(crate) use room_dock::ConnectedRoom;
 pub(crate) use welcome_card::PreConnectCard;
 
+use crate::components::common::{
+    ChannelContext, ServerContext, UserProfileContext, VoiceConnectionStatus, VoiceContext, classes,
+};
+use crate::voice::VoiceManager;
 use sycamore::prelude::*;
-use crate::components::common::{classes, ChannelContext, ServerContext, UserProfileContext};
 
 #[component]
 pub fn VoiceChannelArea() -> View {
     let channel_context = use_context::<ChannelContext>();
     let server_context = use_context::<ServerContext>();
     let user_profile = use_context::<UserProfileContext>();
+    let voice_context = use_context::<VoiceContext>();
 
     let is_connected = create_signal(false);
 
-    // Reset connected state when switching channels
     create_effect(move || {
-        channel_context.current.track();
-        is_connected.set(false);
+        let current_cid = channel_context.current.with(|c| c.as_ref().map(|ch| ch.id));
+        let voice_cid = voice_context.current_channel_id.get();
+        let status = voice_context.connection_status.get();
+        let connected = current_cid.is_some()
+            && current_cid == voice_cid
+            && status == VoiceConnectionStatus::Connected;
+        is_connected.set(connected);
     });
 
     let channel_name = create_memo(move || {
@@ -43,29 +51,53 @@ pub fn VoiceChannelArea() -> View {
     };
 
     let on_connect = move |_| {
-        is_connected.set(true);
-        // TODO [HTTP]: POST /channels/{channel_id}/voice/join (SFU token & ICE credentials)
-        // TODO [WS]: ServerSend::JoinVoiceChannel { channel_id }
-        // TODO [WebRTC]: navigator.mediaDevices.getUserMedia(...) & RTCPeerConnection SDP
+        if let Some(ch) = channel_context.current.get_clone() {
+            wasm_bindgen_futures::spawn_local(async move {
+                if let Err(e) = VoiceManager::connect(ch.id, voice_context, user_profile).await {
+                    web_sys::console::error_1(&format!("[VOICE] Connect error: {e}").into());
+                }
+            });
+        }
     };
 
     let on_disconnect = move |_| {
-        is_connected.set(false);
-        // TODO [WS]: ServerSend::LeftVoiceChannel { channel_id }
-        // TODO [HTTP]: POST /channels/{channel_id}/voice/leave
-        // TODO [WebRTC]: Stop audio tracks and close RTCPeerConnection
+        let uid = user_profile.user_id.get();
+        if let Some(uid) = uid {
+            voice_context.channel_participants.update(|map| {
+                for list in map.values_mut() {
+                    list.retain(|p| p.user_id != uid);
+                }
+            });
+        }
+        wasm_bindgen_futures::spawn_local(async move {
+            VoiceManager::disconnect(voice_context, uid).await;
+        });
     };
 
     let on_toggle_mic = move |_| {
         let new_muted = !user_profile.is_muted.get();
-        user_profile.is_muted.set(new_muted);
-        // TODO [WS]: ServerSend::VoiceStateUpdate { channel_id, is_muted: new_muted, ... }
+        VoiceManager::set_muted(new_muted, voice_context, user_profile);
     };
 
     let on_toggle_deafen = move |_| {
         let new_deafened = !user_profile.is_deafened.get();
-        user_profile.is_deafened.set(new_deafened);
-        // TODO [WS]: ServerSend::VoiceStateUpdate { channel_id, is_deafened: new_deafened, ... }
+        VoiceManager::set_deafened(new_deafened, voice_context, user_profile);
+    };
+
+    let on_toggle_camera = move |_| {
+        wasm_bindgen_futures::spawn_local(async move {
+            if let Err(e) = VoiceManager::toggle_camera(voice_context).await {
+                web_sys::console::error_1(&format!("[VOICE] Camera toggle error: {e}").into());
+            }
+        });
+    };
+
+    let on_toggle_screen = move |_| {
+        wasm_bindgen_futures::spawn_local(async move {
+            if let Err(e) = VoiceManager::toggle_screen_share(voice_context).await {
+                web_sys::console::error_1(&format!("[VOICE] Screen share error: {e}").into());
+            }
+        });
     };
 
     view! {
@@ -88,6 +120,8 @@ pub fn VoiceChannelArea() -> View {
                         ConnectedRoom(
                             on_toggle_mic=on_toggle_mic,
                             on_toggle_deafen=on_toggle_deafen,
+                            on_toggle_camera=on_toggle_camera,
+                            on_toggle_screen=on_toggle_screen,
                             on_disconnect=on_disconnect,
                         )
                     }

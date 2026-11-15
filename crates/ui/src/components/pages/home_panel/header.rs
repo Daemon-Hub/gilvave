@@ -1,11 +1,11 @@
 //! Top header server information and controls.
 
-use sycamore::prelude::*;
-use gilvave_core::dto::servers::Server;
 use crate::components::{
     common::UiModalContext,
     ui::icons::{GearIcon, HomeIcon},
 };
+use gilvave_core::dto::servers::Server;
+use sycamore::prelude::*;
 
 pub(crate) fn header_server_view(
     server_signal: Signal<Option<Server>>,

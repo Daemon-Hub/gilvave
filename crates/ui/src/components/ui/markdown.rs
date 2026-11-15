@@ -84,7 +84,9 @@ fn postprocess_chat_html(raw_html: &str, default_pack: EmojiPack) -> String {
                     let mut img_tag = String::with_capacity(tag.len() + 64);
                     if let Some(pos) = tag.find("<img") {
                         img_tag.push_str(&tag[..pos + 4]);
-                        img_tag.push_str(" class=\"chat-message-image\" loading=\"lazy\" decoding=\"async\"");
+                        img_tag.push_str(
+                            " class=\"chat-message-image\" loading=\"lazy\" decoding=\"async\"",
+                        );
                         img_tag.push_str(&tag[pos + 4..]);
                     } else {
                         img_tag.push_str(tag);
@@ -131,7 +133,10 @@ fn postprocess_chat_html(raw_html: &str, default_pack: EmojiPack) -> String {
         let mut non_candidate_len = 0;
         while non_candidate_len < rem_bytes.len() {
             let b = rem_bytes[non_candidate_len];
-            if matches!(b, b'<' | b'&' | b'#' | b'*' | b'0'..=b'9' | 0xE2 | 0xE3 | 0xF0) {
+            if matches!(
+                b,
+                b'<' | b'&' | b'#' | b'*' | b'0'..=b'9' | 0xE2 | 0xE3 | 0xF0
+            ) {
                 break;
             }
             non_candidate_len += 1;

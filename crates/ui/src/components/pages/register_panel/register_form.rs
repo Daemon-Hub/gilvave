@@ -6,8 +6,7 @@ use sycamore::{prelude::*, web::events::SubmitEvent};
 use crate::components::{
     features::auth::social_buttons::SocialButtons,
     ui::{
-        divider::Divider, input_group::InputGroup, spinner::Spinner,
-        submit_button::SubmitButton,
+        divider::Divider, input_group::InputGroup, spinner::Spinner, submit_button::SubmitButton,
     },
 };
 

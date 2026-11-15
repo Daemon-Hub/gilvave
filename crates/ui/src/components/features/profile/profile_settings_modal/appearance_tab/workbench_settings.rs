@@ -2,7 +2,7 @@
 
 use sycamore::prelude::*;
 
-use crate::components::common::{is_mobile_device, AppTheme, UiModalContext};
+use crate::components::common::{AppTheme, UiModalContext, is_mobile_device};
 
 #[component(inline_props)]
 pub fn WorkbenchSettings() -> View {

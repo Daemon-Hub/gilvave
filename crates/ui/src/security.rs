@@ -33,7 +33,11 @@ fn cookie_set(name: &str, value: &str) {
         Some(d) => d,
         None => return,
     };
-    let cookie_str = format!("{name}={value}; path=/; SameSite=Strict");
+    let cookie_str = if value.is_empty() {
+        format!("{name}=; path=/; Max-Age=0; SameSite=Strict")
+    } else {
+        format!("{name}={value}; path=/; SameSite=Strict")
+    };
     let _ = doc.set_cookie(&cookie_str);
 }
 

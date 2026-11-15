@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use sycamore::prelude::*;
 
 use gilvave_core::{
@@ -7,9 +7,37 @@ use gilvave_core::{
         servers::channels::{ChannelType, ChannelView},
         servers::{MemberView, Server, ServerSmallPart},
         users::friends::FriendView,
+        voice::{VideoCodecPreference, VoiceParticipantView},
     },
-    ids::{ServerId, UserId},
+    ids::{ChannelId, ServerId, UserId},
 };
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum VoiceConnectionStatus {
+    #[default]
+    Disconnected,
+    Connecting,
+    Connected,
+    Reconnecting,
+}
+
+#[derive(Clone, Copy)]
+pub struct VoiceContext {
+    pub current_channel_id: Signal<Option<ChannelId>>,
+    pub connection_status: Signal<VoiceConnectionStatus>,
+    pub participants: Signal<Vec<VoiceParticipantView>>,
+    pub is_speaking: Signal<bool>,
+    pub is_camera_on: Signal<bool>,
+    pub is_screen_sharing: Signal<bool>,
+    pub video_codec_preference: Signal<VideoCodecPreference>,
+    pub local_camera_stream: Signal<Option<web_sys::MediaStream>>,
+    pub local_screen_stream: Signal<Option<web_sys::MediaStream>>,
+    pub remote_video_streams: Signal<HashMap<UserId, web_sys::MediaStream>>,
+    pub remote_screen_streams: Signal<HashMap<UserId, web_sys::MediaStream>>,
+    pub pinned_user_id: Signal<Option<UserId>>,
+    pub is_focus_mode: Signal<bool>,
+    pub channel_participants: Signal<HashMap<ChannelId, Vec<VoiceParticipantView>>>,
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum NetworkStatus {

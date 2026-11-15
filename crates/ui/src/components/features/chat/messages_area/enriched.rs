@@ -6,8 +6,7 @@ use gilvave_core::{
 };
 
 use crate::{
-    components::features::chat::chat_scroll::format_date_divider,
-    utils::get_local_offset,
+    components::features::chat::chat_scroll::format_date_divider, utils::get_local_offset,
 };
 
 #[derive(Clone, PartialEq)]

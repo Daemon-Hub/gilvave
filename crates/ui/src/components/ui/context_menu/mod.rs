@@ -173,4 +173,3 @@ pub fn AppContextMenu() -> View {
         })
     }
 }
-

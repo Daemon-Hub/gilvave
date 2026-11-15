@@ -1,6 +1,6 @@
 //! Twemoji SVG URL generation and text segmentation with multi-pack support.
 
-use super::pack::{emoji_to_pack_url, EmojiPack};
+use super::pack::{EmojiPack, emoji_to_pack_url};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MessageSegment {
@@ -55,13 +55,27 @@ fn find_first_candidate(bytes: &[u8]) -> usize {
         let b7 = is_candidate_byte(chunk[7]);
 
         if b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7 {
-            if b0 { return offset; }
-            if b1 { return offset + 1; }
-            if b2 { return offset + 2; }
-            if b3 { return offset + 3; }
-            if b4 { return offset + 4; }
-            if b5 { return offset + 5; }
-            if b6 { return offset + 6; }
+            if b0 {
+                return offset;
+            }
+            if b1 {
+                return offset + 1;
+            }
+            if b2 {
+                return offset + 2;
+            }
+            if b3 {
+                return offset + 3;
+            }
+            if b4 {
+                return offset + 4;
+            }
+            if b5 {
+                return offset + 5;
+            }
+            if b6 {
+                return offset + 6;
+            }
             return offset + 7;
         }
         offset += 8;

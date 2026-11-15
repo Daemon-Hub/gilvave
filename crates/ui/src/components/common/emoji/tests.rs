@@ -94,11 +94,17 @@ mod tests {
         let msg = "Смотри: <e:apple:🍏> и <e:fluent_3d:💎> и обычный 😀!";
         let segments = parse_message_segments(msg, EmojiPack::Noto);
         assert_eq!(segments[0], MessageSegment::Text("Смотри: ".to_string()));
-        assert!(matches!(&segments[1], MessageSegment::Emoji { char, pack: Some(EmojiPack::Apple), .. } if char == "🍏"));
+        assert!(
+            matches!(&segments[1], MessageSegment::Emoji { char, pack: Some(EmojiPack::Apple), .. } if char == "🍏")
+        );
         assert_eq!(segments[2], MessageSegment::Text(" и ".to_string()));
-        assert!(matches!(&segments[3], MessageSegment::Emoji { char, pack: Some(EmojiPack::Fluent3D), .. } if char == "💎"));
+        assert!(
+            matches!(&segments[3], MessageSegment::Emoji { char, pack: Some(EmojiPack::Fluent3D), .. } if char == "💎")
+        );
         assert_eq!(segments[4], MessageSegment::Text(" и обычный ".to_string()));
-        assert!(matches!(&segments[5], MessageSegment::Emoji { char, pack: None, .. } if char == "😀"));
+        assert!(
+            matches!(&segments[5], MessageSegment::Emoji { char, pack: None, .. } if char == "😀")
+        );
         assert_eq!(segments[6], MessageSegment::Text("!".to_string()));
     }
 
@@ -109,12 +115,18 @@ mod tests {
         for fallback_pack in [EmojiPack::Fluent3D, EmojiPack::Apple, EmojiPack::Noto] {
             let segs = parse_message_segments(mixed_msg, fallback_pack);
             assert_eq!(segs.len(), 3);
-            assert!(matches!(&segs[0], MessageSegment::Emoji { char, pack: Some(EmojiPack::Fluent3D), url, .. }
-                if char == "🔥" && url.contains("fluent-emoji-3d")));
-            assert!(matches!(&segs[1], MessageSegment::Emoji { char, pack: Some(EmojiPack::Apple), url, .. }
-                if char == "🍏" && url.contains("emoji-datasource-apple")));
-            assert!(matches!(&segs[2], MessageSegment::Emoji { char, pack: Some(EmojiPack::Noto), url, .. }
-                if char == "🤖" && url.contains("emoji-datasource-google")));
+            assert!(
+                matches!(&segs[0], MessageSegment::Emoji { char, pack: Some(EmojiPack::Fluent3D), url, .. }
+                if char == "🔥" && url.contains("fluent-emoji-3d"))
+            );
+            assert!(
+                matches!(&segs[1], MessageSegment::Emoji { char, pack: Some(EmojiPack::Apple), url, .. }
+                if char == "🍏" && url.contains("emoji-datasource-apple"))
+            );
+            assert!(
+                matches!(&segs[2], MessageSegment::Emoji { char, pack: Some(EmojiPack::Noto), url, .. }
+                if char == "🤖" && url.contains("emoji-datasource-google"))
+            );
         }
     }
 }

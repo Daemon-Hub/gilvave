@@ -8,3 +8,6 @@ ignore = ["../src-tauri"]
 port = 1420
 open = false
 addresses = ["0.0.0.0"]
+tls_key_path = "../../certs/key.pem"
+tls_cert_path = "../../certs/cert.pem"
+ws_protocol = "wss"

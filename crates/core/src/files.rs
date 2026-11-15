@@ -119,7 +119,10 @@ pub fn detect_file_type(name: &str, bytes: &[u8]) -> (FileType, &'static str) {
         "ogg" | "oga" => (FileType::File, "audio/ogg"),
         "flac" => (FileType::File, "audio/flac"),
         "apk" => (FileType::File, "application/vnd.android.package-archive"),
-        "exe" => (FileType::File, "application/vnd.microsoft.portable-executable"),
+        "exe" => (
+            FileType::File,
+            "application/vnd.microsoft.portable-executable",
+        ),
         _ => (FileType::File, "application/octet-stream"),
     }
 }
@@ -178,7 +181,9 @@ pub fn extract_file_ids_from_text(text: &str) -> Vec<FileId> {
         remaining = after;
     }
 
-    for word in text.split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '[' | ']' | '<' | '>')) {
+    for word in
+        text.split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | '[' | ']' | '<' | '>'))
+    {
         if let Some(filename) = word.rsplit('/').next() {
             let stem = filename.split('.').next().unwrap_or(filename);
             if stem.len() == 36
@@ -199,38 +204,86 @@ mod tests {
 
     #[test]
     fn test_detect_file_type_images() {
-        assert_eq!(detect_file_type("photo.png", &[]), (FileType::Image, "image/png"));
-        assert_eq!(detect_file_type("avatar.JPG", &[]), (FileType::Image, "image/jpeg"));
-        assert_eq!(detect_file_type("image.webp", &[]), (FileType::Image, "image/webp"));
-        assert_eq!(detect_file_type("icon.svg", &[]), (FileType::Image, "image/svg+xml"));
+        assert_eq!(
+            detect_file_type("photo.png", &[]),
+            (FileType::Image, "image/png")
+        );
+        assert_eq!(
+            detect_file_type("avatar.JPG", &[]),
+            (FileType::Image, "image/jpeg")
+        );
+        assert_eq!(
+            detect_file_type("image.webp", &[]),
+            (FileType::Image, "image/webp")
+        );
+        assert_eq!(
+            detect_file_type("icon.svg", &[]),
+            (FileType::Image, "image/svg+xml")
+        );
     }
 
     #[test]
     fn test_detect_file_type_videos() {
-        assert_eq!(detect_file_type("movie.mp4", &[]), (FileType::Video, "video/mp4"));
-        assert_eq!(detect_file_type("clip.webm", &[]), (FileType::Video, "video/webm"));
-        assert_eq!(detect_file_type("record.mkv", &[]), (FileType::Video, "video/x-matroska"));
+        assert_eq!(
+            detect_file_type("movie.mp4", &[]),
+            (FileType::Video, "video/mp4")
+        );
+        assert_eq!(
+            detect_file_type("clip.webm", &[]),
+            (FileType::Video, "video/webm")
+        );
+        assert_eq!(
+            detect_file_type("record.mkv", &[]),
+            (FileType::Video, "video/x-matroska")
+        );
     }
 
     #[test]
     fn test_detect_file_type_generic_files() {
-        assert_eq!(detect_file_type("doc.pdf", &[]), (FileType::File, "application/pdf"));
-        assert_eq!(detect_file_type("archive.zip", &[]), (FileType::File, "application/zip"));
-        assert_eq!(detect_file_type("table.xlsx", &[]), (FileType::File, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        assert_eq!(detect_file_type("notes.txt", &[]), (FileType::File, "text/plain; charset=utf-8"));
-        assert_eq!(detect_file_type("unknown.xyz123", &[]), (FileType::File, "application/octet-stream"));
+        assert_eq!(
+            detect_file_type("doc.pdf", &[]),
+            (FileType::File, "application/pdf")
+        );
+        assert_eq!(
+            detect_file_type("archive.zip", &[]),
+            (FileType::File, "application/zip")
+        );
+        assert_eq!(
+            detect_file_type("table.xlsx", &[]),
+            (
+                FileType::File,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        );
+        assert_eq!(
+            detect_file_type("notes.txt", &[]),
+            (FileType::File, "text/plain; charset=utf-8")
+        );
+        assert_eq!(
+            detect_file_type("unknown.xyz123", &[]),
+            (FileType::File, "application/octet-stream")
+        );
     }
 
     #[test]
     fn test_detect_file_type_magic_bytes() {
         let png_bytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-        assert_eq!(detect_file_type("unnamed_file", &png_bytes), (FileType::Image, "image/png"));
+        assert_eq!(
+            detect_file_type("unnamed_file", &png_bytes),
+            (FileType::Image, "image/png")
+        );
 
         let jpeg_bytes = [0xFF, 0xD8, 0xFF, 0xE0];
-        assert_eq!(detect_file_type("blob", &jpeg_bytes), (FileType::Image, "image/jpeg"));
+        assert_eq!(
+            detect_file_type("blob", &jpeg_bytes),
+            (FileType::Image, "image/jpeg")
+        );
 
         let pdf_bytes = b"%PDF-1.4";
-        assert_eq!(detect_file_type("file_without_ext", pdf_bytes), (FileType::File, "application/pdf"));
+        assert_eq!(
+            detect_file_type("file_without_ext", pdf_bytes),
+            (FileType::File, "application/pdf")
+        );
     }
 
     #[test]
@@ -252,7 +305,10 @@ mod tests {
 
     #[test]
     fn test_get_file_extension() {
-        assert_eq!(get_file_extension("archive.tar.gz", "application/gzip"), "gz");
+        assert_eq!(
+            get_file_extension("archive.tar.gz", "application/gzip"),
+            "gz"
+        );
         assert_eq!(get_file_extension("photo.JPEG", "image/jpeg"), "jpeg");
         assert_eq!(get_file_extension("blob", "image/png"), "png");
         assert_eq!(get_file_extension("video", "video/mp4"), "mp4");
@@ -263,7 +319,9 @@ mod tests {
     fn test_extract_file_ids_from_text() {
         let id1 = FileId::default();
         let id2 = FileId::default();
-        let text = format!("Check this [doc](file:{id1}) and image ![img](http://localhost/images/user/{id2}.png)");
+        let text = format!(
+            "Check this [doc](file:{id1}) and image ![img](http://localhost/images/user/{id2}.png)"
+        );
         let ids = extract_file_ids_from_text(&text);
         assert_eq!(ids.len(), 2);
         assert!(ids.contains(&id1));

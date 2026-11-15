@@ -1,14 +1,11 @@
 //! All friends list tab with online status sorting, search filtering, and action buttons.
 
-use sycamore::prelude::*;
-use gilvave_core::{
-    dto::users::friends::FriendView,
-    ids::UserId,
-};
+use super::format_friend_date;
 use crate::components::ui::icons::{
     BanIcon, ChatBubbleIcon, CloseSmallIcon, SearchIcon, TrashIcon, UserPlusIcon, UsersIcon,
 };
-use super::format_friend_date;
+use gilvave_core::{dto::users::friends::FriendView, ids::UserId};
+use sycamore::prelude::*;
 
 pub(crate) fn view_all_friends<F1, F2, F3, F4>(
     friends_signal: Signal<Vec<FriendView>>,
@@ -182,5 +179,3 @@ where
         }
     }
 }
-
-

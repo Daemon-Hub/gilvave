@@ -22,5 +22,12 @@ pub(crate) fn format_friend_date(dt: time::OffsetDateTime) -> String {
         time::Month::November => "ноября",
         time::Month::December => "декабря",
     };
-    format!("{} {} {}, {:02}:{:02}", local.day(), month_str, local.year(), local.hour(), local.minute())
+    format!(
+        "{} {} {}, {:02}:{:02}",
+        local.day(),
+        month_str,
+        local.year(),
+        local.hour(),
+        local.minute()
+    )
 }

@@ -29,10 +29,7 @@ pub fn CustomThemeCard(
     let name = theme.name.clone();
     let author = format!("by @{}", theme.author);
     let desc = if theme.description.trim().is_empty() {
-        format!(
-            "Пользовательская тема ({}, v{})",
-            theme.base, theme.version
-        )
+        format!("Пользовательская тема ({}, v{})", theme.base, theme.version)
     } else {
         theme.description.clone()
     };

@@ -1,10 +1,10 @@
 //! Empty states for the server overview modal (no servers in tab, or search query without results).
 
-use sycamore::prelude::*;
 use crate::components::{
     common::OverviewTab,
     ui::icons::{GlobeIcon, PlusIcon, SearchIcon, UserIcon},
 };
+use sycamore::prelude::*;
 
 #[component(inline_props)]
 pub fn ServerOverviewEmptyState<F1, F2>(

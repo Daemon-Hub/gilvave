@@ -1,12 +1,12 @@
 //! Pending incoming and outgoing friend requests tab.
 
-use sycamore::prelude::*;
+use super::format_friend_date;
+use crate::components::ui::icons::{CheckIcon, CloseSmallIcon, UsersIcon};
 use gilvave_core::{
-    dto::users::friends::{FriendRequestsList, FriendRequestView},
+    dto::users::friends::{FriendRequestView, FriendRequestsList},
     ids::UserId,
 };
-use crate::components::ui::icons::{CheckIcon, CloseSmallIcon, UsersIcon};
-use super::format_friend_date;
+use sycamore::prelude::*;
 
 pub(crate) fn view_requests<F1, F2>(
     requests_signal: Signal<FriendRequestsList>,
@@ -197,5 +197,3 @@ where
         }
     }
 }
-
-

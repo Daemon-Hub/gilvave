@@ -16,8 +16,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, SubmitEvent};
 
 use crate::components::common::{
-    ChannelContext, ScreenWrapper, UiModalContext, focus_editor_at_end,
-    insert_text_into_editor, serialize_contenteditable, sync_editor_content,
+    ChannelContext, ScreenWrapper, UiModalContext, focus_editor_at_end, insert_text_into_editor,
+    serialize_contenteditable, sync_editor_content,
 };
 
 #[component(inline_props)]
@@ -185,7 +185,9 @@ where
             return;
         }
         let att = crate::components::common::media::PendingAttachment::new(file);
-        modal_context.pending_attachments.update(|list| list.push(att));
+        modal_context
+            .pending_attachments
+            .update(|list| list.push(att));
     };
 
     let on_paste = move |event: web_sys::Event| {

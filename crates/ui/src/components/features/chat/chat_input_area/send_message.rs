@@ -76,7 +76,11 @@ pub(crate) fn send_channel_message(
                             match crate::http::api::Api::upload_file(file).await {
                                 Ok(res) => {
                                     let file_url = if res.url.starts_with('/') {
-                                        format!("{}{}", gilvave_core::settings::BASE_HTTP_URL, res.url)
+                                        format!(
+                                            "{}{}",
+                                            gilvave_core::settings::BASE_HTTP_URL,
+                                            res.url
+                                        )
                                     } else {
                                         res.url
                                     };
@@ -92,7 +96,9 @@ pub(crate) fn send_channel_message(
                                         Ok(format!("[{}](file:{})", res.name, res.id))
                                     }
                                 }
-                                Err(err) => Err(format!("Ошибка загрузки «{}»: {}", att.name, err.1)),
+                                Err(err) => {
+                                    Err(format!("Ошибка загрузки «{}»: {}", att.name, err.1))
+                                }
                             }
                         } else {
                             Ok(String::new())
@@ -144,7 +150,9 @@ pub(crate) fn send_channel_message(
             let sanitized = match gilvave_core::validation::validate_message(&final_content) {
                 Ok(s) => s,
                 Err(e) => {
-                    web_sys::console::warn_1(&format!("[MESSAGES_AREA] edit validation failed: {e}").into());
+                    web_sys::console::warn_1(
+                        &format!("[MESSAGES_AREA] edit validation failed: {e}").into(),
+                    );
                     return;
                 }
             };
@@ -316,11 +324,7 @@ pub(crate) fn send_channel_message(
                         m.is_failed = true;
                     }
                 });
-                crate::components::ui::context_menu::clipboard::show_toast(
-                    &m_ctx,
-                    true,
-                    err_msg,
-                );
+                crate::components::ui::context_menu::clipboard::show_toast(&m_ctx, true, err_msg);
                 return;
             }
 

@@ -4,8 +4,11 @@ use super::channel_item::ChannelItem;
 use crate::{
     cache::CacheService,
     components::{
-        common::{ChannelContext, ServerContext, UiModalContext},
-        ui::icons::{ChevronDownIcon, PlusIcon},
+        common::{
+            ChannelContext, ServerContext, UiModalContext, UserProfileContext,
+            VoiceConnectionStatus, VoiceContext,
+        },
+        ui::icons::{ChevronDownIcon, PhoneOffIcon, PlusIcon},
     },
     gateway::service::WsService,
     http::api::Api,
@@ -17,6 +20,50 @@ pub fn ChannelPanel() -> View {
     let context = use_context::<ChannelContext>();
     let server_context = use_context::<ServerContext>();
     let modal_context = use_context::<UiModalContext>();
+    let user_profile = use_context::<UserProfileContext>();
+    let voice_context = use_context::<VoiceContext>();
+
+    let is_voice_connected = create_memo(move || {
+        voice_context.connection_status.get() == VoiceConnectionStatus::Connected
+    });
+
+    let active_voice_channel_name = create_memo(move || {
+        let active_cid = voice_context.current_channel_id.get();
+        context.voice.with(|channels| {
+            channels
+                .iter()
+                .find(|ch| Some(ch.id) == active_cid)
+                .map(|ch| ch.name.clone())
+                .unwrap_or_else(|| "Голосовой канал".to_string())
+        })
+    });
+
+    let on_disconnect_voice = move |e: web_sys::MouseEvent| {
+        e.stop_propagation();
+        let uid = user_profile.user_id.get();
+        if let Some(uid) = uid {
+            voice_context.channel_participants.update(|map| {
+                for list in map.values_mut() {
+                    list.retain(|p| p.user_id != uid);
+                }
+            });
+        }
+        wasm_bindgen_futures::spawn_local(async move {
+            crate::voice::VoiceManager::disconnect(voice_context, uid).await;
+        });
+    };
+
+    let on_open_active_voice = move |_| {
+        let active_cid = voice_context.current_channel_id.get();
+        if let Some(ch) = context.voice.with(|channels| {
+            channels
+                .iter()
+                .find(|ch| Some(ch.id) == active_cid)
+                .cloned()
+        }) {
+            context.current.set(Some(ch));
+        }
+    };
 
     let is_text_collapsed = create_signal(false);
     let is_voice_collapsed = create_signal(false);
@@ -192,6 +239,31 @@ pub fn ChannelPanel() -> View {
                     }
                 }
             }
+
+            (if is_voice_connected.get() {
+                view! {
+                    div(class="voice-status-bar") {
+                        div(class="voice-status-info", on:click=on_open_active_voice) {
+                            div(class="voice-status-indicator") {}
+                            div(class="voice-status-text") {
+                                span(class="voice-status-title") { "Голос подключен" }
+                                span(class="voice-status-channel") { (active_voice_channel_name.get_clone()) }
+                            }
+                        }
+                        div(class="voice-status-actions") {
+                            button(
+                                class="voice-status-btn disconnect",
+                                on:click=on_disconnect_voice,
+                                title="Покинуть звонок",
+                            ) {
+                                PhoneOffIcon()
+                            }
+                        }
+                    }
+                }
+            } else {
+                view! {}
+            })
         }
     }
 }

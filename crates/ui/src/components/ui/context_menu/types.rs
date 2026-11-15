@@ -50,5 +50,3 @@ impl ContextMenuContext {
         self.is_open.set(false);
     }
 }
-
-

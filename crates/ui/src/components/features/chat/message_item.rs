@@ -32,7 +32,10 @@ fn visible_text_len(s: &str) -> usize {
                 let word = u64::from_le_bytes(chunk);
                 let has_high_bit = (word & 0x8080_8080_8080_8080) != 0;
                 let xor_bracket = word ^ 0x5D5D_5D5D_5D5D_5D5D;
-                let has_bracket = (xor_bracket.wrapping_sub(0x0101_0101_0101_0101) & !xor_bracket & 0x8080_8080_8080_8080) != 0;
+                let has_bracket = (xor_bracket.wrapping_sub(0x0101_0101_0101_0101)
+                    & !xor_bracket
+                    & 0x8080_8080_8080_8080)
+                    != 0;
 
                 if !has_high_bit && !has_bracket {
                     count += 8;

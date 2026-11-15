@@ -4,11 +4,10 @@ use gilvave_core::dto::servers::ServerCreateInfo;
 use sycamore::prelude::*;
 
 use crate::components::{
-    common::{CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext, classes},
-    features::servers::{
-        join_server_modal::JoinServerModal,
-        server_actions::create_server,
+    common::{
+        CreateServerContext, CreateServerOrigin, ModalView, ServerContext, UiModalContext, classes,
     },
+    features::servers::{join_server_modal::JoinServerModal, server_actions::create_server},
     ui::icons::{ArrowLeftIcon, GlobeIcon, LockIcon},
 };
 
